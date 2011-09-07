@@ -274,7 +274,12 @@ static void ion_buffer_destroy(struct kref *kref)
 	struct ion_buffer *buffer = container_of(kref, struct ion_buffer, ref);
 	struct ion_device *dev = buffer->dev;
 
-	ion_iommu_delayed_unmap(buffer);
+	if (WARN_ON(buffer->kmap_cnt > 0))
+		buffer->heap->ops->unmap_kernel(buffer->heap, buffer);
+
+	if (WARN_ON(buffer->dmap_cnt > 0))
+		buffer->heap->ops->unmap_dma(buffer->heap, buffer);
+
 	buffer->heap->ops->free(buffer);
 	mutex_lock(&dev->lock);
 	rb_erase(&buffer->node, &dev->buffers);
@@ -411,6 +416,11 @@ struct ion_handle *ion_alloc(struct ion_client *client, size_t len,
 	 * request of the caller allocate from it.  Repeat until allocate has
 	 * succeeded or all heaps have been tried
 	 */
+	if (WARN_ON(!len))
+		return ERR_PTR(-EINVAL);
+
+	len = PAGE_ALIGN(len);
+
 	mutex_lock(&dev->lock);
 	for (n = rb_first(&dev->heaps); n != NULL; n = rb_next(n)) {
 		struct ion_heap *heap = rb_entry(n, struct ion_heap, node);
@@ -457,7 +467,10 @@ struct ion_handle *ion_alloc(struct ion_client *client, size_t len,
 	}
 	mutex_unlock(&dev->lock);
 
-	if (IS_ERR_OR_NULL(buffer)) {
+	if (buffer == NULL)
+		return ERR_PTR(-ENODEV);
+
+	if (IS_ERR(buffer)) {
 		pr_debug("ION is unable to allocate 0x%x bytes (alignment: "
 			 "0x%x) from heap(s) %sfor client %s with heap "
 			 "mask 0x%x\n",
@@ -467,22 +480,18 @@ struct ion_handle *ion_alloc(struct ion_client *client, size_t len,
 
 	handle = ion_handle_create(client, buffer);
 
-	if (IS_ERR_OR_NULL(handle))
-		goto end;
-
 	/*
 	 * ion_buffer_create will create a buffer with a ref_cnt of 1,
 	 * and ion_handle_create will take a second reference, drop one here
 	 */
 	ion_buffer_put(buffer);
 
-	mutex_lock(&client->lock);
-	ion_handle_add(client, handle);
-	mutex_unlock(&client->lock);
-	return handle;
+	if (!IS_ERR(handle)) {
+		mutex_lock(&client->lock);
+		ion_handle_add(client, handle);
+		mutex_unlock(&client->lock);
+	}
 
-end:
-	ion_buffer_put(buffer);
 	return handle;
 }
 EXPORT_SYMBOL(ion_alloc);
@@ -1131,7 +1140,8 @@ struct ion_client *ion_client_create(struct ion_device *dev,
 
 	client = kzalloc(sizeof(struct ion_client), GFP_KERNEL);
 	if (!client) {
-		put_task_struct(current->group_leader);
+		if (task)
+			put_task_struct(current->group_leader);
 		return ERR_PTR(-ENOMEM);
 	}
 
@@ -1305,10 +1315,18 @@ static void ion_vma_open(struct vm_area_struct *vma)
 		vma->vm_private_data = NULL;
 		return;
 	}
+
+	if (!ion_handle_validate(client, handle)) {
+		ion_client_put(client);
+		vma->vm_private_data = NULL;
+		return;
+	}
+
 	ion_handle_get(handle);
 	mutex_lock(&buffer->lock);
 	buffer->umap_cnt++;
 	mutex_unlock(&buffer->lock);
+
 	pr_debug("%s: %d client_cnt %d handle_cnt %d alloc_cnt %d\n",
 		 __func__, __LINE__,
 		 atomic_read(&client->ref.refcount),
@@ -1459,7 +1477,7 @@ static int ion_ioctl_share(struct file *parent, struct ion_client *client,
 	struct file *file;
 
 	if (fd < 0)
-		return -ENFILE;
+		return fd;
 
 	file = anon_inode_getfile("ion_share_fd", &ion_share_fops,
 				  handle->buffer, O_RDWR);
@@ -1493,11 +1511,13 @@ static long ion_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 		data.handle = ion_alloc(client, data.len, data.align,
 					     data.flags);
 
-		if (IS_ERR_OR_NULL(data.handle))
-			return -ENOMEM;
+		if (IS_ERR(data.handle))
+			return PTR_ERR(data.handle);
 
-		if (copy_to_user((void __user *)arg, &data, sizeof(data)))
+		if (copy_to_user((void __user *)arg, &data, sizeof(data))) {
+			ion_free(client, data.handle);
 			return -EFAULT;
+		}
 		break;
 	}
 	case ION_IOC_FREE:
