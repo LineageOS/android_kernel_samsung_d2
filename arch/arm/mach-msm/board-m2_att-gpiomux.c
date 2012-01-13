@@ -232,7 +232,7 @@ static struct gpiomux_setting mdm2ap_errfatal_cfg = {
 static struct gpiomux_setting ap2mdm_kpdpwr_n_cfg = {
 	.func = GPIOMUX_FUNC_GPIO,
 	.drv = GPIOMUX_DRV_4MA,
-	.pull = GPIOMUX_PULL_NONE,
+	.pull = GPIOMUX_PULL_DOWN,
 };
 #endif
 
