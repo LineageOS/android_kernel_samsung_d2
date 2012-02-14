@@ -21,7 +21,6 @@
 #include <linux/delay.h>
 #include <mach/hardware.h>
 #include <linux/io.h>
-
 #include <asm/system.h>
 #include <asm/mach-types.h>
 #include <linux/semaphore.h>
@@ -83,29 +82,29 @@ int mdp4_overlay_writeback_on(struct platform_device *pdev)
 		pipe = mdp4_overlay_pipe_alloc(OVERLAY_TYPE_BF, MDP4_MIXER2);
 		if (pipe == NULL)
 			pr_info("%s: pipe_alloc failed\n", __func__);
-		else{
-			pipe->pipe_used++;
-			pipe->mixer_stage  = MDP4_MIXER_STAGE_BASE;
-			pipe->mixer_num  = MDP4_MIXER2;
-			pipe->src_format = MDP_ARGB_8888;
-			mdp4_overlay_panel_mode(pipe->mixer_num,
-				MDP4_PANEL_WRITEBACK);
-			ret = mdp4_overlay_format2pipe(pipe);
-			if (ret < 0)
-				pr_info("%s: format2type failed\n", __func__);
+		pipe->pipe_used++;
+		pipe->mixer_stage  = MDP4_MIXER_STAGE_BASE;
+		pipe->mixer_num  = MDP4_MIXER2;
+		pipe->src_format = MDP_ARGB_8888;
+		mdp4_overlay_panel_mode(pipe->mixer_num, MDP4_PANEL_WRITEBACK);
+		ret = mdp4_overlay_format2pipe(pipe);
+		if (ret < 0)
+			pr_info("%s: format2type failed\n", __func__);
 
-			writeback_pipe = pipe; /* keep it */
-			}
+		writeback_pipe = pipe; /* keep it */
 
 	} else {
 		pipe = writeback_pipe;
 	}
 	ret = panel_next_on(pdev);
+
 	/* MDP_LAYERMIXER_WB_MUX_SEL to use mixer1 axi for mixer2 writeback */
-	data = inpdw(MDP_BASE + 0x100F4);
-	data &= ~0x02; /* clear the mixer1 mux bit */
-	data |= 0x02;
+	if (hdmi_prim_display)
+		data = 0x01;
+	else
+		data = 0x02;
 	outpdw(MDP_BASE + 0x100F4, data);
+
 	MDP_OUTP(MDP_BASE + MDP4_OVERLAYPROC1_BASE + 0x5004,
 		((0x0 & 0xFFF) << 16) | /* 12-bit B */
 			(0x0 & 0xFFF));         /* 12-bit G */
@@ -120,7 +119,6 @@ int mdp4_overlay_writeback_on(struct platform_device *pdev)
 int mdp4_overlay_writeback_off(struct platform_device *pdev)
 {
 	int ret;
-	uint32 data;
 	struct msm_fb_data_type *mfd =
 			(struct msm_fb_data_type *)platform_get_drvdata(pdev);
 	if (mfd && writeback_pipe) {
@@ -132,11 +130,8 @@ int mdp4_overlay_writeback_off(struct platform_device *pdev)
 	}
 	ret = panel_next_off(pdev);
 	mdp_pipe_ctrl(MDP_CMD_BLOCK, MDP_BLOCK_POWER_ON, FALSE);
-	/* MDP_LAYERMIXER_WB_MUX_SEL to restore
-	 * mixer1 axi for mixer1 writeback */
-	data = inpdw(MDP_BASE + 0x100F4);
-	data &= ~0x02; /* clear the mixer1 mux bit */
-	outpdw(MDP_BASE + 0x100F4, data);
+	/* MDP_LAYERMIXER_WB_MUX_SEL to restore to default cfg*/
+	outpdw(MDP_BASE + 0x100F4, 0x0);
 	mdp_pipe_ctrl(MDP_CMD_BLOCK, MDP_BLOCK_POWER_OFF, FALSE);
 	return ret;
 }
@@ -144,6 +139,7 @@ int mdp4_overlay_writeback_update(struct msm_fb_data_type *mfd)
 {
 	struct fb_info *fbi;
 	uint8 *buf;
+	unsigned int buf_offset;
 	struct mdp4_overlay_pipe *pipe;
 	int bpp;
 
@@ -159,7 +155,7 @@ int mdp4_overlay_writeback_update(struct msm_fb_data_type *mfd)
 
 	bpp = fbi->var.bits_per_pixel / 8;
 	buf = (uint8 *) fbi->fix.smem_start;
-	buf += fbi->var.xoffset * bpp +
+	buf_offset = fbi->var.xoffset * bpp +
 		fbi->var.yoffset * fbi->fix.line_length;
 
 	/* MDP cmd block enable */
@@ -176,8 +172,8 @@ int mdp4_overlay_writeback_update(struct msm_fb_data_type *mfd)
 	pipe->src_x = 0;
 	pipe->dst_y = 0;
 	pipe->dst_x = 0;
-	pipe->srcp0_addr = (uint32)buf;
 
+	pipe->srcp0_addr = (uint32)(buf + buf_offset);
 
 	mdp4_mixer_stage_up(pipe);
 
@@ -272,11 +268,11 @@ void mdp4_writeback_kickoff_video(struct msm_fb_data_type *mfd,
 	}
 	mutex_unlock(&mfd->writeback_mutex);
 
-	writeback_pipe->blt_addr = (ulong) (node ? node->addr : NULL);
+	writeback_pipe->ov_blt_addr = (ulong) (node ? node->addr : NULL);
 
-	if (!writeback_pipe->blt_addr) {
+	if (!writeback_pipe->ov_blt_addr) {
 		pr_err("%s: no writeback buffer 0x%x, %p\n", __func__,
-				(unsigned int)writeback_pipe->blt_addr, node);
+			(unsigned int)writeback_pipe->ov_blt_addr, node);
 		mutex_unlock(&mfd->unregister_mutex);
 		return;
 	}
@@ -309,9 +305,6 @@ void mdp4_writeback_overlay(struct msm_fb_data_type *mfd)
 	int ret = 0;
 	struct msmfb_writeback_data_list *node = NULL;
 
-	if (!mfd)
-		return;
-
 	mutex_lock(&mfd->unregister_mutex);
 	mutex_lock(&mfd->writeback_mutex);
 	if (!list_empty(&mfd->writeback_free_queue)
@@ -327,13 +320,13 @@ void mdp4_writeback_overlay(struct msm_fb_data_type *mfd)
 	}
 	mutex_unlock(&mfd->writeback_mutex);
 
-	writeback_pipe->blt_addr = (ulong) (node ? node->addr : NULL);
+	writeback_pipe->ov_blt_addr = (ulong) (node ? node->addr : NULL);
 
 	mutex_lock(&mfd->dma->ov_mutex);
 	pr_debug("%s in writeback\n", __func__);
-	if (writeback_pipe && !writeback_pipe->blt_addr) {
+	if (writeback_pipe && !writeback_pipe->ov_blt_addr) {
 		pr_err("%s: no writeback buffer 0x%x\n", __func__,
-				(unsigned int)writeback_pipe->blt_addr);
+				(unsigned int)writeback_pipe->ov_blt_addr);
 		ret = mdp4_overlay_writeback_update(mfd);
 		if (ret)
 			pr_err("%s: update failed writeback pipe NULL\n",
@@ -354,7 +347,7 @@ void mdp4_writeback_overlay(struct msm_fb_data_type *mfd)
 		}
 
 		pr_debug("%s: in writeback pan display 0x%x\n", __func__,
-				(unsigned int)writeback_pipe->blt_addr);
+				(unsigned int)writeback_pipe->ov_blt_addr);
 		mdp4_writeback_kickoff_ui(mfd, writeback_pipe);
 
 		/* signal if pan function is waiting for the
@@ -392,6 +385,7 @@ static struct msmfb_writeback_data_list *get_if_registered(
 {
 	struct msmfb_writeback_data_list *temp;
 	bool found = false;
+
 	if (!list_empty(&mfd->writeback_register_queue)) {
 		list_for_each_entry(temp,
 				&mfd->writeback_register_queue,
@@ -409,11 +403,8 @@ static struct msmfb_writeback_data_list *get_if_registered(
 			pr_err("%s: out of memory\n", __func__);
 			goto register_alloc_fail;
 		}
-
-		if (data->iova)
-			temp->addr = (void *)(data->iova + data->offset);
 #ifdef CONFIG_MSM_MULTIMEDIA_USE_ION
-		else {
+        else {
 			struct ion_handle *srcp_ihdl;
 			ulong len;
 			srcp_ihdl = ion_import_fd(mfd->iclient,
@@ -423,15 +414,16 @@ static struct msmfb_writeback_data_list *get_if_registered(
 				goto register_ion_fail;
 			}
 			if (ion_phys(mfd->iclient,
-				     srcp_ihdl,
-				     (ulong *)&temp->addr,
-				     (size_t *)&len)) {
-				pr_err("%s: unable to get ion phys\n",
-				       __func__);
-				goto register_ion_fail;
+						srcp_ihdl,
+						(ulong *)&temp->addr,
+						(size_t *)&len)) {
+					pr_err("%s: unable to get ion phys\n",
+							__func__);
+					goto register_ion_fail;
 			}
 			temp->addr += data->offset;
 		}
+
 #else
 		else {
 			pr_err("%s: only support ion memory\n", __func__);
