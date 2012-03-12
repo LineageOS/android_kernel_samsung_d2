@@ -2179,17 +2179,14 @@ static uint32 mdp4_overlay_get_perf_level(struct mdp_overlay *req,
 	if (play_speed_1_5)
 		return OVERLAY_PERF_LEVEL1;
 
-	if (req->src.width*req->src.height <= OVERLAY_VGA_SIZE)
-#if defined(CONFIG_FB_MSM_MIPI_SAMSUNG_OLED_VIDEO_HD_PT)
-		return OVERLAY_PERF_LEVEL3;
-#else
-		return OVERLAY_PERF_LEVEL4;
-#endif
-	else if (req->src.width*req->src.height <= OVERLAY_720P_TILE_SIZE) {
+	if (req->src.width*req->src.height <= OVERLAY_VGA_SIZE) {
+		if (mfd->mdp_rev >= MDP_REV_42)
+			return OVERLAY_PERF_LEVEL4;
+		else
+			return OVERLAY_PERF_LEVEL3;
+
+	} else if (req->src.width*req->src.height <= OVERLAY_720P_TILE_SIZE) {
 		u32 max, min;
-#if defined(CONFIG_FB_MSM_MIPI_SAMSUNG_OLED_VIDEO_HD_PT)
-		return OVERLAY_PERF_LEVEL2;
-#endif
 		max = (req->dst_rect.h > req->dst_rect.w) ?
 			req->dst_rect.h : req->dst_rect.w;
 		min = (mfd->panel_info.yres > mfd->panel_info.xres) ?
