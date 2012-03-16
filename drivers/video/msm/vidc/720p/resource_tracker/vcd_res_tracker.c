@@ -763,3 +763,10 @@ u32 res_trk_estimate_perf_level(u32 pn_perf_lvl)
 	return 0;
 }
 
+u32 res_trk_is_cp_enabled(void)
+{
+	if (resource_context.vidc_platform_data->cp_enabled)
+		return 1;
+	else
+		return 0;
+}
