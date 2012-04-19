@@ -475,6 +475,7 @@ u32 ddl_encode_frame(u32 *ddl_handle,
 					client_data);
 	}
 
+	DDL_MSG_HIGH("ddl_encode_frame");
 	ddl_set_core_start_time(__func__, ENC_OP_TIME);
 	ddl_context = ddl_get_context();
 	if (!DDL_IS_INITIALIZED(ddl_context)) {
