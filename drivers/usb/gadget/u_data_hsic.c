@@ -34,8 +34,8 @@ static const char *data_bridge_names[] = {
 
 #define GHSIC_DATA_RMNET_RX_Q_SIZE		50
 #define GHSIC_DATA_RMNET_TX_Q_SIZE		300
-#define GHSIC_DATA_SERIAL_RX_Q_SIZE		2
-#define GHSIC_DATA_SERIAL_TX_Q_SIZE		2
+#define GHSIC_DATA_SERIAL_RX_Q_SIZE		10
+#define GHSIC_DATA_SERIAL_TX_Q_SIZE		20
 #define GHSIC_DATA_RX_REQ_SIZE			2048
 
 static unsigned int ghsic_data_rmnet_tx_q_size = GHSIC_DATA_RMNET_TX_Q_SIZE;
