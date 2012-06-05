@@ -50,4 +50,8 @@ int res_trk_close_secure_session(void);
 void res_trk_secure_set(void);
 void res_trk_secure_unset(void);
 u32 get_res_trk_perf_level(enum vcd_perf_level);
+int res_trk_enable_footswitch(void);
+int res_trk_disable_footswitch(void);
+void res_trk_release_fw_addr(void);
+u32 res_trk_get_clk_rate(unsigned long *phclk_rate);
 #endif

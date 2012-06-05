@@ -220,7 +220,7 @@ static u32 res_trk_sel_clk_rate(unsigned long hclk_rate)
 	return true;
 }
 
-static u32 res_trk_get_clk_rate(unsigned long *phclk_rate)
+u32 res_trk_get_clk_rate(unsigned long *phclk_rate)
 {
 	if (!phclk_rate) {
 		VCDRES_MSG_ERROR("%s(): phclk_rate is NULL\n", __func__);
