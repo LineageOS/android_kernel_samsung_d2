@@ -907,7 +907,7 @@ static struct acpu_level acpu_freq_tbl_8627[] = {
 	{ 0, { 0 } }
 };
 
-static unsigned long acpuclk_8960_get_rate(int cpu)
+unsigned long acpuclk_8960_get_rate(int cpu)
 {
 	return scalable[cpu].current_speed->khz;
 }
