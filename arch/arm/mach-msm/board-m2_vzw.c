@@ -4142,7 +4142,7 @@ static struct sec_jack_zone jack_zones[] = {
 		.jack_type	= SEC_HEADSET_3POLE,
 	},
 	[2] = {
-		.adc_high	= 1600,
+		.adc_high	= 1720,
 		.delay_ms	= 10,
 		.check_count	= 10,
 		.jack_type	= SEC_HEADSET_4POLE,
