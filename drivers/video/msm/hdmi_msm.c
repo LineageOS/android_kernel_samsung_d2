@@ -4515,9 +4515,11 @@ static int __devinit hdmi_msm_probe(struct platform_device *pdev)
 
 	DEV_INFO("HDMI HPD: ON\n");
 #if !defined(CONFIG_VIDEO_MHL_V1) && !defined(CONFIG_VIDEO_MHL_V2)
-	rc = hdmi_msm_hpd_on(true);
-	if (rc)
-		goto error;
+	if (hdmi_prim_display) {
+		rc = hdmi_msm_hpd_on(true);
+		if (rc)
+			goto error;
+	}
 #endif
 
 #ifdef CONFIG_FB_MSM_HDMI_MSM_PANEL_HDCP_SUPPORT
