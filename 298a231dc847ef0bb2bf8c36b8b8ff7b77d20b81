@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "AAAAUX///cQ\u003d",
+        "filename": "README",
+        "patchSetId": 3
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 2195
+      },
+      "writtenOn": "2012-07-12T13:51:50Z",
+      "side": 1,
+      "message": "Shouldn\u0027t this be m2_spr_defconfig",
+      "revId": "298a231dc847ef0bb2bf8c36b8b8ff7b77d20b81",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    }
+  ]
+}
