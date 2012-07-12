@@ -1731,7 +1731,7 @@ void mdp4_overlay_pipe_free(struct mdp4_overlay_pipe *pipe)
 
 static int mdp4_overlay_validate_downscale(struct mdp_overlay *req,
 	struct msm_fb_data_type *mfd, uint32 perf_level,
-				uint32 pclk_rate, uint32 type)
+				uint32 pclk_rate)
 {
 	__u32 panel_clk_khz, mdp_clk_khz;
 	__u32 num_hsync_pix_clks, mdp_clks_per_hsync, src_wh, scale_fct_y;
@@ -1775,15 +1775,10 @@ static int mdp4_overlay_validate_downscale(struct mdp_overlay *req,
 		mdp_period_ps, total_hsync_period_ps);
 
 	src_wh = req->src_rect.w * req->src_rect.h;
-#if defined(CONFIG_FB_MSM_MIPI_SAMSUNG_OLED_VIDEO_HD_PT)
-	scale_fct_y = ((req->src_rect.h - 1) / req->dst_rect.h) + 1;
-	fill_rate_y_dir = (scale_fct_y * req->src_rect.w);
-#else
 	if (src_wh % req->dst_rect.h)
 		fill_rate_y_dir = (src_wh / req->dst_rect.h) + 1;
 	else
 		fill_rate_y_dir = (src_wh / req->dst_rect.h);
-#endif
 
 	fill_rate_x_dir = (mfd->panel_info.xres - req->dst_rect.w)
 		+ req->src_rect.w;
@@ -1801,28 +1796,10 @@ static int mdp4_overlay_validate_downscale(struct mdp_overlay *req,
 	pr_debug("fillratex100 %lu, mdp_pixels_produced %lu\n",
 		fillratex100, mdp_pixels_produced);
 
-#if defined(CONFIG_FB_MSM_MIPI_SAMSUNG_OLED_VIDEO_HD_PT)
-	/* more 720p use blt mode in portrait full screen*/
-	if (type == OVERLAY_TYPE_VIDEO) {
-		if (src_wh >= (1200 * 700)) {
-			mdp4_stat.err_underflow++;
-			return -ERANGE;
-		} else if ((req->src_rect.w > req->dst_rect.w) !=
-			(req->src_rect.h > req->dst_rect.h)) {
-			return -ERANGE;
-		}
-	}
-
 	if (mdp_pixels_produced <= mfd->panel_info.xres) {
 		mdp4_stat.err_underflow++;
 		return -ERANGE;
 	}
-#else
-	if (mdp_pixels_produced <= (num_hsync_pix_clks + 500)) {
-		mdp4_stat.err_underflow++;
-		return -ERANGE;
-	}
-#endif
 	return 0;
 }
 
@@ -2294,36 +2271,24 @@ static u32 mdp4_overlay_blt_enable(struct mdp_overlay *req,
 	struct msm_fb_data_type *mfd, uint32 perf_level)
 {
 	u32 clk_rate = mfd->panel_info.clk_rate;
-	u32 pull_mode = 0, use_blt = 0;
-	u32 type = mdp4_overlay_format2type(req->src.format);
+	u32 blt_chq_req  = 0, use_blt = 0;
 
-	if (mfd->panel_info.type == MIPI_VIDEO_PANEL)
+	if ((mfd->panel_info.type == MIPI_VIDEO_PANEL) ||
+		 (mfd->panel_info.type == MIPI_CMD_PANEL))
 		clk_rate = (&mfd->panel_info.mipi)->dsi_pclk_rate;
 
 	if ((mfd->panel_info.type == LCDC_PANEL) ||
 	    (mfd->panel_info.type == MIPI_VIDEO_PANEL) ||
-	    (mfd->panel_info.type == DTV_PANEL))
-		pull_mode = 1;
+	    (mfd->panel_info.type == DTV_PANEL) ||
+	    (mfd->panel_info.type == MIPI_CMD_PANEL))
+		blt_chq_req = 1;
 
-#if defined(CONFIG_FB_MSM_MIPI_SAMSUNG_OLED_VIDEO_HD_PT)
-	if (pull_mode &&
-		(req->src_rect.h > req->dst_rect.h ||
-		req->src_rect.w > req->dst_rect.w ||
-		((!camera_mode) && (type == OVERLAY_TYPE_VIDEO) &&
-		req->src_rect.h > 500))) {
-		if (mdp4_overlay_validate_downscale(req,
-			mfd, perf_level, clk_rate, type))
-			use_blt = 1;
-	}
-#else
-	if (pull_mode &&
-		(req->src_rect.h > req->dst_rect.h ||
+	if (blt_chq_req && (req->src_rect.h > req->dst_rect.h ||
 		req->src_rect.w > req->dst_rect.w)) {
-		if (mdp4_overlay_validate_downscale(req,
-			mfd, perf_level, clk_rate, type))
+		if (mdp4_overlay_validate_downscale(req, mfd, perf_level,
+			clk_rate))
 			use_blt = 1;
 	}
-#endif
 
 	if (mfd->mdp_rev == MDP_REV_41) {
 		/*
@@ -2529,10 +2494,15 @@ int mdp4_overlay_unset(struct fb_info *info, int ndx)
 		mdp4_mixer_stage_down(pipe);
 
 		if (pipe->mixer_num == MDP4_MIXER0) {
+			mfd->use_ov0_blt &= ~(1 << (pipe->pipe_ndx-1));
+			mdp4_overlay_update_blt_mode(mfd);
 #ifdef CONFIG_FB_MSM_MIPI_DSI
 			if (ctrl->panel_mode & MDP4_PANEL_DSI_CMD) {
-				if (mfd->panel_power_on)
+				if (mfd->panel_power_on) {
 					mdp4_dsi_cmd_overlay_restore();
+					mdp4_dsi_cmd_dma_busy_wait(mfd);
+					mdp4_dsi_blt_dmap_busy_wait(mfd);
+				}
 			} else if (ctrl->panel_mode & MDP4_PANEL_DSI_VIDEO) {
 				pipe->flags &= ~MDP_OV_PLAY_NOWAIT;
 				if (mfd->panel_power_on)
@@ -2541,8 +2511,11 @@ int mdp4_overlay_unset(struct fb_info *info, int ndx)
 			}
 #else
 			if (ctrl->panel_mode & MDP4_PANEL_MDDI) {
-				if (mfd->panel_power_on)
+				if (mfd->panel_power_on) {
 					mdp4_mddi_overlay_restore();
+					mdp4_mddi_dma_busy_wait(mfd);
+					mdp4_mddi_blt_dmap_busy_wait(mfd);
+				}
 			}
 #endif
 			else if (ctrl->panel_mode & MDP4_PANEL_LCDC) {
@@ -2550,8 +2523,6 @@ int mdp4_overlay_unset(struct fb_info *info, int ndx)
 				if (mfd->panel_power_on)
 					mdp4_overlay_lcdc_vsync_push(mfd, pipe);
 			}
-			mfd->use_ov0_blt &= ~(1 << (pipe->pipe_ndx-1));
-			mdp4_overlay_update_blt_mode(mfd);
 			if (!mfd->use_ov0_blt)
 				mdp4_free_writeback_buf(mfd, MDP4_MIXER0);
 		} else {	/* mixer1, DTV, ATV */
