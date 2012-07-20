@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "AAAAVX///NY\u003d",
+        "filename": "arch/arm/configs/cyanogen_d2vzw_defconfig",
+        "patchSetId": 4
+      },
+      "lineNbr": 2447,
+      "author": {
+        "id": 383
+      },
+      "writtenOn": "2012-07-20T09:18:14Z",
+      "side": 1,
+      "message": "This should remain enabled. It alters some things in the SoC voice audio code for Verizon.",
+      "revId": "5a31a3245129ca631fb25cd67834654528c8e056",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    }
+  ]
+}
