@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "AAAAVX///O4\u003d",
+        "filename": "arch/arm/configs/cyanogen_d2_defconfig",
+        "patchSetId": 1
+      },
+      "lineNbr": 327,
+      "author": {
+        "id": 32
+      },
+      "writtenOn": "2012-07-20T04:54:44Z",
+      "side": 1,
+      "message": "Yeah, this will break shit. It\u0027s referenced all over the kernel.",
+      "revId": "486331a01a932dfb56ccd5d0ecef26b0457a1aa7",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    }
+  ]
+}
