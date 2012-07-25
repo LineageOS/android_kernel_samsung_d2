@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "AAAAVX//9kM\u003d",
+        "filename": "arch/arm/configs/cyanogen_d2_defconfig",
+        "patchSetId": 5
+      },
+      "lineNbr": 326,
+      "author": {
+        "id": 32
+      },
+      "writtenOn": "2012-07-25T10:55:47Z",
+      "side": 1,
+      "message": "Should do the \"is not set\" thing.",
+      "revId": "0d1638dac75649b20e633fcc890570036b452f2a",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    }
+  ]
+}
