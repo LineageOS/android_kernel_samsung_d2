@@ -533,8 +533,6 @@ void mdp4_primary_vsync_dsi_video(void)
  */
 void mdp4_dma_p_done_dsi_video(struct mdp_dma_data *dma)
 {
-#if defined(CONFIG_SAMSUNG_CMC624)
-	if (!samsung_has_cmc624()) {
 		if (blt_cfg_changed) {
 			mdp_is_in_isr = TRUE;
 			mdp4_overlayproc_cfg(dsi_pipe);
@@ -554,11 +552,6 @@ void mdp4_dma_p_done_dsi_video(struct mdp_dma_data *dma)
 			blt_cfg_changed = 0;
 		}
 		complete_all(&dsi_video_comp);
-	} else
-		complete_all(&dsi_video_comp);
-#else
-	complete_all(&dsi_video_comp);
-#endif
 }
 
 /*
