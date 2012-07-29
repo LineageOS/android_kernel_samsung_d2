@@ -1,0 +1,10 @@
+Change-Id: Icbb4ef8724a28568ffde7ce4d47c09eb42253ed2
+Code-Review+2: Steve Kondik <shade@chemlab.org>
+Verified+1: Steve Kondik <shade@chemlab.org>
+Code-Review+1: Shareef Ali <shareefalis@gmail.com>
+Verified+1: Shareef Ali <shareefalis@gmail.com>
+Submitted-by: Steve Kondik <shade@chemlab.org>
+Submitted-at: Sun, 29 Jul 2012 08:00:55 +0400
+Reviewed-on: http://review.cyanogenmod.com/20282
+Project: CyanogenMod/android_kernel_samsung_d2
+Branch: refs/heads/jb-test
