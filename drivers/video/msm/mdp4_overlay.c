@@ -2493,19 +2493,17 @@ static u32 mdp4_overlay_blt_enable(struct mdp_overlay *req,
 	struct msm_fb_data_type *mfd, uint32 perf_level)
 {
 	u32 clk_rate = mfd->panel_info.clk_rate;
-	u32 blt_chq_req  = 0, use_blt = 0;
+	u32 pull_mode  = 0, use_blt = 0;
 
-	if ((mfd->panel_info.type == MIPI_VIDEO_PANEL) ||
-		 (mfd->panel_info.type == MIPI_CMD_PANEL))
+	if ((mfd->panel_info.type == MIPI_VIDEO_PANEL)
 		clk_rate = (&mfd->panel_info.mipi)->dsi_pclk_rate;
 
 	if ((mfd->panel_info.type == LCDC_PANEL) ||
 	    (mfd->panel_info.type == MIPI_VIDEO_PANEL) ||
-	    (mfd->panel_info.type == DTV_PANEL) ||
-	    (mfd->panel_info.type == MIPI_CMD_PANEL))
-		blt_chq_req = 1;
+	    (mfd->panel_info.type == DTV_PANEL))
+		pull_mode = 1;
 
-	if (blt_chq_req && (req->src_rect.h > req->dst_rect.h ||
+	if (pull_mode && (req->src_rect.h > req->dst_rect.h ||
 		req->src_rect.w > req->dst_rect.w)) {
 		if (mdp4_overlay_validate_downscale(req, mfd, perf_level,
 			clk_rate))
@@ -2544,7 +2542,6 @@ int mdp4_overlay_set(struct fb_info *info, struct mdp_overlay *req)
 	struct msm_fb_data_type *mfd = (struct msm_fb_data_type *)info->par;
 	int ret, mixer, perf_level;
 	struct mdp4_overlay_pipe *pipe;
-	u32 use_blt = 0;
 
 	if (mfd == NULL) {
 		pr_err("%s: mfd == NULL, -ENODEV\n", __func__);
@@ -2576,7 +2573,7 @@ int mdp4_overlay_set(struct fb_info *info, struct mdp_overlay *req)
 	perf_level = mdp4_overlay_get_perf_level(req, mfd);
 
 	if (mixer == MDP4_MIXER0) {
-		use_blt = mdp4_overlay_blt_enable(req, mfd,	perf_level);
+		u32 use_blt = mdp4_overlay_blt_enable(req, mfd,	perf_level);
 		mfd->use_ov0_blt &= ~(1 << (pipe->pipe_ndx-1));
 		mfd->use_ov0_blt |= (use_blt << (pipe->pipe_ndx-1));
 	}
