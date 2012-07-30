@@ -5059,7 +5059,6 @@ static struct clk_lookup msm_clocks_8064[] = {
 	CLK_LOOKUP("core_clk",		rot_clk.c,	"footswitch-8x60.6"),
 	CLK_LOOKUP("tv_src_clk",	tv_src_clk.c,	"footswitch-8x60.4"),
 	CLK_LOOKUP("src_clk",	tv_src_clk.c,		"dtv.0"),
-	CLK_LOOKUP("div_clk",	tv_src_div_clk.c,	""),
 	CLK_LOOKUP("core_clk",		vcodec_clk.c,		"msm_vidc.0"),
 	CLK_LOOKUP("core_clk",		vcodec_clk.c,	"footswitch-8x60.7"),
 	CLK_LOOKUP("mdp_clk",	mdp_tv_clk.c,		"dtv.0"),

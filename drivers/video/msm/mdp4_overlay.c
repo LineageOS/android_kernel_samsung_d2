@@ -1908,7 +1908,7 @@ static int mdp4_overlay_validate_downscale(struct mdp_overlay *req,
 				uint32 pclk_rate)
 {
 	__u32 panel_clk_khz, mdp_clk_khz;
-	__u32 num_hsync_pix_clks, mdp_clks_per_hsync, src_wh, scale_fct_y;
+	__u32 num_hsync_pix_clks, mdp_clks_per_hsync, src_wh;
 	__u32 hsync_period_ps, mdp_period_ps, total_hsync_period_ps;
 	unsigned long fill_rate_y_dir, fill_rate_x_dir;
 	unsigned long fillratex100, mdp_pixels_produced;
@@ -2439,9 +2439,9 @@ void mdp4_set_perf_level(void)
 	if (old_perf_level != cur_perf_level) {
 		mdp_set_core_clk(cur_perf_level);
 		old_perf_level = cur_perf_level;
-	}
-	mdp_bus_scale_update_request(OVERLAY_BUS_SCALE_TABLE_BASE
+	    mdp_bus_scale_update_request(OVERLAY_BUS_SCALE_TABLE_BASE
 				     - cur_perf_level);
+    }
 }
 
 static void mdp4_overlay_update_blt_mode(struct msm_fb_data_type *mfd)
