@@ -258,6 +258,20 @@ struct mdp4_hsic_regs {
 	int32_t dirty;
 };
 
+struct mdp4_iommu_pipe_info {
+   struct ion_handle *ihdl[MDP4_MAX_PLANE];
+   struct ion_handle *prev_ihdl[MDP4_MAX_PLANE];
+   u8 mark_unmap;
+};
+
+#define IOMMU_FREE_LIST_MAX 32
+
+struct iommu_free_list {
+   int total;
+   int fndx;
+   struct ion_handle *ihdl[IOMMU_FREE_LIST_MAX];
+};
+
 struct blend_cfg {
 	u32 op;
 	u32 bg_alpha;
@@ -356,6 +370,7 @@ struct mdp4_overlay_pipe {
 	struct mdp_overlay req_data;
 	struct completion comp;
 	struct completion dmas_comp;
+    struct mdp4_iommu_pipe_info iommu;
 };
 
 struct mdp4_statistic {
@@ -396,6 +411,9 @@ struct mdp4_statistic {
 	ulong pipe[OVERLAY_PIPE_MAX];
 	ulong wait4vsync0;
 	ulong wait4vsync1;
+    ulong iommu_map;
+    ulong iommu_unmap;
+    ulong iommu_drop;
 	ulong dsi_clkoff;
 	ulong err_mixer;
 	ulong err_zorder;
@@ -928,4 +946,10 @@ bool samsung_has_cmc624(void);
 #endif
 
 int mdp4_igc_lut_config(struct mdp_igc_lut_data *cfg);
+void mdp4_overlay_iommu_pipe_free(int ndx, int all);
+void mdp4_overlay_iommu_free_list(int mixer, struct ion_handle *ihdl);
+void mdp4_overlay_iommu_unmap_freelist(int mixer);
+void mdp4_overlay_iommu_vsync_cnt(void);
+void mdp4_iommu_unmap(struct mdp4_overlay_pipe *pipe);
+void mdp4_iommu_attach(void);
 #endif /* MDP_H */

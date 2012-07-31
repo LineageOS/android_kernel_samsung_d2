@@ -21,6 +21,7 @@
 #include <linux/delay.h>
 #include <mach/hardware.h>
 #include <linux/io.h>
+#include <mach/iommu_domains.h>
 #include <asm/system.h>
 #include <asm/mach-types.h>
 #include <linux/semaphore.h>
@@ -173,7 +174,10 @@ int mdp4_overlay_writeback_update(struct msm_fb_data_type *mfd)
 	pipe->dst_y = 0;
 	pipe->dst_x = 0;
 
-	pipe->srcp0_addr = (uint32)(buf + buf_offset);
+	if (mfd->display_iova)
+		pipe->srcp0_addr = mfd->display_iova + buf_offset;
+	else
+		pipe->srcp0_addr = (uint32)(buf + buf_offset);
 
 	mdp4_mixer_stage_up(pipe);
 
@@ -349,6 +353,7 @@ void mdp4_writeback_overlay(struct msm_fb_data_type *mfd)
 		pr_debug("%s: in writeback pan display 0x%x\n", __func__,
 				(unsigned int)writeback_pipe->ov_blt_addr);
 		mdp4_writeback_kickoff_ui(mfd, writeback_pipe);
+		mdp4_iommu_unmap(writeback_pipe);
 
 		/* signal if pan function is waiting for the
 		 * update completion */
@@ -385,6 +390,7 @@ static struct msmfb_writeback_data_list *get_if_registered(
 {
 	struct msmfb_writeback_data_list *temp;
 	bool found = false;
+	int domain;
 
 	if (!list_empty(&mfd->writeback_register_queue)) {
 		list_for_each_entry(temp,
@@ -403,33 +409,47 @@ static struct msmfb_writeback_data_list *get_if_registered(
 			pr_err("%s: out of memory\n", __func__);
 			goto register_alloc_fail;
 		}
-#ifdef CONFIG_MSM_MULTIMEDIA_USE_ION
-        else {
+		temp->ihdl = NULL;
+		if (data->iova)
+			temp->addr = (void *)(data->iova + data->offset);
+		else if (mfd->iclient) {
 			struct ion_handle *srcp_ihdl;
 			ulong len;
-			srcp_ihdl = ion_import_fd(mfd->iclient,
+			srcp_ihdl = ion_import_dma_buf(mfd->iclient,
 						  data->memory_id);
 			if (IS_ERR_OR_NULL(srcp_ihdl)) {
 				pr_err("%s: ion import fd failed\n", __func__);
 				goto register_ion_fail;
 			}
-			if (ion_phys(mfd->iclient,
-						srcp_ihdl,
-						(ulong *)&temp->addr,
-						(size_t *)&len)) {
-					pr_err("%s: unable to get ion phys\n",
-							__func__);
-					goto register_ion_fail;
+
+			if (mdp_iommu_split_domain)
+				domain = DISPLAY_WRITE_DOMAIN;
+			else
+				domain = DISPLAY_READ_DOMAIN;
+
+			if (ion_map_iommu(mfd->iclient,
+					  srcp_ihdl,
+					  domain,
+					  GEN_POOL,
+					  SZ_4K,
+					  0,
+					  (ulong *)&temp->addr,
+					  (ulong *)&len,
+					  0,
+					  ION_IOMMU_UNMAP_DELAYED)) {
+				ion_free(mfd->iclient, srcp_ihdl);
+				pr_err("%s: unable to get ion mapping addr\n",
+				       __func__);
+				goto register_ion_fail;
 			}
 			temp->addr += data->offset;
+			temp->ihdl = srcp_ihdl;
 		}
-
-#else
 		else {
 			pr_err("%s: only support ion memory\n", __func__);
 			goto register_ion_fail;
 		}
-#endif
+
 		memcpy(&temp->buf_info, data, sizeof(struct msmfb_data));
 		if (mdp4_overlay_writeback_register_buffer(mfd, temp)) {
 			pr_err("%s: error registering node\n", __func__);
@@ -488,7 +508,7 @@ int mdp4_writeback_dequeue_buffer(struct fb_info *info, struct msmfb_data *data)
 {
 	struct msm_fb_data_type *mfd = (struct msm_fb_data_type *)info->par;
 	struct msmfb_writeback_data_list *node = NULL;
-	int rc = 0;
+	int rc = 0, domain;
 
 	rc = wait_event_interruptible(mfd->wait_q, is_buffer_ready(mfd));
 	if (rc) {
@@ -508,6 +528,20 @@ int mdp4_writeback_dequeue_buffer(struct fb_info *info, struct msmfb_data *data)
 		list_del(&node->active_entry);
 		node->state = WITH_CLIENT;
 		memcpy(data, &node->buf_info, sizeof(struct msmfb_data));
+		if (!data->iova)
+			if (mfd->iclient && node->ihdl) {
+				if (mdp_iommu_split_domain)
+					domain = DISPLAY_WRITE_DOMAIN;
+				else
+					domain = DISPLAY_READ_DOMAIN;
+
+				ion_unmap_iommu(mfd->iclient,
+						node->ihdl,
+						domain,
+						GEN_POOL);
+				ion_free(mfd->iclient,
+					 node->ihdl);
+			}
 	} else {
 		pr_err("node is NULL. Somebody else dequeued?\n");
 		rc = -ENOBUFS;

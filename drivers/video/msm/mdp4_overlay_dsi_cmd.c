@@ -312,11 +312,19 @@ int mdp4_dsi_cmd_pipe_commit(void)
 
 	mdp4_backlight_commit_level(vctrl);
 
+	/* free previous committed iommu back to pool */
+	mdp4_overlay_iommu_unmap_freelist(mixer);
+
 	pipe = vp->plist;
 	for (i = 0; i < OVERLAY_PIPE_MAX; i++, pipe++) {
 		if (pipe->pipe_used) {
 			cnt++;
 			mdp4_overlay_vsync_commit(pipe);
+			/* free previous iommu to freelist
+			 * which will be freed at next
+			 * pipe_commit
+			 */
+			mdp4_overlay_iommu_pipe_free(pipe->pipe_ndx, 0);
 			pipe->pipe_used = 0; /* clear */
 		}
 	}
@@ -894,8 +902,11 @@ int mdp4_dsi_cmd_on(struct platform_device *pdev)
 	if (vctrl->base_pipe == NULL)
 		mdp4_overlay_update_dsi_cmd(mfd);
 
+	mdp4_iommu_attach();
+
 	atomic_set(&vctrl->suspend, 0);
 	pr_info("%s-:\n", __func__);
+
 
 	return ret;
 }
@@ -963,6 +974,7 @@ void mdp_dsi_cmd_overlay_suspend(struct msm_fb_data_type *mfd)
 			vctrl->base_pipe = NULL;
 		} else {
 			mdp4_mixer_stage_down(pipe);
+			mdp4_overlay_iommu_pipe_free(pipe->pipe_ndx, 1);
 		}
 	}
 }

@@ -118,6 +118,7 @@ void mdp4_overlay_dtv_start(void)
 {
 	if (!dtv_enabled) {
 		/* enable DTV block */
+		mdp4_iommu_attach();
 		mdp_pipe_ctrl(MDP_CMD_BLOCK, MDP_BLOCK_POWER_ON, FALSE);
 		MDP_OUTP(MDP_BASE + DTV_BASE, 1);
 		mdp_pipe_ctrl(MDP_OVERLAY1_BLOCK, MDP_BLOCK_POWER_ON, FALSE);
@@ -183,6 +184,7 @@ int mdp4_dtv_pipe_commit(void)
 	vp = &vctrl->vlist[undx];
 	pipe = vctrl->base_pipe;
 	mixer = pipe->mixer_num;
+	mdp4_overlay_iommu_unmap_freelist(mixer);
 
 	if (vp->update_cnt == 0) {
 		mutex_unlock(&vctrl->update_lock);

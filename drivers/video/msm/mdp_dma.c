@@ -481,8 +481,6 @@ static void mdp_dma2_update_sub(struct msm_fb_data_type *mfd)
 void mdp_dma2_update(struct msm_fb_data_type *mfd)
 #endif
 {
-	if (!mfd)
-		return;
 	unsigned long flag;
 
 	down(&mfd->dma->mutex);
@@ -534,7 +532,11 @@ void mdp_set_dma_pan_info(struct fb_info *info, struct mdp_dirty_region *dirty,
 	down(&mfd->sem);
 
 	iBuf = &mfd->ibuf;
-	iBuf->buf = (uint8 *) info->fix.smem_start;
+
+	if (mfd->display_iova)
+		iBuf->buf = (uint8 *)mfd->display_iova;
+	else
+		iBuf->buf = (uint8 *) info->fix.smem_start;
 
 	iBuf->buf += calc_fb_offset(mfd, fbi, bpp);
 
