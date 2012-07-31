@@ -285,6 +285,9 @@ static ssize_t msm_fb_msm_fb_type(struct device *dev,
 	case MIPI_CMD_PANEL:
 		ret = snprintf(buf, PAGE_SIZE, "mipi dsi cmd panel\n");
 		break;
+    case WRITEBACK_PANEL:
+        ret = snprintf(buf, PAGE_SIZE, "writeback panel\n");
+        break;
 	default:
 		ret = snprintf(buf, PAGE_SIZE, "unknown panel\n");
 		break;
@@ -340,6 +343,13 @@ static int msm_fb_probe(struct platform_device *pdev)
 		}
 		MSM_FB_DEBUG("msm_fb_probe:  phy_Addr = 0x%x virt = 0x%x\n",
 			     (int)fbram_phys, (int)fbram);
+
+        iclient = msm_ion_client_create(-1, pdev->name);
+        if (IS_ERR_OR_NULL(iclient)) {
+            pr_err("msm_ion_client_create() return"
+                " error, val %p\n", iclient);
+            iclient = NULL;
+        }
 
 		msm_fb_resource_initialized = 1;
 		return 0;
@@ -1281,31 +1291,21 @@ static int msm_fb_register(struct msm_fb_data_type *mfd)
 	if (!remainder_mode2)
 		remainder_mode2 = PAGE_SIZE;
 
-	/* calculate smem_len based on max size of two supplied modes */
-	fix->smem_len = MAX((msm_fb_line_length(mfd->index, panel_info->xres,
-					      bpp) *
-			    panel_info->yres + PAGE_SIZE -
-				remainder) * mfd->fb_page,
-			    (msm_fb_line_length(mfd->index,
-					       panel_info->mode2_xres,
-					       bpp) *
-			    panel_info->mode2_yres + PAGE_SIZE -
-				remainder_mode2) * mfd->fb_page);
-
-
 	/*
 	 * calculate smem_len based on max size of two supplied modes.
 	 * Only fb0 has mem. fb1 and fb2 don't have mem.
 	 */
 	if (!bf_supported || mfd->index == 0)
-		fix->smem_len = roundup(MAX(msm_fb_line_length(mfd->index,
+		fix->smem_len = MAX((msm_fb_line_length(mfd->index,
 							panel_info->xres,
 							bpp) *
-				     panel_info->yres * mfd->fb_page,
-				    msm_fb_line_length(mfd->index,
+				     panel_info->yres + PAGE_SIZE -
+				     remainder) * mfd->fb_page,
+ 					 (msm_fb_line_length(mfd->index,
 							panel_info->mode2_xres,
 							bpp) *
-				      panel_info->mode2_yres * mfd->fb_page), PAGE_SIZE);
+				      panel_info->mode2_yres + PAGE_SIZE -
+ 					  remainder_mode2) * mfd->fb_page);
 	else if (mfd->index == 1 || mfd->index == 2) {
 		pr_debug("%s:%d no memory is allocated for fb%d!\n",
 			__func__, __LINE__, mfd->index);
@@ -1329,7 +1329,8 @@ static int msm_fb_register(struct msm_fb_data_type *mfd)
 	var->width = -1;/* width of picture in mm */
 #endif
 	var->xres_virtual = panel_info->xres;
-	var->yres_virtual = panel_info->yres * mfd->fb_page;
+	var->yres_virtual = panel_info->yres * mfd->fb_page +
+		((PAGE_SIZE - remainder)/fix->line_length) * mfd->fb_page;
 	var->bits_per_pixel = bpp * 8;	/* FrameBuffer color depth */
 	if (mfd->dest == DISPLAY_LCD) {
 		if (panel_info->type == MDDI_PANEL && panel_info->mddi.is_type1)
@@ -1428,6 +1429,22 @@ static int msm_fb_register(struct msm_fb_data_type *mfd)
 
 	fbi->screen_base = fbram;
 	fbi->fix.smem_start = (unsigned long)fbram_phys;
+
+    msm_iommu_map_contig_buffer(fbi->fix.smem_start,
+                                    DISPLAY_DOMAIN,
+                                    GEN_POOL,
+                                    fbi->fix.smem_len,
+                                    SZ_4K,
+                                    1,
+                                    &(mfd->display_iova));
+
+    msm_iommu_map_contig_buffer(fbi->fix.smem_start,
+                                    ROTATOR_DOMAIN,
+                                    GEN_POOL,
+                                    fbi->fix.smem_len,
+                                    SZ_4K,
+                                    1,
+                                    &(mfd->rotator_iova));
 
 	if (!bf_supported || mfd->index == 0)
 		memset(fbi->screen_base, 0x0, fix->smem_len);
@@ -3527,7 +3544,7 @@ static int msm_fb_ioctl(struct fb_info *info, unsigned int cmd,
 		if (!mfd->panel_power_on)
 			return -EPERM;
 
-		if (!mfd->do_histogram)
+		if (!mfd->start_histogram)
 			return -ENODEV;
 
 		ret = copy_from_user(&hist, argp, sizeof(hist));
@@ -3541,14 +3558,14 @@ static int msm_fb_ioctl(struct fb_info *info, unsigned int cmd,
 		if (!mfd->panel_power_on)
 			return -EPERM;
 
-		if (!mfd->do_histogram)
+		if (!mfd->stop_histogram)
 			return -ENODEV;
 
 		ret = copy_from_user(&hist_req, argp, sizeof(hist_req));
 		if (ret)
 			return ret;
 
-		ret = mdp_histogram_start(&hist_req);
+		ret = mfd->stop_histogram(&hist_req);
 		break;
 
 	case MSMFB_HISTOGRAM_STOP:
@@ -3756,11 +3773,7 @@ struct platform_device *msm_fb_add_device(struct platform_device *pdev)
 	mfd->fb_page = fb_num;
 	mfd->index = fbi_list_index;
 	mfd->mdp_fb_page_protection = MDP_FB_PAGE_PROTECTION_WRITECOMBINE;
-#ifdef CONFIG_MSM_MULTIMEDIA_USE_ION
-	mfd->iclient = msm_ion_client_create(-1, pdev->name);
-#else
-	mfd->iclient = NULL;
-#endif
+	mfd->iclient = iclient;
 	/* link to the latest pdev */
 	mfd->pdev = this_dev;
 
@@ -3849,15 +3862,15 @@ int get_fb_phys_info(unsigned long *start, unsigned long *len, int fb_num,
     mfd = (struct msm_fb_data_type *)info->par;
 
     if (subsys_id == DISPLAY_SUBSYSTEM_ID) {
-        if (mfd->display_iova)
-            *start = mfd->display_iova;
-        else
-            *start = info->fix.smem_start;
+            if (mfd->display_iova)
+                    *start = mfd->display_iova;
+            else
+                    *start = info->fix.smem_start;
     } else {
-        if (mfd->rotator_iova)
-            *start = mfd->rotator_iova;
-        else
-            *start = info->fix.smem_start;
+            if (mfd->rotator_iova)
+                    *start = mfd->rotator_iova;
+            else
+                    *start = info->fix.smem_start;
     }
 
     *len = info->fix.smem_len;
