@@ -1,0 +1,8 @@
+Change-Id: If1dac6cd308355f2575d4015800a7ccc4bc28df7
+Code-Review+2: Shareef Ali <shareefalis@gmail.com>
+Verified+1: Shareef Ali <shareefalis@gmail.com>
+Submitted-by: Shareef Ali <shareefalis@gmail.com>
+Submitted-at: Wed, 01 Aug 2012 03:56:24 +0400
+Reviewed-on: http://review.cyanogenmod.com/20468
+Project: CyanogenMod/android_kernel_samsung_d2
+Branch: refs/heads/jb-vsync-test
