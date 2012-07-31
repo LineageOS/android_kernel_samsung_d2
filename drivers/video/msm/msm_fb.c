@@ -3827,20 +3827,42 @@ int get_fbinfo(int fb_num, unsigned int *fb_paddr, unsigned int *xres,
 }
 #endif
 
-int get_fb_phys_info(unsigned long *start, unsigned long *len, int fb_num)
+int get_fb_phys_info(unsigned long *start, unsigned long *len, int fb_num,
+    int subsys_id)
 {
-	struct fb_info *info;
+    struct fb_info *info;
+    struct msm_fb_data_type *mfd;
 
-	if (fb_num >= MAX_FBI_LIST)
-		return -1;
+    if (fb_num > MAX_FBI_LIST ||
+        (subsys_id != DISPLAY_SUBSYSTEM_ID &&
+         subsys_id != ROTATOR_SUBSYSTEM_ID)) {
+        pr_err("%s(): Invalid parameters\n", __func__);
+        return -1;
+    }
 
-	info = fbi_list[fb_num];
-	if (!info)
-		return -1;
+    info = fbi_list[fb_num];
+    if (!info) {
+        pr_err("%s(): info is NULL\n", __func__);
+        return -1;
+    }
 
-	*start = info->fix.smem_start;
-	*len = info->fix.smem_len;
-	return 0;
+    mfd = (struct msm_fb_data_type *)info->par;
+
+    if (subsys_id == DISPLAY_SUBSYSTEM_ID) {
+        if (mfd->display_iova)
+            *start = mfd->display_iova;
+        else
+            *start = info->fix.smem_start;
+    } else {
+        if (mfd->rotator_iova)
+            *start = mfd->rotator_iova;
+        else
+            *start = info->fix.smem_start;
+    }
+
+    *len = info->fix.smem_len;
+
+    return 0;
 }
 EXPORT_SYMBOL(get_fb_phys_info);
 
