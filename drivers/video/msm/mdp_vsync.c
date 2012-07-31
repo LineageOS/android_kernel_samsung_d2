@@ -93,7 +93,7 @@ void mdp_hw_vsync_clk_enable(struct msm_fb_data_type *mfd)
 		return;
 	mutex_lock(&vsync_clk_lock);
 	if (mfd->use_mdp_vsync) {
-		clk_enable(mdp_vsync_clk);
+		clk_prepare_enable(mdp_vsync_clk);
 		vsync_clk_status = 1;
 	}
 	mutex_unlock(&vsync_clk_lock);
@@ -105,7 +105,7 @@ void mdp_hw_vsync_clk_disable(struct msm_fb_data_type *mfd)
 		return;
 	mutex_lock(&vsync_clk_lock);
 	if (mfd->use_mdp_vsync) {
-		clk_disable(mdp_vsync_clk);
+		clk_disable_unprepare(mdp_vsync_clk);
 		vsync_clk_status = 0;
 	}
 	mutex_unlock(&vsync_clk_lock);
@@ -285,7 +285,7 @@ void mdp_vsync_cfg_regs(struct msm_fb_data_type *mfd,
 	 * external vsync source pulse width and
 	 * polarity flip
 	 */
-	MDP_OUTP(MDP_BASE + MDP_PRIM_VSYNC_OUT_CTRL, BIT(0)|BIT(30));
+	MDP_OUTP(MDP_BASE + MDP_PRIM_VSYNC_OUT_CTRL, BIT(0));
 #ifdef CONFIG_FB_MSM_MDP40
 	if (mdp_hw_revision < MDP4_REVISION_V2_1) {
 		MDP_OUTP(MDP_BASE +	MDP_SEC_VSYNC_OUT_CTRL, BIT(0));

@@ -29,6 +29,7 @@
 #include <linux/dma-mapping.h>
 #include <mach/board.h>
 #include <linux/uaccess.h>
+#include <mach/iommu_domains.h>
 
 #include <linux/workqueue.h>
 #include <linux/string.h>
@@ -82,6 +83,8 @@ static u32 msm_fb_pseudo_palette[16] = {
 	0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
 	0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff
 };
+
+static struct ion_client *iclient;
 
 u32 msm_fb_debug_enabled;
 /* Setting msm_fb_msg_level to 8 prints out ALL messages */
@@ -937,110 +940,6 @@ static int msm_fb_set_lut(struct fb_cmap *cmap, struct fb_info *info)
 	return 0;
 }
 
-/* if the acutal line length is not the same as var->fix_line_length
- * the frame capture by ddms may broken. Hence we must fix here.
- */
-static ssize_t msm_fb_read(struct fb_info *info, char __user *buf,
-						size_t count, loff_t *ppos)
-{
-	unsigned long p = *ppos;
-	struct fb_var_screeninfo *var = &info->var;
-	struct fb_fix_screeninfo *fix = &info->fix;
-
-	u8 *buffer, *dst;
-	u8 __iomem *src;
-	int c, cnt = 0, err = 0;
-	unsigned long total_size;
-	int dummy_left = 0, dummy_right = 0;
-	int line_offset = 0, actual_line_length = 0;
-	int need_fix = 0, avoid_dead = 0;
-
-	total_size = info->fix.smem_len;
-
-	if (p >= total_size)
-		return 0;
-
-	if (count >= total_size)
-		count = total_size;
-
-	if (count + p > total_size)
-		count = total_size - p;
-
-	buffer = kmalloc((count > PAGE_SIZE) ? PAGE_SIZE : count,
-			 GFP_KERNEL);
-	if (!buffer)
-		return -ENOMEM;
-
-	actual_line_length = var->xres * var->bits_per_pixel / 8;
-	if (var->yoffset)
-		p = p  - (actual_line_length * var->yoffset)
-			+ (fix->line_length * var->yoffset);
-
-	src = (u8 __iomem *) (info->screen_base + p);
-
-	if (fix->line_length != actual_line_length) {
-		line_offset = (p / fix->line_length) * fix->line_length;
-		dummy_left = line_offset + actual_line_length;
-		dummy_right = line_offset + fix->line_length;
-
-		if ((p + count) > dummy_left)
-			need_fix = 1;
-	}
-
-	if (need_fix && dummy_left && dummy_right && (count < PAGE_SIZE)) {
-		c = 0;
-		cnt = 0;
-
-		while (count) {
-			while (((c + p) >= dummy_left) &&
-					((c + p) < dummy_right) &&
-					(avoid_dead < PAGE_SIZE)) {
-				avoid_dead++;
-				c++;
-			}
-
-			if ((unsigned long)(src + c) >
-				(unsigned long)(info->screen_base
-							+ total_size)) {
-				pr_info("Accessing memory address error!!\n");
-				break;
-			}
-
-			*(buffer + cnt) = *(src + c);
-			count--;
-			cnt++;
-			c++;
-
-			avoid_dead = 0;
-		}
-
-		if (copy_to_user(buf, buffer, cnt))
-				err = -EFAULT;
-
-		*ppos += c;
-	} else {
-		while (count) {
-			c  = (count > PAGE_SIZE) ? PAGE_SIZE : count;
-			dst = buffer;
-			fb_memcpy_fromfb(dst, src, c);
-			dst += c;
-			src += c;
-
-			if (copy_to_user(buf, buffer, c)) {
-				err = -EFAULT;
-				break;
-			}
-			*ppos += c;
-			buf += c;
-			cnt += c;
-			count -= c;
-		}
-	}
-	kfree(buffer);
-
-	return (err) ? err : cnt;
-}
-
 /*
  * Custom Framebuffer mmap() function for MSM driver.
  * Differs from standard mmap() function by allowing for customized
@@ -1101,7 +1000,7 @@ static struct fb_ops msm_fb_ops = {
 	.owner = THIS_MODULE,
 	.fb_open = msm_fb_open,
 	.fb_release = msm_fb_release,
-	.fb_read = msm_fb_read,
+	.fb_read = NULL,
 	.fb_write = NULL,
 	.fb_cursor = NULL,
 	.fb_check_var = msm_fb_check_var,	/* vinfo check */
@@ -1334,14 +1233,14 @@ static int msm_fb_register(struct msm_fb_data_type *mfd)
 	var->bits_per_pixel = bpp * 8;	/* FrameBuffer color depth */
 	if (mfd->dest == DISPLAY_LCD) {
 		if (panel_info->type == MDDI_PANEL && panel_info->mddi.is_type1)
-			var->reserved[4] = panel_info->lcd.refx100 / (100 * 2);
+			var->reserved[3] = panel_info->lcd.refx100 / (100 * 2);
 		else
-			var->reserved[4] = panel_info->lcd.refx100 / 100;
+			var->reserved[3] = panel_info->lcd.refx100 / 100;
 	} else {
 		if (panel_info->type == MIPI_VIDEO_PANEL) {
-			var->reserved[4] = panel_info->mipi.frame_rate;
+			var->reserved[3] = panel_info->mipi.frame_rate;
 		} else {
-			var->reserved[4] = panel_info->clk_rate /
+			var->reserved[3] = panel_info->clk_rate /
 				((panel_info->lcdc.h_back_porch +
 				  panel_info->lcdc.h_front_porch +
 				  panel_info->lcdc.h_pulse_width +
@@ -1352,7 +1251,7 @@ static int msm_fb_register(struct msm_fb_data_type *mfd)
 				  panel_info->yres));
 		}
 	}
-	pr_debug("reserved[4] %u\n", var->reserved[4]);
+	pr_debug("reserved[3] %u\n", var->reserved[3]);
 
 		/*
 		 * id field for fb app
@@ -1431,11 +1330,11 @@ static int msm_fb_register(struct msm_fb_data_type *mfd)
 	fbi->fix.smem_start = (unsigned long)fbram_phys;
 
     msm_iommu_map_contig_buffer(fbi->fix.smem_start,
-                                    DISPLAY_DOMAIN,
+                                    DISPLAY_READ_DOMAIN,
                                     GEN_POOL,
                                     fbi->fix.smem_len,
                                     SZ_4K,
-                                    1,
+                                    0,
                                     &(mfd->display_iova));
 
     msm_iommu_map_contig_buffer(fbi->fix.smem_start,
@@ -1443,7 +1342,7 @@ static int msm_fb_register(struct msm_fb_data_type *mfd)
                                     GEN_POOL,
                                     fbi->fix.smem_len,
                                     SZ_4K,
-                                    1,
+                                    0,
                                     &(mfd->rotator_iova));
 
 	if (!bf_supported || mfd->index == 0)
@@ -3544,7 +3443,7 @@ static int msm_fb_ioctl(struct fb_info *info, unsigned int cmd,
 		if (!mfd->panel_power_on)
 			return -EPERM;
 
-		if (!mfd->start_histogram)
+		if (!mfd->do_histogram)
 			return -ENODEV;
 
 		ret = copy_from_user(&hist, argp, sizeof(hist));
@@ -3558,25 +3457,25 @@ static int msm_fb_ioctl(struct fb_info *info, unsigned int cmd,
 		if (!mfd->panel_power_on)
 			return -EPERM;
 
-		if (!mfd->stop_histogram)
+		if (!mfd->start_histogram)
 			return -ENODEV;
 
 		ret = copy_from_user(&hist_req, argp, sizeof(hist_req));
 		if (ret)
 			return ret;
 
-		ret = mfd->stop_histogram(&hist_req);
+		ret = mfd->start_histogram(&hist_req);
 		break;
 
 	case MSMFB_HISTOGRAM_STOP:
-		if (!mfd->do_histogram)
+		if (!mfd->stop_histogram)
 			return -ENODEV;
 
 		ret = copy_from_user(&block, argp, sizeof(int));
 		if (ret)
 			return ret;
 
-		ret = mdp_histogram_stop(info, block);
+		ret = mfd->stop_histogram(info, block);
 		break;
 
 

@@ -215,11 +215,9 @@ void msm_fb_config_backlight(struct msm_fb_data_type *mfd);
 extern int poweroff_charging;
 void fill_black_screen(void);
 void unfill_black_screen(void);
-extern boolean mdp4_overlay_used(void);
 #ifdef CONFIG_FB_MSM_LOGO
 #define INIT_IMAGE_FILE "/initlogo.rle"
 extern int load_565rle_image(char *filename, bool bf_supported);
-extern int draw_rgb888_screen(void);
 #endif
 int msm_fb_check_frame_rate(struct msm_fb_data_type *mfd,
 				struct fb_info *info);
