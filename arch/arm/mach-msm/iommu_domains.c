@@ -175,7 +175,7 @@ static struct msm_iommu_domain msm_iommu_domains[] = {
 			.iova_pools = camera_pools,
 			.npools = ARRAY_SIZE(camera_pools),
 		},
-		[DISPLAY_DOMAIN] = {
+		[DISPLAY_READ_DOMAIN] = {
 			.iova_pools = display_pools,
 			.npools = ARRAY_SIZE(display_pools),
 		},
