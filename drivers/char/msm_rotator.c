@@ -121,19 +121,12 @@ struct msm_rotator_mem_planes {
 #define checkoffset(offset, size, max_size) \
 	((size) > (max_size) || (offset) > ((max_size) - (size)))
 
-struct msm_rotator_fd_info {
-	int pid;
-	int ref_cnt;
-	struct list_head list;
-};
-
 struct msm_rotator_dev {
 	void __iomem *io_base;
 	int irq;
 	struct msm_rotator_img_info *img_info[MAX_SESSIONS];
 	struct clk *core_clk;
-	struct msm_rotator_fd_info *fd_info[MAX_SESSIONS];
-	struct list_head fd_list;
+	int pid_list[MAX_SESSIONS];
 	struct clk *pclk;
 	int rot_clk_state;
 	struct regulator *regulator;
@@ -278,7 +271,6 @@ static void enable_rot_clks(void)
 /* disable clocks needed by rotator block */
 static void disable_rot_clks(void)
 {
-	int ret = 0;
 	if (msm_rotator_dev->core_clk != NULL)
 		clk_disable_unprepare(msm_rotator_dev->core_clk);
 	if (msm_rotator_dev->pclk != NULL)
@@ -486,24 +478,24 @@ static int msm_rotator_ycxcx_h2v1(struct msm_rotator_img_info *info,
 			iowrite32(GET_PACK_PATTERN(0, 0, CLR_CR, CLR_CB, 8),
 				  MSM_ROTATOR_OUT_PACK_PATTERN1);
 		}
-		iowrite32((1  << 18) |		/* chroma sampling 1=H2V1 */
+		iowrite32((1  << 18) | 		/* chroma sampling 1=H2V1 */
 			  (ROTATIONS_TO_BITMASK(info->rotations) << 9) |
 			  1 << 8 |			/* ROT_EN */
 			  info->downscale_ratio << 2 |	/* downscale v ratio */
 			  info->downscale_ratio,	/* downscale h ratio */
 			  MSM_ROTATOR_SUB_BLOCK_CFG);
-		iowrite32(0 << 29 |		/* frame format 0 = linear */
+		iowrite32(0 << 29 | 		/* frame format 0 = linear */
 			  (use_imem ? 0 : 1) << 22 | /* tile size */
-			  2 << 19 |		/* fetch planes 2 = pseudo */
-			  0 << 18 |		/* unpack align */
-			  1 << 17 |		/* unpack tight */
-			  1 << 13 |		/* unpack count 0=1 component */
+			  2 << 19 | 		/* fetch planes 2 = pseudo */
+			  0 << 18 | 		/* unpack align */
+			  1 << 17 | 		/* unpack tight */
+			  1 << 13 | 		/* unpack count 0=1 component */
 			  (bpp-1) << 9 |	/* src Bpp 0=1 byte ... */
-			  0 << 8  |		/* has alpha */
-			  0 << 6  |		/* alpha bits 3=8bits */
-			  3 << 4  |		/* R/Cr bits 1=5 2=6 3=8 */
-			  3 << 2  |		/* B/Cb bits 1=5 2=6 3=8 */
-			  3 << 0,		/* G/Y  bits 1=5 2=6 3=8 */
+			  0 << 8  | 		/* has alpha */
+			  0 << 6  | 		/* alpha bits 3=8bits */
+			  3 << 4  | 		/* R/Cr bits 1=5 2=6 3=8 */
+			  3 << 2  | 		/* B/Cb bits 1=5 2=6 3=8 */
+			  3 << 0,   		/* G/Y  bits 1=5 2=6 3=8 */
 			  MSM_ROTATOR_SRC_FORMAT);
 	}
 
@@ -544,7 +536,8 @@ static int msm_rotator_ycxcx_h2v2(struct msm_rotator_img_info *info,
 
 	/* rotator expects YCbCr for planar input format */
 	if ((info->src.format == MDP_Y_CR_CB_H2V2 ||
-	    info->src.format == MDP_Y_CR_CB_GH2V2))
+	    info->src.format == MDP_Y_CR_CB_GH2V2) &&
+	    rotator_hw_revision < ROTATOR_REVISION_V2)
 		swap(in_chroma_paddr, in_chroma2_paddr);
 
 	iowrite32(in_paddr, MSM_ROTATOR_SRCP0_ADDR);
@@ -593,7 +586,7 @@ static int msm_rotator_ycxcx_h2v2(struct msm_rotator_img_info *info,
 			iowrite32(GET_PACK_PATTERN(0, 0, CLR_CR, CLR_CB, 8),
 				  MSM_ROTATOR_OUT_PACK_PATTERN1);
 		}
-		iowrite32((3  << 18) |		/* chroma sampling 3=4:2:0 */
+		iowrite32((3  << 18) | 		/* chroma sampling 3=4:2:0 */
 			  (ROTATIONS_TO_BITMASK(info->rotations) << 9) |
 			  1 << 8 |			/* ROT_EN */
 			  info->downscale_ratio << 2 |	/* downscale v ratio */
@@ -603,15 +596,15 @@ static int msm_rotator_ycxcx_h2v2(struct msm_rotator_img_info *info,
 		iowrite32((is_tile ? 2 : 0) << 29 |  /* frame format */
 			  (use_imem ? 0 : 1) << 22 | /* tile size */
 			  (in_chroma2_paddr ? 1 : 2) << 19 | /* fetch planes */
-			  0 << 18 |		/* unpack align */
-			  1 << 17 |		/* unpack tight */
-			  1 << 13 |		/* unpack count 0=1 component */
+			  0 << 18 | 		/* unpack align */
+			  1 << 17 | 		/* unpack tight */
+			  1 << 13 | 		/* unpack count 0=1 component */
 			  0 << 9  |		/* src Bpp 0=1 byte ... */
-			  0 << 8  |		/* has alpha */
-			  0 << 6  |		/* alpha bits 3=8bits */
-			  3 << 4  |		/* R/Cr bits 1=5 2=6 3=8 */
-			  3 << 2  |		/* B/Cb bits 1=5 2=6 3=8 */
-			  3 << 0,		/* G/Y  bits 1=5 2=6 3=8 */
+			  0 << 8  | 		/* has alpha */
+			  0 << 6  | 		/* alpha bits 3=8bits */
+			  3 << 4  | 		/* R/Cr bits 1=5 2=6 3=8 */
+			  3 << 2  | 		/* B/Cb bits 1=5 2=6 3=8 */
+			  3 << 0,   		/* G/Y  bits 1=5 2=6 3=8 */
 			  MSM_ROTATOR_SRC_FORMAT);
 	}
 	return 0;
@@ -663,24 +656,24 @@ static int msm_rotator_ycrycb(struct msm_rotator_img_info *info,
 			  MSM_ROTATOR_SRC_UNPACK_PATTERN1);
 		iowrite32(GET_PACK_PATTERN(0, 0, CLR_CR, CLR_CB, 8),
 			  MSM_ROTATOR_OUT_PACK_PATTERN1);
-		iowrite32((1  << 18) |		/* chroma sampling 1=H2V1 */
+		iowrite32((1  << 18) | 		/* chroma sampling 1=H2V1 */
 			  (ROTATIONS_TO_BITMASK(info->rotations) << 9) |
 			  1 << 8 |			/* ROT_EN */
 			  info->downscale_ratio << 2 |	/* downscale v ratio */
 			  info->downscale_ratio,	/* downscale h ratio */
 			  MSM_ROTATOR_SUB_BLOCK_CFG);
-		iowrite32(0 << 29 |		/* frame format 0 = linear */
+		iowrite32(0 << 29 | 		/* frame format 0 = linear */
 			  (use_imem ? 0 : 1) << 22 | /* tile size */
-			  0 << 19 |		/* fetch planes 0=interleaved */
-			  0 << 18 |		/* unpack align */
-			  1 << 17 |		/* unpack tight */
-			  3 << 13 |		/* unpack count 0=1 component */
+			  0 << 19 | 		/* fetch planes 0=interleaved */
+			  0 << 18 | 		/* unpack align */
+			  1 << 17 | 		/* unpack tight */
+			  3 << 13 | 		/* unpack count 0=1 component */
 			  (bpp-1) << 9 |	/* src Bpp 0=1 byte ... */
-			  0 << 8  |		/* has alpha */
-			  0 << 6  |		/* alpha bits 3=8bits */
-			  3 << 4  |		/* R/Cr bits 1=5 2=6 3=8 */
-			  3 << 2  |		/* B/Cb bits 1=5 2=6 3=8 */
-			  3 << 0,		/* G/Y  bits 1=5 2=6 3=8 */
+			  0 << 8  | 		/* has alpha */
+			  0 << 6  | 		/* alpha bits 3=8bits */
+			  3 << 4  | 		/* R/Cr bits 1=5 2=6 3=8 */
+			  3 << 2  | 		/* B/Cb bits 1=5 2=6 3=8 */
+			  3 << 0,   		/* G/Y  bits 1=5 2=6 3=8 */
 			  MSM_ROTATOR_SRC_FORMAT);
 	}
 
@@ -710,7 +703,7 @@ static int msm_rotator_rgb_types(struct msm_rotator_img_info *info,
 	if (new_session) {
 		iowrite32(info->src.width * bpp, MSM_ROTATOR_SRC_YSTRIDE1);
 		iowrite32(info->dst.width * bpp, MSM_ROTATOR_OUT_YSTRIDE1);
-		iowrite32((0  << 18) |		/* chroma sampling 0=rgb */
+		iowrite32((0  << 18) | 		/* chroma sampling 0=rgb */
 			  (ROTATIONS_TO_BITMASK(info->rotations) << 9) |
 			  1 << 8 |			/* ROT_EN */
 			  info->downscale_ratio << 2 |	/* downscale v ratio */
@@ -782,18 +775,18 @@ static int msm_rotator_rgb_types(struct msm_rotator_img_info *info,
 		default:
 			return -EINVAL;
 		}
-		iowrite32(0 << 29 |		/* frame format 0 = linear */
+		iowrite32(0 << 29 | 		/* frame format 0 = linear */
 			  (use_imem ? 0 : 1) << 22 | /* tile size */
-			  0 << 19 |		/* fetch planes 0=interleaved */
-			  0 << 18 |		/* unpack align */
-			  1 << 17 |		/* unpack tight */
+			  0 << 19 | 		/* fetch planes 0=interleaved */
+			  0 << 18 | 		/* unpack align */
+			  1 << 17 | 		/* unpack tight */
 			  (abits ? 3 : 2) << 13 | /* unpack count 0=1 comp */
-			  (bpp-1) << 9 |	/* src Bpp 0=1 byte ... */
+			  (bpp-1) << 9 | 	/* src Bpp 0=1 byte ... */
 			  (abits ? 1 : 0) << 8  | /* has alpha */
-			  abits << 6  |		/* alpha bits 3=8bits */
-			  rbits << 4  |		/* R/Cr bits 1=5 2=6 3=8 */
-			  bbits << 2  |		/* B/Cb bits 1=5 2=6 3=8 */
-			  gbits << 0,		/* G/Y  bits 1=5 2=6 3=8 */
+			  abits << 6  | 	/* alpha bits 3=8bits */
+			  rbits << 4  | 	/* R/Cr bits 1=5 2=6 3=8 */
+			  bbits << 2  | 	/* B/Cb bits 1=5 2=6 3=8 */
+			  gbits << 0,   	/* G/Y  bits 1=5 2=6 3=8 */
 			  MSM_ROTATOR_SRC_FORMAT);
 	}
 
@@ -1189,8 +1182,7 @@ static void msm_rotator_set_perf_level(u32 wh, u32 is_rgb)
 
 }
 
-static int msm_rotator_start(unsigned long arg,
-			     struct msm_rotator_fd_info *fd_info)
+static int msm_rotator_start(unsigned long arg, int pid)
 {
 	struct msm_rotator_img_info info;
 	int rc = 0;
@@ -1271,7 +1263,7 @@ static int msm_rotator_start(unsigned long arg,
 			(unsigned int)msm_rotator_dev->img_info[s]
 			)) {
 			*(msm_rotator_dev->img_info[s]) = info;
-			msm_rotator_dev->fd_info[s] = fd_info;
+			msm_rotator_dev->pid_list[s] = pid;
 
 			if (msm_rotator_dev->last_session_idx == s)
 				msm_rotator_dev->last_session_idx =
@@ -1299,7 +1291,7 @@ static int msm_rotator_start(unsigned long arg,
 		info.session_id = (unsigned int)
 			msm_rotator_dev->img_info[first_free_index];
 		*(msm_rotator_dev->img_info[first_free_index]) = info;
-		msm_rotator_dev->fd_info[first_free_index] = fd_info;
+		msm_rotator_dev->pid_list[first_free_index] = pid;
 
 		if (copy_to_user((void __user *)arg, &info, sizeof(info)))
 			rc = -EFAULT;
@@ -1334,7 +1326,7 @@ static int msm_rotator_finish(unsigned long arg)
 					INVALID_SESSION;
 			kfree(msm_rotator_dev->img_info[s]);
 			msm_rotator_dev->img_info[s] = NULL;
-			msm_rotator_dev->fd_info[s] = NULL;
+			msm_rotator_dev->pid_list[s] = 0;
 			break;
 		}
 	}
@@ -1352,45 +1344,24 @@ static int msm_rotator_finish(unsigned long arg)
 static int
 msm_rotator_open(struct inode *inode, struct file *filp)
 {
-	struct msm_rotator_fd_info *tmp, *fd_info = NULL;
+	int *id;
 	int i;
 
 	if (filp->private_data)
 		return -EBUSY;
 
 	mutex_lock(&msm_rotator_dev->rotator_lock);
-	for (i = 0; i < MAX_SESSIONS; i++) {
-		if (msm_rotator_dev->fd_info[i] == NULL)
+	id = &msm_rotator_dev->pid_list[0];
+	for (i = 0; i < MAX_SESSIONS; i++, id++) {
+		if (*id == 0)
 			break;
 	}
-
-	if (i == MAX_SESSIONS) {
-		mutex_unlock(&msm_rotator_dev->rotator_lock);
-		return -EBUSY;
-	}
-
-	list_for_each_entry(tmp, &msm_rotator_dev->fd_list, list) {
-		if (tmp->pid == current->pid) {
-			fd_info = tmp;
-			break;
-		}
-	}
-
-	if (!fd_info) {
-		fd_info = kzalloc(sizeof(*fd_info), GFP_KERNEL);
-		if (!fd_info) {
-			mutex_unlock(&msm_rotator_dev->rotator_lock);
-			pr_err("%s: insufficient memory to alloc resources\n",
-			       __func__);
-			return -ENOMEM;
-		}
-		list_add(&fd_info->list, &msm_rotator_dev->fd_list);
-		fd_info->pid = current->pid;
-	}
-	fd_info->ref_cnt++;
 	mutex_unlock(&msm_rotator_dev->rotator_lock);
 
-	filp->private_data = fd_info;
+	if (i == MAX_SESSIONS)
+		return -EBUSY;
+
+	filp->private_data = (void *)current->pid;
 
 	return 0;
 }
@@ -1398,32 +1369,21 @@ msm_rotator_open(struct inode *inode, struct file *filp)
 static int
 msm_rotator_close(struct inode *inode, struct file *filp)
 {
-	struct msm_rotator_fd_info *fd_info;
 	int s;
+	int pid;
 
-	fd_info = (struct msm_rotator_fd_info *)filp->private_data;
-
+	pid = (int)filp->private_data;
 	mutex_lock(&msm_rotator_dev->rotator_lock);
-	if (--fd_info->ref_cnt > 0) {
-		mutex_unlock(&msm_rotator_dev->rotator_lock);
-		return 0;
-	}
 	for (s = 0; s < MAX_SESSIONS; s++) {
 		if (msm_rotator_dev->img_info[s] != NULL &&
-			msm_rotator_dev->fd_info[s] == fd_info) {
-			pr_debug("%s: freeing rotator session %p (pid %d)\n",
-				 __func__, msm_rotator_dev->img_info[s],
-				 fd_info->pid);
+			msm_rotator_dev->pid_list[s] == pid) {
 			kfree(msm_rotator_dev->img_info[s]);
 			msm_rotator_dev->img_info[s] = NULL;
-			msm_rotator_dev->fd_info[s] = NULL;
 			if (msm_rotator_dev->last_session_idx == s)
 				msm_rotator_dev->last_session_idx =
 					INVALID_SESSION;
 		}
 	}
-	list_del(&fd_info->list);
-	kfree(fd_info);
 	mutex_unlock(&msm_rotator_dev->rotator_lock);
 
 	return 0;
@@ -1432,16 +1392,16 @@ msm_rotator_close(struct inode *inode, struct file *filp)
 static long msm_rotator_ioctl(struct file *file, unsigned cmd,
 						 unsigned long arg)
 {
-	struct msm_rotator_fd_info *fd_info;
+	int pid;
 
 	if (_IOC_TYPE(cmd) != MSM_ROTATOR_IOCTL_MAGIC)
 		return -ENOTTY;
 
-	fd_info = (struct msm_rotator_fd_info *)file->private_data;
+	pid = (int)file->private_data;
 
 	switch (cmd) {
 	case MSM_ROTATOR_IOCTL_START:
-		return msm_rotator_start(arg, fd_info);
+		return msm_rotator_start(arg, pid);
 	case MSM_ROTATOR_IOCTL_ROTATE:
 		return msm_rotator_do_rotate(arg);
 	case MSM_ROTATOR_IOCTL_FINISH:
@@ -1484,7 +1444,6 @@ static int __devinit msm_rotator_probe(struct platform_device *pdev)
 
 	msm_rotator_dev->imem_owner = IMEM_NO_OWNER;
 	mutex_init(&msm_rotator_dev->imem_lock);
-	INIT_LIST_HEAD(&msm_rotator_dev->fd_list);
 	msm_rotator_dev->imem_clk_state = CLK_DIS;
 	INIT_DELAYED_WORK(&msm_rotator_dev->imem_clk_work,
 			  msm_rotator_imem_clk_work_f);
