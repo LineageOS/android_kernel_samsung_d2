@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "AAAAVn//8DI\u003d",
+        "filename": "arch/arm/kernel/smp.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 665,
+      "author": {
+        "id": 2681
+      },
+      "writtenOn": "2012-08-12T08:26:20Z",
+      "side": 0,
+      "message": "Should this have not been removed?",
+      "revId": "5036a1845d8db117e78757d8aa59f7e2a26f2f3d",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    }
+  ]
+}
