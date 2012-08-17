@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "AAAAWH//+v4\u003d",
+        "filename": "arch/arm/configs/cyanogen_d2spr_defconfig",
+        "patchSetId": 1
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 2260
+      },
+      "writtenOn": "2012-08-17T23:41:23Z",
+      "side": 1,
+      "message": "+# CONFIG_KERNEL_LZMA is not set",
+      "revId": "d2d50fb442e461b42c40d8b955e1b5289567da68",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    }
+  ]
+}
