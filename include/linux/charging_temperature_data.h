@@ -103,7 +103,7 @@ static const int temp_table[][2] = {
 	{41954,	-200},
 };
 
-#elif defined(CONFIG_MACH_M2_VZW)
+#elif defined(CONFIG_MACH_M2_VZW) || defined(CONFIG_MACH_M2_USC)
 static const int temp_table[][2] = {
 	{26537,	 800},
 	{26849,	 750},

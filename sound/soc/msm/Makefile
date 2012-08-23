@@ -70,6 +70,8 @@ else ifdef CONFIG_MACH_M2_SPR
 snd-soc-msm8960-objs := msm8960-d2.o
 else ifdef CONFIG_MACH_M2_VZW
 snd-soc-msm8960-objs := msm8960-d2.o
+else ifdef CONFIG_MACH_M2_USC
+snd-soc-msm8960-objs := msm8960-d2.o
 else ifdef CONFIG_MACH_M2_DCM
 snd-soc-msm8960-objs := msm8960-d2.o
 else ifdef CONFIG_MACH_GOGH

@@ -726,6 +726,13 @@ config MACH_M2_VZW
         help
           Support for the Samsung M2 Verizon device.
 
+config MACH_M2_USC
+        depends on ARCH_MSM8960
+        default n
+        bool "MSM8960 Samsung M2_USC"
+        help
+          Support for the Samsung M2 US Cellular device.
+
 config MACH_M2_SPR
         depends on ARCH_MSM8960
         default n

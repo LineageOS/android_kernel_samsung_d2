@@ -1762,7 +1762,7 @@ bool samsung_has_cmc624(void)
 		return false;
 	else
 		return true;
-#elif defined(CONFIG_MACH_M2_VZW)
+#elif defined(CONFIG_MACH_M2_VZW) || defined(CONFIG_MACH_M2_USC)
 	if ((system_rev == 4) || (system_rev >= 14))
 		return false;
 	else

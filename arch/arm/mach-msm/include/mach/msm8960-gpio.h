@@ -23,7 +23,7 @@
 /* MSM8960 GPIO */
 #if defined(CONFIG_MACH_JAGUAR)
 #include <mach/jaguar-gpio.h>
-#elif defined(CONFIG_MACH_M2_VZW)
+#elif defined(CONFIG_MACH_M2_VZW) || defined(CONFIG_MACH_M2_USC)
 #include <mach/m2_vzw-gpio.h>
 #elif defined(CONFIG_MACH_M2_ATT)
 #include <mach/m2_att-gpio.h>

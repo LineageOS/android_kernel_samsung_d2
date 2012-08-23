@@ -64,7 +64,7 @@ static char panel_cond_set[] = {
 };
 #endif
 /* FOR 4.8 inch */
-#ifdef CONFIG_MACH_M2_VZW
+#if defined(CONFIG_MACH_M2_VZW) || defined(CONFIG_MACH_M2_USC)
 static char panel_cond_set_4_8[] = {
 	0xF8,
 	0x19, 0x33, 0x00, 0x00, 0x00,
@@ -1467,7 +1467,7 @@ static int __init mipi_cmd_samsung_oled_qhd_pt_init(void)
 	else
 #ifdef CONFIG_MACH_M2_SPR
 		pinfo.clk_rate = 500000000;		
-#elif defined(CONFIG_MACH_M2_VZW)
+#elif defined(CONFIG_MACH_M2_VZW) || defined(CONFIG_MACH_M2_USC)
 		pinfo.clk_rate = 487000000;
 #else
 		pinfo.clk_rate = 499500000;

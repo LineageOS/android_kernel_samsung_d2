@@ -39,7 +39,7 @@ struct max17040_platform_data {
 #define RCOMP0_TEMP	20 /* 'C */
 #elif defined(CONFIG_MACH_M2_ATT) || defined(CONFIG_MACH_M2_SPR) || \
 	defined(CONFIG_MACH_M2_VZW) || defined(CONFIG_MACH_M2_SKT) || \
-	defined(CONFIG_MACH_M2_DCM)
+	defined(CONFIG_MACH_M2_DCM) || defined(CONFIG_MACH_M2_USC)
 #define EMPTY_COND_SOC		100
 #define EMPTY_SOC		30
 #define FULL_SOC_DEFAULT	9860
