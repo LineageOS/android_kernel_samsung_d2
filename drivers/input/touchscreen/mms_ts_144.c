@@ -407,8 +407,8 @@ static void change_dvfs_lock(struct work_struct *work)
 	if (ret < 0)
 		pr_err("%s: 1booster stop failed(%d)\n",\
 					__func__, __LINE__);
-	else
-		pr_info("[TSP] %s", __func__);
+	//else
+		//pr_info("[TSP] %s", __func__);
 }
 
 static void set_dvfs_off(struct work_struct *work)
