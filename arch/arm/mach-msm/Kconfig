@@ -726,6 +726,13 @@ config MACH_M2_VZW
         help
           Support for the Samsung M2 Verizon device.
 
+config MACH_M2_USC
+        depends on ARCH_MSM8960
+        default n
+        bool "MSM8960 Samsung M2_USC"
+        help
+          Support for the Samsung M2 US Cellular device.
+
 config MACH_M2_SPR
         depends on ARCH_MSM8960
         default n
@@ -759,6 +766,16 @@ config MACH_MSM8960_LIQUID
 	bool "MSM8960 LIQUID"
 	help
 	  Support for the Qualcomm MSM8960 LIQUID device.
+
+config DMUX_LA1_5
+	depends on ARCH_MSM8960
+	default n
+	bool "BAM_DMUX LA1_5"
+	help
+          Support for the LA1.5 Modem device.
+	  Samsung should get rid of this feature after the verification.
+	  Because this feature is for preventing modem crash.
+	  This feature is used in bam_dmux.c
 
 config MACH_MSM8930_CDP
 	depends on ARCH_MSM8930

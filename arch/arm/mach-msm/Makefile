@@ -248,7 +248,12 @@ obj-$(CONFIG_MACH_APEXQ)  += board-apexq.o board-apexq-gpiomux.o
 obj-$(CONFIG_MACH_ESPRESSO_VZW) += board-espresso_vzw.o board-espresso_vzw-gpiomux.o
 obj-$(CONFIG_MACH_ESPRESSO_ATT) += board-espresso_att.o board-espresso_att-gpiomux.o
 obj-$(CONFIG_MACH_ESPRESSO10_VZW) += board-espresso10_vzw.o board-espresso10_vzw-gpiomux.o
+#hack to prevent compile error
+ifdef CONFIG_MACH_M2_USC
+obj-y += board-m2_usc.o board-m2_vzw-gpiomux.o
+else
 obj-$(CONFIG_MACH_M2_VZW) += board-m2_vzw.o board-m2_vzw-gpiomux.o
+endif
 obj-$(CONFIG_MACH_M2_SPR) += board-m2_spr.o board-m2_spr-gpiomux.o
 obj-$(CONFIG_MACH_M2_ATT) += board-m2_att.o board-m2_att-gpiomux.o
 obj-$(CONFIG_MACH_M2_SKT) += board-m2_skt.o board-m2_skt-gpiomux.o
