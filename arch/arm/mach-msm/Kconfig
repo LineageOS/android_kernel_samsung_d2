@@ -1242,6 +1242,26 @@ config MSM_BAM_DMUX
 	  provides a means to support more logical channels
 	  via muxing than BAM could without muxing.
 
+config MSM_BAM_DMUX_USC
+	bool "BAM Data Mux Driver For d2usc"
+	depends on SPS
+	default n
+	help
+	  Support Muxed Data Channels over BAM interface.
+	  BAM has a limited number of pipes.  This driver
+	  provides a means to support more logical channels
+	  via muxing than BAM could without muxing.
+
+config DMUX_LA1_5
+	depends on MSM_BAM_DMUX_USC
+	default n
+	bool "BAM_DMUX LA1_5"
+	help
+          Support for the LA1.5 Modem device.
+	  Samsung should get rid of this feature after the verification.
+	  Because this feature is for preventing modem crash.
+	  This feature is used in bam_dmux_usc.c
+
 config MSM_N_WAY_SMD
 	depends on (MSM_SMD && !(ARCH_MSM7X01A))
 	default y

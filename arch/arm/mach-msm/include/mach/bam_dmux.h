@@ -55,7 +55,7 @@ enum {
  *          data - data relevant to event.  May not be valid. See event_type
  *                    enum for valid cases.
  */
-#ifdef CONFIG_MSM_BAM_DMUX
+#if defined(CONFIG_MSM_BAM_DMUX) || defined(CONFIG_MSM_BAM_DMUX_USC)
 int msm_bam_dmux_open(uint32_t id, void *priv,
 		       void (*notify)(void *priv, int event_type,
 						unsigned long data));
