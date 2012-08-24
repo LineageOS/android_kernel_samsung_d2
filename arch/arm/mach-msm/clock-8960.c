@@ -5834,7 +5834,7 @@ static int get_mclk_rev(void)
 {
 #if defined(CONFIG_MACH_M2_ATT)
 	return ((system_rev >= BOARD_REV10) ? 1 : 0);
-#elif defined(CONFIG_MACH_M2_VZW)
+#elif defined(CONFIG_MACH_M2_VZW) || defined(CONFIG_MACH_M2_USC)
 	return ((system_rev >= BOARD_REV13) ? 1 : 0);
 #elif defined(CONFIG_MACH_M2_SPR)
 	return ((system_rev >= BOARD_REV08) ? 1 : 0);

@@ -109,7 +109,7 @@ static void check_using_max17048(void)
 		is_max17048 = 0;
 		return;
 	}
-#elif defined(CONFIG_MACH_M2_VZW)
+#elif defined(CONFIG_MACH_M2_VZW) || defined(CONFIG_MACH_M2_USC)
 	if (system_rev <  0x02) {
 		is_max17048 = 0;
 		return;

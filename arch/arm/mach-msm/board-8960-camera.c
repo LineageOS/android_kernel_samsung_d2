@@ -1721,7 +1721,7 @@ static void cam_ldo_power_on(int mode, int num)
 				if (ret)
 					cam_err("error enabling regulator.");
 			}
-#elif defined(CONFIG_MACH_M2_VZW)
+#elif defined(CONFIG_MACH_M2_VZW) || defined(CONFIG_MACH_M2_USC)
 			if (system_rev >= BOARD_REV08) {
 				printk(KERN_DEBUG "[s5c73m3] vzw check vddCore : %d\n",
 					vddCore);
@@ -1886,7 +1886,7 @@ static void cam_ldo_power_off(int mode)
 		if (ret)
 			cam_err("error disabling regulator");
 		regulator_put(isp_core);
-#elif defined(CONFIG_MACH_M2_VZW)
+#elif defined(CONFIG_MACH_M2_VZW) || defined(CONFIG_MACH_M2_USC)
 		if (system_rev >= BOARD_REV08)
 			ret = regulator_disable(isp_core);
 		if (ret)
@@ -2718,7 +2718,7 @@ static int get_mclk_rev(void)
 {
 #if defined(CONFIG_MACH_M2_ATT)
 	return ((system_rev >= BOARD_REV10) ? 1 : 0);
-#elif defined(CONFIG_MACH_M2_VZW)
+#elif defined(CONFIG_MACH_M2_VZW) || defined(CONFIG_MACH_M2_USC)
 	return ((system_rev >= BOARD_REV13) ? 1 : 0);
 #elif defined(CONFIG_MACH_M2_SPR)
 	return ((system_rev >= BOARD_REV08) ? 1 : 0);

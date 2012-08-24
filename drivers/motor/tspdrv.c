@@ -306,7 +306,8 @@ static __devinit int tspdrv_probe(struct platform_device *pdev)
 #if defined(CONFIG_MACH_M2_ATT) || defined(CONFIG_MACH_M2_VZW) || \
 defined(CONFIG_MACH_M2_SPR) || defined(CONFIG_MACH_M2_DCM) || \
 defined(CONFIG_MACH_M2_SKT) || defined(CONFIG_MACH_JAGUAR) || \
-defined(CONFIG_MACH_AEGIS2) || defined(CONFIG_MACH_COMANCHE)
+defined(CONFIG_MACH_AEGIS2) || defined(CONFIG_MACH_COMANCHE) || \
+defined(CONFIG_MACH_M2_USC)
 		vibrator_drvdata.vib_pwm_gpio = GPIO_VIB_PWM;
 		vibrator_drvdata.vib_en_gpio = GPIO_VIB_ON;
 		vibrator_drvdata.haptic_pwr_en_gpio = GPIO_HAPTIC_PWR_EN;
@@ -331,7 +332,7 @@ defined(CONFIG_MACH_GOGH) || defined(CONFIG_MACH_ESPRESSO_ATT)
 			vibrator_drvdata.is_pmic_haptic_pwr_en = 1;
 		}
 #endif
-#ifdef CONFIG_MACH_M2_VZW
+#if defined(CONFIG_MACH_M2_VZW) || defined(CONFIG_MACH_M2_USC)
 		if (system_rev >= BOARD_REV09) {
 			vibrator_drvdata.vib_en_gpio = PM8921_GPIO_PM_TO_SYS(\
 						PMIC_GPIO_VIB_ON);

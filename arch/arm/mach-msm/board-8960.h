@@ -58,7 +58,8 @@ extern void __init usb_switch_init(void);
 
 #if defined(CONFIG_MACH_JAGUAR) || defined(CONFIG_MACH_M2_VZW) || \
 defined(CONFIG_MACH_M2_ATT) || defined(CONFIG_MACH_M2_SPR) || \
-defined(CONFIG_MACH_M2_SKT) || defined(CONFIG_MACH_M2_DCM)
+defined(CONFIG_MACH_M2_SKT) || defined(CONFIG_MACH_M2_DCM) || \
+defined(CONFIG_MACH_M2_USC)
 extern void __init msm8960_cam_init(void);
 #endif
 

@@ -244,7 +244,7 @@ static void check_smb347_version(void)
 #elif defined(CONFIG_MACH_M2_SPR)
 	if (system_rev >= 0x6)
 		smb347_verA5 = 1;
-#elif defined(CONFIG_MACH_M2_VZW)
+#elif defined(CONFIG_MACH_M2_VZW) || defined(CONFIG_MACH_M2_USC)
 	if (system_rev >= 0xd)
 		smb347_verA5 = 1;
 #elif defined(CONFIG_MACH_M2_SKT)
