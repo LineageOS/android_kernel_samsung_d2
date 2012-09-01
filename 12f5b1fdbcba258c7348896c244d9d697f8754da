@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "AAAAXH///TA\u003d",
+        "filename": "scripts/Makefile.lib",
+        "patchSetId": 1
+      },
+      "lineNbr": 236,
+      "author": {
+        "id": 2260
+      },
+      "writtenOn": "2012-09-01T02:37:35Z",
+      "side": 1,
+      "message": "I might drop the second \"2\u003e/dev/null\" here.  In the event that both stats fail, the stderr output would be the only indication in the build log that something bad happened.\n\nOr does it generate stderr in the success case?",
+      "revId": "12f5b1fdbcba258c7348896c244d9d697f8754da",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    }
+  ]
+}
