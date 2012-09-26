@@ -516,7 +516,11 @@ static void primary_rdptr_isr(int cndx)
 
 	spin_lock(&vctrl->spin_lock);
 	if (vctrl->uevent)
+#ifdef CONFIG_FB_MSM_VSYNC_SYSFS
+		msm_fb_notify_vsync(vctrl->mfd, vctrl->vsync_time);
+#else
 		schedule_work(&vctrl->vsync_work);
+#endif
 
 	if (vctrl->wait_vsync_cnt) {
 		complete(&vctrl->vsync_comp);

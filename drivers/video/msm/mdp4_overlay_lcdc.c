@@ -736,7 +736,11 @@ void mdp4_primary_vsync_lcdc(void)
 	vctrl = &vsync_ctrl_db[cndx];
 	pr_debug("%s: cpu=%d\n", __func__, smp_processor_id());
 	vctrl->vsync_time = ktime_get();
+#ifdef CONFIG_FB_MSM_VSYNC_SYSFS
+	msm_fb_notify_vsync(vctrl->mfd, vctrl->vsync_time);
+#else
 	schedule_work(&vctrl->vsync_work);
+#endif
 
 	spin_lock(&vctrl->spin_lock);
 	if (vctrl->wait_vsync_cnt) {
