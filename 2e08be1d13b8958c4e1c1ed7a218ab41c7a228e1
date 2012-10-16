@@ -1,0 +1,72 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "AAAAaH///4s\u003d",
+        "filename": "arch/arm/mach-msm/Kconfig",
+        "patchSetId": 2
+      },
+      "lineNbr": 2269,
+      "author": {
+        "id": 19
+      },
+      "writtenOn": "2012-10-16T21:04:40Z",
+      "side": 1,
+      "message": "this must default n",
+      "revId": "2e08be1d13b8958c4e1c1ed7a218ab41c7a228e1",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "AAAAaH///5U\u003d",
+        "filename": "arch/arm/mach-msm/acpuclock-8960.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 183,
+      "author": {
+        "id": 19
+      },
+      "writtenOn": "2012-10-16T21:04:40Z",
+      "side": 1,
+      "message": "missing?",
+      "revId": "2e08be1d13b8958c4e1c1ed7a218ab41c7a228e1",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "AAAAaH///40\u003d",
+        "filename": "arch/arm/mach-msm/include/mach/rpm-8960.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 311,
+      "author": {
+        "id": 19
+      },
+      "writtenOn": "2012-10-16T21:04:40Z",
+      "side": 1,
+      "message": "this var is not used anywhere",
+      "revId": "2e08be1d13b8958c4e1c1ed7a218ab41c7a228e1",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "AAAAaH///4w\u003d",
+        "filename": "arch/arm/mach-msm/include/mach/rpm-8960.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 322,
+      "author": {
+        "id": 19
+      },
+      "writtenOn": "2012-10-16T21:04:40Z",
+      "side": 1,
+      "message": "this var is not used anywhere",
+      "revId": "2e08be1d13b8958c4e1c1ed7a218ab41c7a228e1",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    }
+  ]
+}
