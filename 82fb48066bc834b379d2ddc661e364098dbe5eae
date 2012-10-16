@@ -1,0 +1,123 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "AAAAZ3////Q\u003d",
+        "filename": "arch/arm/mach-msm/acpuclock-8960.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 2260
+      },
+      "writtenOn": "2012-10-16T09:24:10Z",
+      "side": 1,
+      "message": "#ifdef CONFIG_MSM8960_CPU_OVERCLOCK\n\n(new values)\n\n#else\n\n(old values)\n\n#endif",
+      "revId": "82fb48066bc834b379d2ddc661e364098dbe5eae",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "AAAAZ3////M\u003d",
+        "filename": "arch/arm/mach-msm/acpuclock-8960.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 2260
+      },
+      "writtenOn": "2012-10-16T09:24:10Z",
+      "side": 1,
+      "message": "#ifdef CONFIG_MSM8960_CPU_OVERCLOCK ...",
+      "revId": "82fb48066bc834b379d2ddc661e364098dbe5eae",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "AAAAZ3////I\u003d",
+        "filename": "arch/arm/mach-msm/acpuclock-8960.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 2260
+      },
+      "writtenOn": "2012-10-16T09:24:10Z",
+      "side": 1,
+      "message": "#ifdef CONFIG_MSM8960_CPU_OVERCLOCK ...",
+      "revId": "82fb48066bc834b379d2ddc661e364098dbe5eae",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "AAAAZ3////E\u003d",
+        "filename": "arch/arm/mach-msm/board-8960-regulator.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 527,
+      "author": {
+        "id": 2260
+      },
+      "writtenOn": "2012-10-16T09:24:10Z",
+      "side": 1,
+      "message": "#ifdef CONFIG_MSM8960_CPU_OVERCLOCK ...",
+      "revId": "82fb48066bc834b379d2ddc661e364098dbe5eae",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "AAAAZ3////A\u003d",
+        "filename": "arch/arm/mach-msm/board-8960-regulator.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 529,
+      "author": {
+        "id": 2260
+      },
+      "writtenOn": "2012-10-16T09:24:10Z",
+      "side": 1,
+      "message": "#ifdef CONFIG_MSM8960_CPU_OVERCLOCK ...",
+      "revId": "82fb48066bc834b379d2ddc661e364098dbe5eae",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "AAAAZ3///+8\u003d",
+        "filename": "arch/arm/mach-msm/include/mach/rpm-8960.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 310,
+      "author": {
+        "id": 2260
+      },
+      "writtenOn": "2012-10-16T09:24:10Z",
+      "side": 1,
+      "message": "#ifdef CONFIG_MSM8960_CPU_OVERCLOCK ...",
+      "revId": "82fb48066bc834b379d2ddc661e364098dbe5eae",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "AAAAZ3///+4\u003d",
+        "filename": "arch/arm/mach-msm/include/mach/rpm-8960.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 317,
+      "author": {
+        "id": 2260
+      },
+      "writtenOn": "2012-10-16T09:24:10Z",
+      "side": 1,
+      "message": "#ifdef CONFIG_MSM8960_CPU_OVERCLOCK ...",
+      "revId": "82fb48066bc834b379d2ddc661e364098dbe5eae",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    }
+  ]
+}
