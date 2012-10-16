@@ -53,6 +53,24 @@
     },
     {
       "key": {
+        "uuid": "AAAAaH///4g\u003d",
+        "filename": "arch/arm/mach-msm/include/mach/rpm-8960.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 311,
+      "author": {
+        "id": 3671
+      },
+      "writtenOn": "2012-10-16T21:09:42Z",
+      "side": 1,
+      "message": "so you suggest we don\u0027t do anything here? remove it completely?\nsame for the one below?",
+      "parentUuid": "AAAAaH///40\u003d",
+      "revId": "2e08be1d13b8958c4e1c1ed7a218ab41c7a228e1",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "AAAAaH///4w\u003d",
         "filename": "arch/arm/mach-msm/include/mach/rpm-8960.h",
         "patchSetId": 2
