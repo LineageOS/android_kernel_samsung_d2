@@ -2,6 +2,23 @@
   "comments": [
     {
       "key": {
+        "uuid": "AAAAaH///0s\u003d",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 2260
+      },
+      "writtenOn": "2012-10-16T22:28:06Z",
+      "side": 1,
+      "message": "I like attribution, but I\u0027m not sure this is the most useful form in the final commit history.  Perhaps something like:\n\n\"Adapted from CyanogenMod/android_kernel_sony_msm8x60, change I74475a9f95cd26a2b2449669c388e0afc7b12691.\"\n\nWhich allows folks to find that commit both on Gerrit (search the change ID), and directly from the repo in case Gerrit explodes one day.  Or you could include both.",
+      "revId": "765ba5cc896d30cdf3a902843a8c165addf6aaeb",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "AAAAaH///3M\u003d",
         "filename": "arch/arm/mach-msm/acpuclock-8960.c",
         "patchSetId": 3
