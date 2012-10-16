@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "AAAAaH///zg\u003d",
+        "filename": "arch/arm/mach-msm/acpuclock-8960.c",
+        "patchSetId": 4
+      },
+      "lineNbr": 1510,
+      "author": {
+        "id": 2260
+      },
+      "writtenOn": "2012-10-16T22:48:28Z",
+      "side": 1,
+      "message": "Left behind?",
+      "revId": "c7edd915286dbbb46df788d2e254a1edc418614d",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    }
+  ]
+}
