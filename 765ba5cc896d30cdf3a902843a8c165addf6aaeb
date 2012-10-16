@@ -1,0 +1,157 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "AAAAaH///3M\u003d",
+        "filename": "arch/arm/mach-msm/acpuclock-8960.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 2260
+      },
+      "writtenOn": "2012-10-16T22:21:35Z",
+      "side": 1,
+      "message": "Remove.",
+      "revId": "765ba5cc896d30cdf3a902843a8c165addf6aaeb",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "AAAAaH///20\u003d",
+        "filename": "arch/arm/mach-msm/acpuclock-8960.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 2260
+      },
+      "writtenOn": "2012-10-16T22:21:35Z",
+      "side": 1,
+      "message": "Remove.",
+      "revId": "765ba5cc896d30cdf3a902843a8c165addf6aaeb",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "AAAAaH///2w\u003d",
+        "filename": "arch/arm/mach-msm/acpuclock-8960.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 158,
+      "author": {
+        "id": 2260
+      },
+      "writtenOn": "2012-10-16T22:21:35Z",
+      "side": 1,
+      "message": "Remove.",
+      "revId": "765ba5cc896d30cdf3a902843a8c165addf6aaeb",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "AAAAaH///2k\u003d",
+        "filename": "arch/arm/mach-msm/acpuclock-8960.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 2260
+      },
+      "writtenOn": "2012-10-16T22:21:35Z",
+      "side": 1,
+      "message": "Remove.",
+      "revId": "765ba5cc896d30cdf3a902843a8c165addf6aaeb",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "AAAAaH///2g\u003d",
+        "filename": "arch/arm/mach-msm/acpuclock-8960.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 2260
+      },
+      "writtenOn": "2012-10-16T22:21:35Z",
+      "side": 1,
+      "message": "Fixup this part like above.",
+      "revId": "765ba5cc896d30cdf3a902843a8c165addf6aaeb",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "AAAAaH///2A\u003d",
+        "filename": "arch/arm/mach-msm/acpuclock-8960.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 1521,
+      "author": {
+        "id": 2260
+      },
+      "writtenOn": "2012-10-16T22:21:35Z",
+      "side": 1,
+      "message": "Does the array size actually need to be changed here?  The modified tables are only growing from 23 elements to 27, so 30 should cover both.",
+      "revId": "765ba5cc896d30cdf3a902843a8c165addf6aaeb",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "AAAAaH///1c\u003d",
+        "filename": "arch/arm/mach-msm/board-8960-regulator.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 529,
+      "author": {
+        "id": 2260
+      },
+      "writtenOn": "2012-10-16T22:21:35Z",
+      "side": 1,
+      "message": "Remove.",
+      "revId": "765ba5cc896d30cdf3a902843a8c165addf6aaeb",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "AAAAaH///1M\u003d",
+        "filename": "arch/arm/mach-msm/board-8960-regulator.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 531,
+      "author": {
+        "id": 2260
+      },
+      "writtenOn": "2012-10-16T22:21:35Z",
+      "side": 1,
+      "message": "Remove.",
+      "revId": "765ba5cc896d30cdf3a902843a8c165addf6aaeb",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "AAAAaH///1I\u003d",
+        "filename": "arch/arm/mach-msm/board-8960-regulator.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 533,
+      "author": {
+        "id": 2260
+      },
+      "writtenOn": "2012-10-16T22:21:35Z",
+      "side": 1,
+      "message": "Fixup this part like above.",
+      "revId": "765ba5cc896d30cdf3a902843a8c165addf6aaeb",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    }
+  ]
+}

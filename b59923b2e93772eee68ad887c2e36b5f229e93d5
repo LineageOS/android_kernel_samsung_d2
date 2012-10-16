@@ -1,0 +1,89 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "AAAAaH///3Q\u003d",
+        "filename": "arch/arm/mach-msm/acpuclock-8960.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 2260
+      },
+      "writtenOn": "2012-10-16T22:21:35Z",
+      "side": 0,
+      "message": "#ifdef CONFIG_MSM8960_CPU_OVERCLOCK\n\n#define VREG_CORE_KRAIT_MAX_VDD 1350000\n\n#define VREG_MEM_KRAIT_MAX_VDD 1250000\n\n#define VREG_DIG_KRAIT_MAX_VDD 1250000\n\n#else\n\n#define VREG_CORE_KRAIT_MAX_VDD 1300000\n\n#define VREG_MEM_KRAIT_MAX_VDD 1150000\n\n#define VREG_DIG_KRAIT_MAX_VDD 1150000\n\n#endif\n\nPlease double check the above numbers.  Also, please excuse my extraneous whitespace, I don\u0027t know how to force a newline otherwise.",
+      "revId": "b59923b2e93772eee68ad887c2e36b5f229e93d5",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "AAAAaH///24\u003d",
+        "filename": "arch/arm/mach-msm/acpuclock-8960.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 2260
+      },
+      "writtenOn": "2012-10-16T22:21:35Z",
+      "side": 0,
+      "message": ".vreg[VREG_CORE] \u003d { \"krait0\",     VREG_CORE_KRAIT_MAX_VDD },\n\n.vreg[VREG_MEM]  \u003d { \"krait0_mem\", VREG_MEM_KRAIT_MAX_VDD,",
+      "revId": "b59923b2e93772eee68ad887c2e36b5f229e93d5",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "AAAAaH///2s\u003d",
+        "filename": "arch/arm/mach-msm/acpuclock-8960.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 2260
+      },
+      "writtenOn": "2012-10-16T22:21:35Z",
+      "side": 0,
+      "message": ".vreg[VREG_DIG]  \u003d { \"krait0_dig\", VREG_DIG_KRAIT_MAX_VDD,",
+      "revId": "b59923b2e93772eee68ad887c2e36b5f229e93d5",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "AAAAaH///1g\u003d",
+        "filename": "arch/arm/mach-msm/board-8960-regulator.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 523,
+      "author": {
+        "id": 2260
+      },
+      "writtenOn": "2012-10-16T22:21:35Z",
+      "side": 0,
+      "message": "#ifdef CONFIG_MSM8960_CPU_OVERCLOCK\n\n#define SAW_VREG_8921_MAX_UV 1350000\n\n#else\n\n#define SAW_VREG_8921_MAX_UV 1300000\n\n#endif",
+      "revId": "b59923b2e93772eee68ad887c2e36b5f229e93d5",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "AAAAaH///1Q\u003d",
+        "filename": "arch/arm/mach-msm/board-8960-regulator.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 527,
+      "author": {
+        "id": 2260
+      },
+      "writtenOn": "2012-10-16T22:21:35Z",
+      "side": 0,
+      "message": "SAW_VREG_INIT(S5, \"8921_s5\",»          850000, SAW_VREG_8921_MAX_UV);",
+      "revId": "b59923b2e93772eee68ad887c2e36b5f229e93d5",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    }
+  ]
+}
