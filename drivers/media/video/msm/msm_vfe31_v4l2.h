@@ -1,4 +1,4 @@
-/* Copyright (c) 2011, Code Aurora Forum. All rights reserved.
+/* Copyright (c) 2012, Code Aurora Forum. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -8,25 +8,21 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
+ *
  */
 
-#ifndef __MSM_VFE32_H__
-#define __MSM_VFE32_H__
+#ifndef __MSM_VFE31_V4L2_H__
+#define __MSM_VFE31_V4L2_H__
+
+#include <linux/bitops.h>
 
 #define TRUE  1
 #define FALSE 0
 
-#define QC_TEST
-
-
-#define VFE32_HW_NUMBER 0x3030B
-#define VFE33_HW_NUMBER 0x30408
-
 /* This defines total number registers in VFE.
  * Each register is 4 bytes so to get the range,
  * multiply this number with 4. */
-#define VFE32_REGISTER_TOTAL 0x000001CD
-#define VFE33_REGISTER_TOTAL 0x000001EE
+#define VFE31_REGISTER_TOTAL 0x0000017F
 
 /* at start of camif,  bit 1:0 = 0x01:enable
  * image data capture at frame boundary. */
@@ -52,14 +48,17 @@
 /* clear the halt bit. */
 #define AXI_HALT_CLEAR  0x00000000
 
+/* clear axi_halt_irq */
+#define MASK_AXI_HALT_IRQ	0xFF7FFFFF
+
 /* reset the pipeline when stop command is issued.
- * (without reset the register.) bit 26-32 = 0,
+ * (without reset the register.) bit 26-31 = 0,
  * domain reset, bit 0-9 = 1 for module reset, except
  * register module. */
 #define VFE_RESET_UPON_STOP_CMD  0x000003ef
 
 /* reset the pipeline when reset command.
- * bit 26-32 = 0, domain reset, bit 0-9 = 1 for module reset. */
+ * bit 26-31 = 0, domain reset, bit 0-9 = 1 for module reset. */
 #define VFE_RESET_UPON_RESET_CMD  0x000003ff
 
 /* bit 5 is for axi status idle or busy.
@@ -94,6 +93,7 @@
 #define VFE_CLEAR_ALL_IRQS   0xffffffff
 
 #define VFE_IRQ_STATUS0_CAMIF_SOF_MASK            0x00000001
+#define VFE_IRQ_STATUS0_CAMIF_EOF_MASK            0x00000004
 #define VFE_IRQ_STATUS0_REG_UPDATE_MASK           0x00000020
 #define VFE_IRQ_STATUS0_IMAGE_COMPOSIT_DONE0_MASK 0x00200000
 #define VFE_IRQ_STATUS0_IMAGE_COMPOSIT_DONE1_MASK 0x00400000
@@ -114,15 +114,17 @@
 #define VFE_IRQ_STATUS0_ASYNC_TIMER0  0x10000000  /* bit 28 */
 #define VFE_IRQ_STATUS0_ASYNC_TIMER1  0x20000000  /* bit 29 */
 #define VFE_IRQ_STATUS0_ASYNC_TIMER2  0x40000000  /* bit 30 */
-#define VFE_IRQ_STATUS0_ASYNC_TIMER3  0x80000000  /* bit 32 */
+#define VFE_IRQ_STATUS0_ASYNC_TIMER3  0x80000000  /* bit 31 */
 
 /* imask for while waiting for stop ack,  driver has already
  * requested stop, waiting for reset irq, and async timer irq.
- * For irq_status_0, bit 28-32 are for async timer. For
+ * For irq_status_0, bit 28-31 are for async timer. For
  * irq_status_1, bit 22 for reset irq, bit 23 for axi_halt_ack
    irq */
 #define VFE_IMASK_WHILE_STOPPING_0  0xF0000000
-#define VFE_IMASK_WHILE_STOPPING_1  0x00800000
+#define VFE_IMASK_WHILE_STOPPING_1  0x00C00000
+#define VFE_IMASK_RESET             0x00400000
+#define VFE_IMASK_AXI_HALT          0x00800000
 
 /* no error irq in mask 0 */
 #define VFE_IMASK_ERROR_ONLY_0  0x0
@@ -133,34 +135,32 @@
 /* For BPC bit 0,bit 12-17 and bit 26 -20 are set to zero and other's 1 */
 #define BPC_MASK 0xF80C0FFE
 
-/* For ABF bit 4 is set to zero and other's 1 */
-#define ABF_MASK 0xFFFFFFF7
-
+/* For BPC bit 1 and 2 are set to zero and other's 1 */
+#define ABF_MASK 0xFFFFFFF9
 
 /* For DBPC bit 0 is set to zero and other's 1 */
 #define DBPC_MASK 0xFFFFFFFE
 
-/* For DBPC bit 1 is set to zero and other's 1 */
+/* For DBCC bit 1 is set to zero and other's 1 */
 #define DBCC_MASK 0xFFFFFFFD
 
 /* For DBPC/ABF/DBCC/ABCC bits are set to 1 all others 0 */
-#define DEMOSAIC_MASK 0xF
-
+#define DEMOSAIC_MASK 0x8FFFFFFF
 /* For MCE enable bit 28 set to zero and other's 1 */
 #define MCE_EN_MASK 0xEFFFFFFF
 
-/* For MCE Q_K bit 28 to 32 set to zero and other's 1 */
+/* For MCE Q_K bit 28 to 31 set to zero and other's 1 */
 #define MCE_Q_K_MASK 0x0FFFFFFF
 
 #define AE_BG_ENABLE_MASK 0x00000020      /* bit 5 */
 #define AF_BF_ENABLE_MASK 0x00000040      /* bit 6 */
 #define AWB_ENABLE_MASK 0x00000080     /* bit 7 */
+
 #define RS_ENABLE_MASK 0x00000100      /* bit 8  */
 #define CS_ENABLE_MASK 0x00000200      /* bit 9  */
 #define RS_CS_ENABLE_MASK 0x00000300   /* bit 8,9  */
-#define CLF_ENABLE_MASK 0x00002000     /* bit 13 */
-#define IHIST_ENABLE_MASK 0x00010000   /* bit 16 */
-#define STATS_ENABLE_MASK 0x000903E0   /* bit 19,16,9,8,7,6,5*/
+#define IHIST_ENABLE_MASK 0x00008000   /* bit 15 */
+#define STATS_ENABLE_MASK 0x000483E0   /* bit 18,15,9,8,7,6,5*/
 
 #define VFE_REG_UPDATE_TRIGGER           1
 #define VFE_PM_BUF_MAX_CNT_MASK          0xFF
@@ -169,204 +169,157 @@
 #define VFE_AF_PINGPONG_STATUS_BIT       0x100
 #define VFE_AWB_PINGPONG_STATUS_BIT      0x200
 
-enum VFE32_DMI_RAM_SEL {
-	NO_MEM_SELECTED          = 0,
-	BLACK_LUT_RAM_BANK0      = 0x1,
-	BLACK_LUT_RAM_BANK1      = 0x2,
-	ROLLOFF_RAM0_BANK0       = 0x3,
-	DEMOSAIC_LUT_RAM_BANK0   = 0x4,
-	DEMOSAIC_LUT_RAM_BANK1   = 0x5,
-	STATS_BHIST_RAM0         = 0x6,
-	STATS_BHIST_RAM1         = 0x7,
-	RGBLUT_RAM_CH0_BANK0     = 0x8,
-	RGBLUT_RAM_CH0_BANK1     = 0x9,
-	RGBLUT_RAM_CH1_BANK0     = 0xa,
-	RGBLUT_RAM_CH1_BANK1     = 0xb,
-	RGBLUT_RAM_CH2_BANK0     = 0xc,
-	RGBLUT_RAM_CH2_BANK1     = 0xd,
-	RGBLUT_CHX_BANK0         = 0xe,
-	RGBLUT_CHX_BANK1         = 0xf,
-	STATS_IHIST_RAM          = 0x10,
-	LUMA_ADAPT_LUT_RAM_BANK0 = 0x11,
-	LUMA_ADAPT_LUT_RAM_BANK1 = 0x12,
-	ROLLOFF_RAM1_BANK0       = 0x13,
-	ROLLOFF_RAM0_BANK1       = 0x14,
-	ROLLOFF_RAM1_BANK1       = 0x15,
+#define HFR_MODE_OFF 1
+#define VFE_FRAME_SKIP_PERIOD_MASK 0x0000001F /*bits 0 -4*/
+
+enum VFE31_DMI_RAM_SEL {
+	 NO_MEM_SELECTED          = 0,
+	 ROLLOFF_RAM              = 0x1,
+	 RGBLUT_RAM_CH0_BANK0     = 0x2,
+	 RGBLUT_RAM_CH0_BANK1     = 0x3,
+	 RGBLUT_RAM_CH1_BANK0     = 0x4,
+	 RGBLUT_RAM_CH1_BANK1     = 0x5,
+	 RGBLUT_RAM_CH2_BANK0     = 0x6,
+	 RGBLUT_RAM_CH2_BANK1     = 0x7,
+	 STATS_HIST_RAM           = 0x8,
+	 RGBLUT_CHX_BANK0         = 0x9,
+	 RGBLUT_CHX_BANK1         = 0xa,
+	 LUMA_ADAPT_LUT_RAM_BANK0 = 0xb,
+	 LUMA_ADAPT_LUT_RAM_BANK1 = 0xc
 };
 
-enum  VFE_STATE {
+enum vfe_output_state {
 	VFE_STATE_IDLE,
-	VFE_STATE_ACTIVE
+	VFE_STATE_START_REQUESTED,
+	VFE_STATE_STARTED,
+	VFE_STATE_STOP_REQUESTED,
+	VFE_STATE_STOPPED,
 };
 
-enum  vfe_recording_state {
-	VFE_REC_STATE_IDLE,
-	VFE_REC_STATE_START_REQUESTED,
-	VFE_REC_STATE_STARTED,
-	VFE_REC_STATE_STOP_REQUESTED,
-	VFE_REC_STATE_STOPPED,
-};
+#define V31_CAMIF_OFF             0x000001E4
+#define V31_CAMIF_LEN             32
 
-#define V32_CAMIF_OFF             0x000001E4
-#define V32_CAMIF_LEN             32
+#define V31_DEMUX_OFF             0x00000284
+#define V31_DEMUX_LEN             20
 
-#define V32_DEMUX_OFF             0x00000284
-#define V32_DEMUX_LEN             20
+#define V31_DEMOSAICV3_UP_REG_CNT 5
 
-#define V32_DEMOSAICV3_0_OFF      0x00000298
-#define V32_DEMOSAICV3_0_LEN      4
-#define V32_DEMOSAICV3_1_OFF      0x0000061C
-#define V32_DEMOSAICV3_1_LEN      88
-#define V32_DEMOSAICV3_2_OFF      0x0000066C
-#define V32_DEMOSAICV3_UP_REG_CNT 5
-/* BPC     */
-#define V32_DEMOSAIC_2_OFF        0x0000029C
-#define V32_DEMOSAIC_2_LEN        8
-
-#define V32_OUT_CLAMP_OFF         0x00000524
-#define V32_OUT_CLAMP_LEN         8
-
-#ifdef QC_TEST /*aswoogi_zsl*/
-#define V32_OPERATION_CFG_LEN     36 /*metadata*/
-#else
-#define V32_OPERATION_CFG_LEN     32
-#endif
-
-#define V32_AXI_OUT_OFF           0x00000038
-#define V32_AXI_OUT_LEN           220
-#define V32_AXI_CH_INF_LEN        32
-#define V32_AXI_CFG_LEN           47
-
-#define V32_FRAME_SKIP_OFF        0x00000504
-#define V32_FRAME_SKIP_LEN        32
-
-#define V32_CHROMA_SUBS_OFF       0x000004F8
-#define V32_CHROMA_SUBS_LEN       12
-
-#define V32_FOV_OFF           0x00000360
-#define V32_FOV_LEN           8
-
-#define V32_MAIN_SCALER_OFF 0x00000368
-#define V32_MAIN_SCALER_LEN 28
-
-#define V32_S2Y_OFF 0x000004D0
-#define V32_S2Y_LEN 20
-
-#define V32_S2CbCr_OFF 0x000004E4
-#define V32_S2CbCr_LEN 20
-
-#define V32_CHROMA_EN_OFF 0x000003C4
-#define V32_CHROMA_EN_LEN 36
-
-#define V32_SYNC_TIMER_OFF      0x0000020C
-#define V32_SYNC_TIMER_POLARITY_OFF 0x00000234
-#define V32_TIMER_SELECT_OFF        0x0000025C
-#define V32_SYNC_TIMER_LEN 28
-
-#define V32_ASYNC_TIMER_OFF 0x00000238
-#define V32_ASYNC_TIMER_LEN 28
-
-#define V32_BLACK_LEVEL_OFF 0x00000264
-#define V32_BLACK_LEVEL_LEN 16
-
-#define V32_MESH_ROLL_OFF_CFG_OFF             0x00000274
-#define V32_MESH_ROLL_OFF_CFG_LEN             16
-#define V32_MESH_ROLL_OFF_INIT_TABLE_SIZE     13
-#define V32_MESH_ROLL_OFF_DELTA_TABLE_SIZE    208
-#define V32_MESH_ROLL_OFF_DELTA_TABLE_OFFSET  32
-#define V32_GAMMA_LUT_BANK_SEL_MASK           0x00000007
-
-#define V33_PCA_ROLL_OFF_CFG_LEN1             16
-#define V33_PCA_ROLL_OFF_CFG_OFF1             0x00000274
-#define V33_PCA_ROLL_OFF_CFG_LEN2             12
-#define V33_PCA_ROLL_OFF_CFG_OFF2             0x000007A8
-#define V33_PCA_ROLL_OFF_TABLE_SIZE           (17 + (13*4))
-#define V33_PCA_ROLL_OFF_LUT_BANK_SEL_MASK    0x00010000
-
-#define V32_COLOR_COR_OFF 0x00000388
-#define V32_COLOR_COR_LEN 52
-
-#define V32_WB_OFF 0x00000384
-#define V32_WB_LEN 4
-
-#define V32_RGB_G_OFF 0x000003BC
-#define V32_RGB_G_LEN 4
-
-#define V32_LA_OFF 0x000003C0
-#define V32_LA_LEN 4
-
-#define V32_SCE_OFF 0x00000418
-#define V32_SCE_LEN 136
-
-#define V32_CHROMA_SUP_OFF 0x000003E8
-#define V32_CHROMA_SUP_LEN 12
-
-#define V32_MCE_OFF 0x000003F4
-#define V32_MCE_LEN 36
-#define V32_STATS_AF_OFF 0x0000053c
-#define V32_STATS_AF_LEN 16
-
-#define V32_STATS_AE_OFF 0x00000534
-#define V32_STATS_AE_LEN 8
-
-#define V32_STATS_AWB_OFF 0x0000054c
-#define V32_STATS_AWB_LEN 32
-
-#define V32_STATS_IHIST_OFF 0x0000057c
-#define V32_STATS_IHIST_LEN 8
-
-#define V32_STATS_RS_OFF 0x0000056c
-#define V32_STATS_RS_LEN 8
-
-#define V32_STATS_CS_OFF 0x00000574
-#define V32_STATS_CS_LEN 8
-
-
-#define V32_ASF_OFF 0x000004A0
-#define V32_ASF_LEN 48
-#define V32_ASF_UPDATE_LEN 36
-
-#define V32_CAPTURE_LEN 4
-
-#define V32_GET_HW_VERSION_OFF 0
-#define V32_GET_HW_VERSION_LEN 4
-
-#define V32_LINEARIZATION_OFF1 0x00000264
-#define V32_LINEARIZATION_LEN1 16
-
-#define V32_LINEARIZATION_OFF2 0x0000067C
-#define V32_LINEARIZATION_LEN2 52
-
-#define V32_DEMOSAICV3_OFF 0x00000298
-#define V32_DEMOSAICV3_LEN 4
-
-#define V32_DEMOSAICV3_DBPC_CFG_OFF  0x0000029C
-#define V32_DEMOSAICV3_DBPC_LEN 4
-
-#define V32_DEMOSAICV3_DBPC_CFG_OFF0 0x000002a0
+/*TODO: check if these are necessary*/
+/*#define V32_DEMOSAICV3_DBPC_CFG_OFF0 0x000002a0
 #define V32_DEMOSAICV3_DBPC_CFG_OFF1 0x00000604
 #define V32_DEMOSAICV3_DBPC_CFG_OFF2 0x00000608
 
 #define V32_DEMOSAICV3_DBCC_OFF 0x0000060C
-#define V32_DEMOSAICV3_DBCC_LEN 16
+#define V32_DEMOSAICV3_DBCC_LEN 16*/
 
-#define V32_DEMOSAICV3_ABF_OFF 0x000002A4
-#define V32_DEMOSAICV3_ABF_LEN 180
+#define V31_OUT_CLAMP_OFF         0x00000524
+#define V31_OUT_CLAMP_LEN         8
 
-#define V32_MODULE_CFG_OFF 0x00000010
-#define V32_MODULE_CFG_LEN 4
+#define V31_OPERATION_CFG_LEN     32
 
-#define V32_ASF_SPECIAL_EFX_CFG_OFF 0x000005FC
-#define V32_ASF_SPECIAL_EFX_CFG_LEN 4
+#define V31_AXI_OUT_OFF           0x00000038
+#define V31_AXI_OUT_LEN           212
+#define V31_AXI_CH_INF_LEN        24
+#define V31_AXI_CFG_LEN           47
+#define V31_AXI_RESERVED            1
 
-#define V32_CLF_CFG_OFF 0x000006B0
-#define V32_CLF_CFG_LEN 72
+#define V31_FRAME_SKIP_OFF        0x00000504
+#define V31_FRAME_SKIP_LEN        32
 
-#define V32_CLF_LUMA_UPDATE_OFF 0x000006B4
-#define V32_CLF_LUMA_UPDATE_LEN 60
+#define V31_CHROMA_SUBS_OFF       0x000004F8
+#define V31_CHROMA_SUBS_LEN       12
 
-#define V32_CLF_CHROMA_UPDATE_OFF 0x000006F0
-#define V32_CLF_CHROMA_UPDATE_LEN 8
+#define V31_FOV_OFF           0x00000360
+#define V31_FOV_LEN           8
+
+#define V31_MAIN_SCALER_OFF 0x00000368
+#define V31_MAIN_SCALER_LEN 28
+
+#define V31_S2Y_OFF 0x000004D0
+#define V31_S2Y_LEN 20
+
+#define V31_S2CbCr_OFF 0x000004E4
+#define V31_S2CbCr_LEN 20
+
+#define V31_CHROMA_EN_OFF 0x000003C4
+#define V31_CHROMA_EN_LEN 36
+
+#define V31_SYNC_TIMER_OFF      0x0000020C
+#define V31_SYNC_TIMER_POLARITY_OFF 0x00000234
+#define V31_TIMER_SELECT_OFF        0x0000025C
+#define V31_SYNC_TIMER_LEN 28
+
+#define V31_ASYNC_TIMER_OFF 0x00000238
+#define V31_ASYNC_TIMER_LEN 28
+
+#define V31_BLACK_LEVEL_OFF 0x00000264
+#define V31_BLACK_LEVEL_LEN 16
+
+#define V31_MESH_ROLL_OFF_CFG_OFF             0x00000274
+#define V31_MESH_ROLL_OFF_CFG_LEN             16
+#define V31_MESH_ROLL_OFF_INIT_TABLE_SIZE     13
+#define V31_MESH_ROLL_OFF_DELTA_TABLE_SIZE    208
+#define V31_MESH_ROLL_OFF_DELTA_TABLE_OFFSET  32
+
+#define V31_COLOR_COR_OFF 0x00000388
+#define V31_COLOR_COR_LEN 52
+
+#define V31_WB_OFF 0x00000384
+#define V31_WB_LEN 4
+
+#define V31_RGB_G_OFF 0x000003BC
+#define V31_RGB_G_LEN 4
+
+#define V31_LA_OFF 0x000003C0
+#define V31_LA_LEN 4
+
+#define V31_SCE_OFF 0x00000418
+#define V31_SCE_LEN 136
+
+#define V31_CHROMA_SUP_OFF 0x000003E8
+#define V31_CHROMA_SUP_LEN 12
+
+#define V31_MCE_OFF 0x000003F4
+#define V31_MCE_LEN 36
+#define V31_STATS_AF_OFF 0x0000053c
+#define V31_STATS_AF_LEN 16
+
+#define V31_STATS_AE_OFF 0x00000534
+#define V31_STATS_AE_LEN 8
+
+#define V31_STATS_AWB_OFF 0x0000054c
+#define V31_STATS_AWB_LEN 32
+
+#define V31_STATS_IHIST_OFF 0x0000057c
+#define V31_STATS_IHIST_LEN 8
+
+#define V31_STATS_RS_OFF 0x0000056c
+#define V31_STATS_RS_LEN 8
+
+#define V31_STATS_CS_OFF 0x00000574
+#define V31_STATS_CS_LEN 8
+
+#define V31_ASF_OFF 0x000004A0
+#define V31_ASF_LEN 48
+#define V31_ASF_UPDATE_LEN 36
+#define V31_CAPTURE_LEN 4
+#define V31_GET_HW_VERSION_OFF 0
+#define V31_GET_HW_VERSION_LEN 4
+#define V31_DEMOSAICV3_OFF 0x00000298
+#define V31_DEMOSAICV3_LEN 4
+/* BPC     */
+#define V31_DEMOSAICV3_DBPC_CFG_OFF  0x0000029C
+#define V31_DEMOSAICV3_DBPC_LEN 8
+#define V31_XBAR_CFG_OFF 0x00000040
+/* ABF     */
+#define V31_DEMOSAICV3_ABF_OFF 0x000002A4
+#define V31_DEMOSAICV3_ABF_LEN 180
+#define V31_XBAR_CFG_LEN 8
+
+#define V31_MODULE_CFG_OFF 0x00000010
+#define V31_MODULE_CFG_LEN 4
+#define V31_EZTUNE_CFG_OFF 0x00000010
+#define V31_EZTUNE_CFG_LEN 4
 
 struct vfe_cmd_hw_version {
 	uint32_t minorVersion;
@@ -390,7 +343,6 @@ enum VFE_RAW_WR_PATH_SEL {
 	VFE_RAW_OUTPUT_VIEW_CBCR_PATH,
 	VFE_RAW_OUTPUT_PATH_INVALID
 };
-
 
 #define VFE_AXI_OUTPUT_BURST_LENGTH     4
 #define VFE_MAX_NUM_FRAGMENTS_PER_FRAME 4
@@ -417,7 +369,6 @@ enum VFE_AXI_BURST_LENGTH {
 	VFE_AXI_BURST_LENGTH_IS_8  = 8,
 	VFE_AXI_BURST_LENGTH_IS_16 = 16
 };
-
 
 struct vfe_cmd_fov_crop_config {
 	uint8_t enable;
@@ -507,11 +458,11 @@ enum VFE_YUV_INPUT_COSITING_MODE {
 	VFE_YUV_INTERPOLATED
 };
 
-#define VFE32_GAMMA_NUM_ENTRIES  64
+#define VFE31_GAMMA_NUM_ENTRIES  64
 
-#define VFE32_LA_TABLE_LENGTH    64
+#define VFE31_LA_TABLE_LENGTH    64
 
-#define VFE32_LINEARIZATON_TABLE_LENGTH    36
+#define VFE31_HIST_TABLE_LENGTH  256
 
 struct vfe_cmds_demosaic_abf {
 	uint8_t   enable;
@@ -718,7 +669,7 @@ struct vfe_msg_camif_status {
 	uint32_t lineCount;
 };
 
-struct vfe32_irq_status {
+struct vfe31_irq_status {
 	uint32_t vfeIrqStatus0;
 	uint32_t vfeIrqStatus1;
 	uint32_t camifStatus;
@@ -726,24 +677,24 @@ struct vfe32_irq_status {
 	uint32_t asfMaxEdge;
 };
 
-#define V32_PREVIEW_AXI_FLAG  0x00000001
-#define V32_SNAPSHOT_AXI_FLAG (0x00000001<<1)
+#define V31_PREVIEW_AXI_FLAG  0x00000001
+#define V31_SNAPSHOT_AXI_FLAG (0x00000001<<1)
 
-struct vfe32_cmd_type {
+struct vfe31_cmd_type {
 	uint16_t id;
 	uint32_t length;
 	uint32_t offset;
 	uint32_t flag;
 };
 
-struct vfe32_free_buf {
+struct vfe31_free_buf {
 	struct list_head node;
 	uint32_t paddr;
 	uint32_t y_off;
 	uint32_t cbcr_off;
 };
 
-struct vfe32_output_ch {
+struct vfe31_output_ch {
 	struct list_head free_buf_queue;
 	spinlock_t free_buf_lock;
 	uint16_t output_fmt;
@@ -758,44 +709,44 @@ struct vfe32_output_ch {
 };
 
 /* no error irq in mask 0 */
-#define VFE32_IMASK_ERROR_ONLY_0  0x0
+#define VFE31_IMASK_ERROR_ONLY_0  0x0
 /* when normal case, don't want to block error status. */
 /* bit 0-21 are error irq bits */
-#define VFE32_IMASK_ERROR_ONLY_1               0x005FFFFF
-#define VFE32_IMASK_CAMIF_ERROR               (0x00000001<<0)
-#define VFE32_IMASK_BHIST_OVWR                (0x00000001<<1)
-#define VFE32_IMASK_STATS_CS_OVWR             (0x00000001<<2)
-#define VFE32_IMASK_STATS_IHIST_OVWR          (0x00000001<<3)
-#define VFE32_IMASK_REALIGN_BUF_Y_OVFL        (0x00000001<<4)
-#define VFE32_IMASK_REALIGN_BUF_CB_OVFL       (0x00000001<<5)
-#define VFE32_IMASK_REALIGN_BUF_CR_OVFL       (0x00000001<<6)
-#define VFE32_IMASK_VIOLATION                 (0x00000001<<7)
-#define VFE32_IMASK_IMG_MAST_0_BUS_OVFL       (0x00000001<<8)
-#define VFE32_IMASK_IMG_MAST_1_BUS_OVFL       (0x00000001<<9)
-#define VFE32_IMASK_IMG_MAST_2_BUS_OVFL       (0x00000001<<10)
-#define VFE32_IMASK_IMG_MAST_3_BUS_OVFL       (0x00000001<<11)
-#define VFE32_IMASK_IMG_MAST_4_BUS_OVFL       (0x00000001<<12)
-#define VFE32_IMASK_IMG_MAST_5_BUS_OVFL       (0x00000001<<13)
-#define VFE32_IMASK_IMG_MAST_6_BUS_OVFL       (0x00000001<<14)
-#define VFE32_IMASK_STATS_AE_BG_BUS_OVFL      (0x00000001<<15)
-#define VFE32_IMASK_STATS_AF_BF_BUS_OVFL      (0x00000001<<16)
-#define VFE32_IMASK_STATS_AWB_BUS_OVFL        (0x00000001<<17)
-#define VFE32_IMASK_STATS_RS_BUS_OVFL         (0x00000001<<18)
-#define VFE32_IMASK_STATS_CS_BUS_OVFL         (0x00000001<<19)
-#define VFE32_IMASK_STATS_IHIST_BUS_OVFL      (0x00000001<<20)
-#define VFE32_IMASK_STATS_SKIN_BHIST_BUS_OVFL (0x00000001<<21)
-#define VFE32_IMASK_AXI_ERROR                 (0x00000001<<22)
+#define VFE31_IMASK_ERROR_ONLY_1               0x003FFFFF
+#define VFE31_IMASK_CAMIF_ERROR               (0x00000001<<0)
+#define VFE31_IMASK_STATS_CS_OVWR             (0x00000001<<1)
+#define VFE31_IMASK_STATS_IHIST_OVWR          (0x00000001<<2)
+#define VFE31_IMASK_REALIGN_BUF_Y_OVFL        (0x00000001<<3)
+#define VFE31_IMASK_REALIGN_BUF_CB_OVFL       (0x00000001<<4)
+#define VFE31_IMASK_REALIGN_BUF_CR_OVFL       (0x00000001<<5)
+#define VFE31_IMASK_VIOLATION                 (0x00000001<<6)
+#define VFE31_IMASK_IMG_MAST_0_BUS_OVFL       (0x00000001<<7)
+#define VFE31_IMASK_IMG_MAST_1_BUS_OVFL       (0x00000001<<8)
+#define VFE31_IMASK_IMG_MAST_2_BUS_OVFL       (0x00000001<<9)
+#define VFE31_IMASK_IMG_MAST_3_BUS_OVFL       (0x00000001<<10)
+#define VFE31_IMASK_IMG_MAST_4_BUS_OVFL       (0x00000001<<11)
+#define VFE31_IMASK_IMG_MAST_5_BUS_OVFL       (0x00000001<<12)
+#define VFE31_IMASK_IMG_MAST_6_BUS_OVFL       (0x00000001<<13)
+#define VFE31_IMASK_STATS_AE_BG_BUS_OVFL         (0x00000001<<14)
+#define VFE31_IMASK_STATS_AF_BF_BUS_OVFL         (0x00000001<<15)
+#define VFE31_IMASK_STATS_AWB_BUS_OVFL        (0x00000001<<16)
+#define VFE31_IMASK_STATS_RS_BUS_OVFL         (0x00000001<<17)
+#define VFE31_IMASK_STATS_CS_BUS_OVFL         (0x00000001<<18)
+#define VFE31_IMASK_STATS_IHIST_BUS_OVFL      (0x00000001<<19)
+#define VFE31_IMASK_STATS_SKIN_BHIST_BUS_OVFL       (0x00000001<<20)
+#define VFE31_IMASK_AXI_ERROR                 (0x00000001<<21)
 
-struct vfe32_output_path {
+#define VFE_COM_STATUS 0x000FE000
+
+struct vfe31_output_path {
 	uint16_t output_mode;     /* bitmask  */
 
-	struct vfe32_output_ch out0; /* preview and thumbnail */
-	struct vfe32_output_ch out1; /* snapshot */
-	struct vfe32_output_ch out2; /* video    */
-	struct vfe32_output_ch out3; /* jpeg soc  */
+	struct vfe31_output_ch out0; /* preview and thumbnail */
+	struct vfe31_output_ch out1; /* snapshot */
+	struct vfe31_output_ch out2; /* video    */
 };
 
-struct vfe32_frame_extra {
+struct vfe31_frame_extra {
 	uint32_t greenDefectPixelCount;
 	uint32_t redBlueDefectPixelCount;
 
@@ -810,38 +761,43 @@ struct vfe32_frame_extra {
 	uint32_t  frameCounter;
 };
 
-#define VFE_DISABLE_ALL_IRQS            0
-#define VFE_CLEAR_ALL_IRQS              0xffffffff
+#define VFE_DISABLE_ALL_IRQS             0
+#define VFE_CLEAR_ALL_IRQS               0xffffffff
 
-#define VFE_HW_VERSION			0x00000000
-#define VFE_GLOBAL_RESET                0x00000004
-#define VFE_MODULE_RESET		0x00000008
-#define VFE_CGC_OVERRIDE                0x0000000C
-#define VFE_MODULE_CFG                  0x00000010
-#define VFE_CFG				0x00000014
-#define VFE_IRQ_CMD                     0x00000018
-#define VFE_IRQ_MASK_0                  0x0000001C
-#define VFE_IRQ_MASK_1                  0x00000020
-#define VFE_IRQ_CLEAR_0                 0x00000024
-#define VFE_IRQ_CLEAR_1                 0x00000028
-#define VFE_IRQ_STATUS_0                0x0000002C
-#define VFE_IRQ_STATUS_1                0x00000030
-#define VFE_IRQ_COMP_MASK               0x00000034
-#define VFE_BUS_CMD                     0x00000038
-#define VFE_BUS_PING_PONG_STATUS        0x00000180
-#define VFE_AXI_CMD                     0x000001D8
-#define VFE_AXI_STATUS        0x000001DC
-#define VFE_BUS_STATS_PING_PONG_BASE    0x000000F4
+#define VFE_HW_VERSION					 0x00000000
+#define VFE_GLOBAL_RESET                 0x00000004
+#define VFE_MODULE_RESET				 0x00000008
+#define VFE_CGC_OVERRIDE                 0x0000000C
+#define VFE_MODULE_CFG                   0x00000010
+#define VFE_CFG				 0x00000014
+#define VFE_IRQ_CMD                      0x00000018
+#define VFE_IRQ_MASK_0                   0x0000001C
+#define VFE_IRQ_MASK_1                   0x00000020
+#define VFE_IRQ_CLEAR_0                  0x00000024
+#define VFE_IRQ_CLEAR_1                  0x00000028
+#define VFE_IRQ_STATUS_0                 0x0000002C
+#define VFE_IRQ_STATUS_1                 0x00000030
+#define VFE_IRQ_COMP_MASK                0x00000034
+#define VFE_BUS_CMD                      0x00000038
+#define VFE_BUS_PING_PONG_STATUS         0x00000180
+#define VFE_BUS_OPERATION_STATUS         0x00000184
 
-#define VFE_BUS_STATS_AEC_WR_PING_ADDR    0x000000F4
-#define VFE_BUS_STATS_AEC_WR_PONG_ADDR    0x000000F8
-#define VFE_BUS_STATS_AEC_UB_CFG          0x000000FC
-#define VFE_BUS_STATS_AF_WR_PING_ADDR     0x00000100
-#define VFE_BUS_STATS_AF_WR_PONG_ADDR     0x00000104
-#define VFE_BUS_STATS_AF_UB_CFG           0x00000108
-#define VFE_BUS_STATS_AWB_WR_PING_ADDR    0x0000010C
-#define VFE_BUS_STATS_AWB_WR_PONG_ADDR    0x00000110
-#define VFE_BUS_STATS_AWB_UB_CFG          0x00000114
+#define VFE_BUS_IMAGE_MASTER_0_WR_PM_STATS_0        0x00000190
+#define VFE_BUS_IMAGE_MASTER_0_WR_PM_STATS_1        0x00000194
+
+#define VFE_AXI_CMD                      0x000001D8
+#define VFE_AXI_STATUS                   0x000001DC
+#define VFE_BUS_STATS_PING_PONG_BASE     0x000000F4
+
+#define VFE_BUS_STATS_AEC_WR_PING_ADDR   0x000000F4
+#define VFE_BUS_STATS_AEC_WR_PONG_ADDR   0x000000F8
+#define VFE_BUS_STATS_AEC_UB_CFG         0x000000FC
+#define VFE_BUS_STATS_AF_WR_PING_ADDR    0x00000100
+#define VFE_BUS_STATS_AF_WR_PONG_ADDR    0x00000104
+#define VFE_BUS_STATS_AF_UB_CFG          0x00000108
+#define VFE_BUS_STATS_AWB_WR_PING_ADDR   0x0000010C
+#define VFE_BUS_STATS_AWB_WR_PONG_ADDR   0x00000110
+#define VFE_BUS_STATS_AWB_UB_CFG         0x00000114
 #define VFE_BUS_STATS_RS_WR_PING_ADDR    0x00000118
 #define VFE_BUS_STATS_RS_WR_PONG_ADDR    0x0000011C
 #define VFE_BUS_STATS_RS_UB_CFG          0x00000120
@@ -849,48 +805,49 @@ struct vfe32_frame_extra {
 #define VFE_BUS_STATS_CS_WR_PING_ADDR    0x00000124
 #define VFE_BUS_STATS_CS_WR_PONG_ADDR    0x00000128
 #define VFE_BUS_STATS_CS_UB_CFG          0x0000012C
-#define VFE_BUS_STATS_HIST_WR_PING_ADDR   0x00000130
-#define VFE_BUS_STATS_HIST_WR_PONG_ADDR   0x00000134
-#define VFE_BUS_STATS_HIST_UB_CFG          0x00000138
-#define VFE_BUS_STATS_SKIN_WR_PING_ADDR    0x0000013C
-#define VFE_BUS_STATS_SKIN_WR_PONG_ADDR    0x00000140
-#define VFE_BUS_STATS_SKIN_UB_CFG          0x00000144
-#define VFE_CAMIF_COMMAND               0x000001E0
-#define VFE_CAMIF_STATUS                0x00000204
-#define VFE_REG_UPDATE_CMD              0x00000260
-#define VFE_DEMUX_GAIN_0                0x00000288
-#define VFE_DEMUX_GAIN_1                0x0000028C
-#define VFE_CHROMA_UP                   0x0000035C
-#define VFE_FRAMEDROP_ENC_Y_CFG         0x00000504
-#define VFE_FRAMEDROP_ENC_CBCR_CFG      0x00000508
-#define VFE_FRAMEDROP_ENC_Y_PATTERN     0x0000050C
-#define VFE_FRAMEDROP_ENC_CBCR_PATTERN  0x00000510
-#define VFE_FRAMEDROP_VIEW_Y            0x00000514
-#define VFE_FRAMEDROP_VIEW_CBCR         0x00000518
-#define VFE_FRAMEDROP_VIEW_Y_PATTERN    0x0000051C
-#define VFE_FRAMEDROP_VIEW_CBCR_PATTERN 0x00000520
-#define VFE_CLAMP_MAX                   0x00000524
-#define VFE_CLAMP_MIN                   0x00000528
-#define VFE_REALIGN_BUF                 0x0000052C
-#define VFE_STATS_CFG                   0x00000530
-#define VFE_DMI_CFG                     0x00000598
-#define VFE_DMI_ADDR                    0x0000059C
-#define VFE_DMI_DATA_LO                 0x000005A4
-#define VFE_BUS_IO_FORMAT_CFG		0x000006F8
-#define VFE_PIXEL_IF_CFG                0x000006FC
-#define VFE_RDI_CFG0                0x00000734 /*aswoogi_zsl*/
+#define VFE_BUS_STATS_HIST_WR_PING_ADDR  0x00000130
+#define VFE_BUS_STATS_HIST_WR_PONG_ADDR  0x00000134
+#define VFE_BUS_STATS_HIST_UB_CFG        0x00000138
+#define VFE_BUS_STATS_SKIN_WR_PING_ADDR  0x0000013C
+#define VFE_BUS_STATS_SKIN_WR_PONG_ADDR  0x00000140
+#define VFE_BUS_STATS_SKIN_UB_CFG        0x00000144
+#define VFE_BUS_PM_CMD                   0x00000188
+#define VFE_BUS_PM_CFG                   0x0000018C
+#define VFE_CAMIF_COMMAND                0x000001E0
+#define VFE_CAMIF_STATUS                 0x00000204
+#define VFE_REG_UPDATE_CMD               0x00000260
+#define VFE_DEMUX_GAIN_0                 0x00000288
+#define VFE_DEMUX_GAIN_1                 0x0000028C
+#define VFE_CHROMA_UP                    0x0000035C
+#define VFE_FRAMEDROP_ENC_Y_CFG          0x00000504
+#define VFE_FRAMEDROP_ENC_CBCR_CFG       0x00000508
+#define VFE_FRAMEDROP_ENC_Y_PATTERN      0x0000050C
+#define VFE_FRAMEDROP_ENC_CBCR_PATTERN   0x00000510
+#define VFE_FRAMEDROP_VIEW_Y             0x00000514
+#define VFE_FRAMEDROP_VIEW_CBCR          0x00000518
+#define VFE_FRAMEDROP_VIEW_Y_PATTERN     0x0000051C
+#define VFE_FRAMEDROP_VIEW_CBCR_PATTERN  0x00000520
+#define VFE_CLAMP_MAX                    0x00000524
+#define VFE_CLAMP_MIN                    0x00000528
+#define VFE_REALIGN_BUF                  0x0000052C
+#define VFE_STATS_CFG                    0x00000530
+#define VFE_STATS_AWB_SGW_CFG            0x00000554
+#define VFE_DMI_CFG                      0x00000598
+#define VFE_DMI_ADDR                     0x0000059C
+#define VFE_DMI_DATA_LO                  0x000005A4
 
+#define VFE_AXI_CFG                      0x00000600
 
-#define VFE33_DMI_DATA_HI               0x000005A0
-#define VFE33_DMI_DATA_LO               0x000005A4
-
-#define VFE32_OUTPUT_MODE_PT (0x1 << 0)
-#define VFE32_OUTPUT_MODE_S (0x1 << 1)
-#define VFE32_OUTPUT_MODE_V (0x1 << 2)
-#define VFE32_OUTPUT_MODE_P (0x1 << 3)
-#define VFE32_OUTPUT_MODE_T (0x1 << 4)
-#define VFE32_OUTPUT_MODE_P_ALL_CHNLS (0x1 << 5)
-
+#define VFE31_OUTPUT_MODE_PT		BIT(0)
+#define VFE31_OUTPUT_MODE_S			BIT(1)
+#define VFE31_OUTPUT_MODE_V			BIT(2)
+#define VFE31_OUTPUT_MODE_P			BIT(3)
+#define VFE31_OUTPUT_MODE_T			BIT(4)
+#define VFE31_OUTPUT_MODE_P_ALL_CHNLS		BIT(5)
+#define VFE31_OUTPUT_MODE_PRIMARY		BIT(6)
+#define VFE31_OUTPUT_MODE_PRIMARY_ALL_CHNLS	BIT(7)
+#define VFE31_OUTPUT_MODE_SECONDARY		BIT(8)
+#define VFE31_OUTPUT_MODE_SECONDARY_ALL_CHNLS	BIT(9)
 struct vfe_stats_control {
 	uint8_t  ackPending;
 	uint32_t nextFrameAddrBuf;
@@ -898,9 +855,9 @@ struct vfe_stats_control {
 	uint32_t bufToRender;
 };
 
-struct vfe32_ctrl_type {
+struct vfe31_ctrl_type {
 	uint16_t operation_mode;     /* streaming or snapshot */
-	struct vfe32_output_path outpath;
+	struct vfe31_output_path outpath;
 
 	uint32_t vfeImaskCompositePacked;
 
@@ -912,6 +869,10 @@ struct vfe32_ctrl_type {
 	spinlock_t  aec_ack_lock;
 	spinlock_t  awb_ack_lock;
 	spinlock_t  af_ack_lock;
+	spinlock_t  ihist_ack_lock;
+	spinlock_t  rs_ack_lock;
+	spinlock_t  cs_ack_lock;
+	spinlock_t  comp_stats_ack_lock;
 
 	uint32_t extlen;
 	void *extdata;
@@ -920,20 +881,24 @@ struct vfe32_ctrl_type {
 	int8_t stop_ack_pending;
 	int8_t reset_ack_pending;
 	int8_t update_ack_pending;
-	enum vfe_recording_state recording_state;
+	enum vfe_output_state recording_state;
 	int8_t update_linear;
 	int8_t update_rolloff;
 	int8_t update_la;
 	int8_t update_gamma;
+	enum vfe_output_state liveshot_state;
 
 	spinlock_t  tasklet_lock;
 	struct list_head tasklet_q;
 	void __iomem *vfebase;
+	void __iomem *camifbase;
 	void *syncdata;
 	uint32_t register_total;
 
 	struct resource	*vfemem;
+	struct resource	*camifmem;
 	struct resource *vfeio;
+	struct resource *camifio;
 	struct resource *vfeirq;
 	struct regulator *fs_vfe;
 
@@ -945,8 +910,6 @@ struct vfe32_ctrl_type {
 	uint32_t sync_timer_number;
 
 	uint32_t vfeFrameId;
-	uint32_t rdi0FrameId;
-	uint32_t rdi1FrameId;
 	uint32_t output1Pattern;
 	uint32_t output1Period;
 	uint32_t output2Pattern;
@@ -959,12 +922,17 @@ struct vfe32_ctrl_type {
 	struct vfe_stats_control ihistStatsControl;
 	struct vfe_stats_control rsStatsControl;
 	struct vfe_stats_control csStatsControl;
-	uint32_t jpeg_soc;
+
 	/* v4l2 subdev */
 	struct v4l2_subdev subdev;
 	struct platform_device *pdev;
-	struct clk *vfe_clk[3];
+	struct clk *vfe_clk[5];
+	struct clk *vfe_camif_clk[2];
 	spinlock_t  sd_notify_lock;
+	uint32_t hfr_mode;
+	uint32_t frame_skip_cnt;
+	uint32_t frame_skip_pattern;
+	uint32_t snapshot_frame_cnt;
 };
 
 #define statsAeNum      0
@@ -984,11 +952,4 @@ struct vfe_cmd_stats_ack {
 struct vfe_cmd_stats_buf {
 	uint32_t statsBuf[VFE_STATS_BUFFER_COUNT];
 };
-
-static unsigned long pre_frame_sec = 0;
-static unsigned long pre_frame_msec = 0;
-static unsigned int no_free_buffer_count = 0;
-static bool no_free_buffer_flag = 0;
-#define TV_MSEC(x) x / 1000000
-
-#endif /* __MSM_VFE32_H__ */
+#endif /* __MSM_VFE31_H__ */
