@@ -22,7 +22,6 @@
 #include <linux/sched.h>
 #include <linux/kthread.h>
 #include <linux/time.h>
-#include <mach/board.h>
 
 #include <media/v4l2-dev.h>
 #include <media/v4l2-ioctl.h>
@@ -44,6 +43,7 @@
 #define VENC_INPUT_BUFFERS 4
 
 struct wfd_device {
+	struct mutex dev_lock;
 	struct platform_device *pdev;
 	struct v4l2_device v4l2_dev;
 	struct video_device *pvdev;
@@ -53,7 +53,6 @@ struct wfd_device {
 	bool secure_device;
 	bool in_use;
 	struct ion_client *ion_client;
-	bool mdp_iommu_split_domain;
 };
 
 struct mem_info {
@@ -285,28 +284,10 @@ int wfd_allocate_input_buffers(struct wfd_device *wfd_dev,
 		mdp_mregion->cookie = 0;
 		mdp_mregion->ion_handle = enc_mregion->ion_handle;
 
-		if (wfd_dev->mdp_iommu_split_domain) {
-			if (wfd_dev->secure_device) {
-				rc = ion_phys(wfd_dev->ion_client,
-					mdp_mregion->ion_handle,
-					(unsigned long *)&mdp_mregion->paddr,
-					(size_t *)&mdp_mregion->size);
-			} else {
-				rc = ion_map_iommu(wfd_dev->ion_client,
-					mdp_mregion->ion_handle,
-					DISPLAY_WRITE_DOMAIN, GEN_POOL, SZ_4K,
-					0, (unsigned long *)&mdp_mregion->paddr,
-					(unsigned long *)&mdp_mregion->size,
-					0, 0);
-			}
-		} else {
-			rc = ion_map_iommu(wfd_dev->ion_client,
-				mdp_mregion->ion_handle,
-				DISPLAY_READ_DOMAIN, GEN_POOL, SZ_4K,
+		rc = ion_map_iommu(wfd_dev->ion_client, mdp_mregion->ion_handle,
+				DISPLAY_DOMAIN, GEN_POOL, SZ_4K,
 				0, (unsigned long *)&mdp_mregion->paddr,
 				(unsigned long *)&mdp_mregion->size, 0, 0);
-		}
-
 		if (rc) {
 			WFD_MSG_ERR("Failed to map to mdp\n");
 			mdp_mregion->kvaddr = NULL;
@@ -376,20 +357,10 @@ void wfd_free_input_buffers(struct wfd_device *wfd_dev,
 				WFD_MSG_ERR("Failed to free buffers "
 						"from encoder\n");
 
-			if (mpair->mdp->paddr) {
-				if (wfd_dev->mdp_iommu_split_domain) {
-					if (!wfd_dev->secure_device)
-						ion_unmap_iommu(wfd_dev->
-							ion_client,
-							mpair->mdp->ion_handle,
-							DISPLAY_WRITE_DOMAIN,
-							GEN_POOL);
-				} else {
-					ion_unmap_iommu(wfd_dev->ion_client,
+			if (mpair->mdp->paddr)
+				ion_unmap_iommu(wfd_dev->ion_client,
 						mpair->mdp->ion_handle,
-						DISPLAY_READ_DOMAIN, GEN_POOL);
-				}
-			}
+						DISPLAY_DOMAIN, GEN_POOL);
 
 			if (mpair->enc->paddr)
 				ion_unmap_iommu(wfd_dev->ion_client,
@@ -1215,7 +1186,7 @@ static int vsg_encode_frame(void *cookie, struct vsg_buf_info *buf)
 	struct wfd_device *wfd_dev =
 		(struct wfd_device *)video_drvdata(filp);
 	struct venc_buf_info venc_buf;
-	int rc = 0;
+	int rc;
 
 	if (!buf)
 		return -EINVAL;
@@ -1228,12 +1199,6 @@ static int vsg_encode_frame(void *cookie, struct vsg_buf_info *buf)
 	wfd_flush_ion_buffer(wfd_dev->ion_client, venc_buf.mregion);
 	rc = v4l2_subdev_call(&wfd_dev->enc_sdev, core, ioctl,
 			ENCODE_FRAME, &venc_buf);
-
-	if (rc)
-		WFD_MSG_ERR("Encode failed\n");
-	else
-		wfd_stats_update(&inst->stats, WFD_STAT_EVENT_ENC_QUEUE);
-
 	return rc;
 }
 
@@ -1273,15 +1238,30 @@ int wfd_initialize_vb2_queue(struct vb2_queue *q, void *priv)
 static int wfd_open(struct file *filp)
 {
 	int rc = 0;
-	struct wfd_inst *inst;
-	struct wfd_device *wfd_dev;
+	struct wfd_inst *inst = NULL;
+	struct wfd_device *wfd_dev = NULL;
 	struct venc_msg_ops enc_mops;
 	struct vsg_msg_ops vsg_mops;
 
 	WFD_MSG_DBG("wfd_open: E\n");
 	wfd_dev = video_drvdata(filp);
+	if (!wfd_dev) {
+		rc = -EINVAL;
+		goto err_dev_busy;
+	}
+	mutex_lock(&wfd_dev->dev_lock);
+	if (wfd_dev->in_use) {
+		WFD_MSG_ERR("Device already in use.\n");
+		rc = -EBUSY;
+		mutex_unlock(&wfd_dev->dev_lock);
+		goto err_dev_busy;
+	}
+
+	wfd_dev->in_use = true;
+	mutex_unlock(&wfd_dev->dev_lock);
+
 	inst = kzalloc(sizeof(struct wfd_inst), GFP_KERNEL);
-	if (!inst || !wfd_dev) {
+	if (!inst) {
 		WFD_MSG_ERR("Could not allocate memory for "
 			"wfd instance\n");
 		rc = -ENOMEM;
@@ -1339,7 +1319,11 @@ err_venc:
 	v4l2_subdev_call(&wfd_dev->mdp_sdev, core, ioctl,
 				MDP_CLOSE, (void *)inst->mdp_inst);
 err_mdp_open:
+	mutex_lock(&wfd_dev->dev_lock);
+	wfd_dev->in_use = false;
+	mutex_unlock(&wfd_dev->dev_lock);
 	kfree(inst);
+err_dev_busy:
 	return rc;
 }
 
@@ -1375,6 +1359,10 @@ static int wfd_close(struct file *filp)
 		wfd_stats_deinit(&inst->stats);
 		kfree(inst);
 	}
+
+	mutex_lock(&wfd_dev->dev_lock);
+	wfd_dev->in_use = false;
+	mutex_unlock(&wfd_dev->dev_lock);
 
 	WFD_MSG_DBG("wfd_close: X\n");
 	return 0;
@@ -1470,7 +1458,6 @@ static int __devinit __wfd_probe(struct platform_device *pdev)
 	int rc = 0, c = 0;
 	struct wfd_device *wfd_dev; /* Should be taken as an array*/
 	struct ion_client *ion_client = NULL;
-	struct msm_wfd_platform_data *wfd_priv;
 
 	WFD_MSG_DBG("__wfd_probe: E\n");
 	wfd_dev = kzalloc(sizeof(*wfd_dev)*WFD_NUM_DEVICES, GFP_KERNEL);
@@ -1480,14 +1467,14 @@ static int __devinit __wfd_probe(struct platform_device *pdev)
 		rc = -ENOMEM;
 		goto err_v4l2_probe;
 	}
-
-	wfd_priv = pdev->dev.platform_data;
-	if (wfd_priv && wfd_priv->wfd_check_mdp_iommu_split) {
-		wfd_dev->mdp_iommu_split_domain =
-			wfd_priv->wfd_check_mdp_iommu_split();
-	}
-
 	pdev->dev.platform_data = (void *) wfd_dev;
+
+	rc = wfd_stats_setup();
+	if (rc) {
+		WFD_MSG_ERR("No debugfs support: %d\n", rc);
+		/* Don't treat this as a fatal err */
+		rc = 0;
+	}
 
 	ion_client = msm_ion_client_create(-1, "wfd");
 	if (!ion_client) {
@@ -1495,13 +1482,6 @@ static int __devinit __wfd_probe(struct platform_device *pdev)
 		rc = -ENODEV;
 		goto err_v4l2_probe;
 	}
-
-	rc = wfd_stats_setup();
-	if (rc) {
-		WFD_MSG_ERR("No debugfs support: %d\n", rc);
-		/* Don't treat this as a fatal err */
-		rc = 0;
-    }
 
 	for (c = 0; c < WFD_NUM_DEVICES; ++c) {
 		rc = wfd_dev_setup(&wfd_dev[c],

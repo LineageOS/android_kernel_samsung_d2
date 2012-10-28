@@ -1438,7 +1438,7 @@ static int msm_fb_register(struct msm_fb_data_type *mfd)
 	fbi->fix.smem_start = (unsigned long)fbram_phys;
 
 	msm_iommu_map_contig_buffer(fbi->fix.smem_start,
-					DISPLAY_WRITE_DOMAIN,
+					DISPLAY_DOMAIN,
 					GEN_POOL,
 					fbi->fix.smem_len * 2,
 					SZ_4K,
@@ -1446,7 +1446,7 @@ static int msm_fb_register(struct msm_fb_data_type *mfd)
 					&(mfd->display_iova));
 
 	msm_iommu_map_contig_buffer(fbi->fix.smem_start,
-					DISPLAY_READ_DOMAIN,
+					DISPLAY_DOMAIN,
 					GEN_POOL,
 					fbi->fix.smem_len * 2,
 					SZ_4K,
@@ -1454,7 +1454,7 @@ static int msm_fb_register(struct msm_fb_data_type *mfd)
 					&(mfd->display_iova));
 
 	msm_iommu_map_contig_buffer(fbi->fix.smem_start,
-					ROTATOR_SRC_DOMAIN,
+					ROTATOR_DOMAIN,
 					GEN_POOL,
 					fbi->fix.smem_len * 2,
 					SZ_4K,
@@ -1476,7 +1476,7 @@ static int msm_fb_register(struct msm_fb_data_type *mfd)
 					GFP_KERNEL);
 
 		msm_iommu_map_contig_buffer((unsigned long)mfd->cursor_buf_phys,
-					    DISPLAY_READ_DOMAIN,
+					    DISPLAY_DOMAIN,
 					    GEN_POOL,
 					    MDP_CURSOR_SIZE,
 					    SZ_4K,

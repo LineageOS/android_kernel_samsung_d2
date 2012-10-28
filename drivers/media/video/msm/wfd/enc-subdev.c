@@ -1323,14 +1323,14 @@ static long venc_set_max_perf_level(struct video_client_ctx *client_ctx,
 		rc = -ENOTSUPP;
 		goto err_set_perf_level;
 	}
-	
+
 	vcd_property_hdr.prop_id = VCD_REQ_PERF_LEVEL;
 	vcd_property_hdr.sz =
 		sizeof(struct vcd_property_perf_level);
 	perf.level = level;
 	rc = vcd_set_property(client_ctx->vcd_handle,
 				&vcd_property_hdr, &perf);
-	err_set_perf_level:				
+err_set_perf_level:				
 	return rc;
 }
 static long venc_set_header_mode(struct video_client_ctx *client_ctx,
@@ -1902,44 +1902,6 @@ flush_failed:
 
 static long venc_free_input_buffer(struct v4l2_subdev *sd, void *arg)
 {
-	int rc = 0;
-	struct venc_inst *inst = sd->dev_priv;
-	struct video_client_ctx *client_ctx = &inst->venc_client;
-	if (!client_ctx) {
-		WFD_MSG_ERR("Invalid input\n");
-		return -EINVAL;
-	}
-	rc = vcd_flush(client_ctx->vcd_handle, VCD_FLUSH_INPUT);
-	if (rc) {
-		WFD_MSG_ERR("Failed to flush input buffers\n");
-		goto flush_failed;
-	}
-	wait_for_completion(&client_ctx->event);
-	if (client_ctx->event_status) {
-		WFD_MSG_ERR("callback for vcd_flush input returned error: %u",
-				client_ctx->event_status);
-		rc = -EIO;
-		goto flush_failed;
-	}
-	rc = vcd_flush(client_ctx->vcd_handle, VCD_FLUSH_OUTPUT);
-	if (rc) {
-		WFD_MSG_ERR("Failed to flush output buffers\n");
-		goto flush_failed;
-	}
-	wait_for_completion(&client_ctx->event);
-	if (client_ctx->event_status) {
-		WFD_MSG_ERR("callback for vcd_flush output returned error: %u",
-				client_ctx->event_status);
-		rc = -EIO;
-		goto flush_failed;
-	}
-
-flush_failed:
-	return rc;
-}
-
-static long venc_free_input_buffer(struct v4l2_subdev *sd, void *arg)
-{
 	int del_rc = 0, free_rc = 0;
 	struct venc_inst *inst = sd->dev_priv;
 	struct video_client_ctx *client_ctx = &inst->venc_client;
@@ -2060,7 +2022,7 @@ static long venc_set_property(struct v4l2_subdev *sd, void *arg)
 		break;
 	case V4L2_CID_MPEG_QCOM_SET_PERF_LEVEL:
 		rc = venc_set_max_perf_level(client_ctx, ctrl->value);
-        break;
+		break;
 	default:
 		WFD_MSG_ERR("Set property not suported: %d\n", ctrl->id);
 		rc = -ENOTSUPP;

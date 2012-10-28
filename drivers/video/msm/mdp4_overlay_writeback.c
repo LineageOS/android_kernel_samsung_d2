@@ -438,9 +438,9 @@ static struct msmfb_writeback_data_list *get_if_registered(
 			}
 
 			if (mdp_iommu_split_domain)
-				domain = DISPLAY_WRITE_DOMAIN;
+				domain = DISPLAY_DOMAIN;
 			else
-				domain = DISPLAY_READ_DOMAIN;
+				domain = DISPLAY_DOMAIN;
 
 			if (ion_map_iommu(mfd->iclient,
 					  srcp_ihdl,
@@ -546,9 +546,9 @@ int mdp4_writeback_dequeue_buffer(struct fb_info *info, struct msmfb_data *data)
 		if (!data->iova)
 			if (mfd->iclient && node->ihdl) {
 				if (mdp_iommu_split_domain)
-					domain = DISPLAY_WRITE_DOMAIN;
+					domain = DISPLAY_DOMAIN;
 				else
-					domain = DISPLAY_READ_DOMAIN;
+					domain = DISPLAY_DOMAIN;
 
 				ion_unmap_iommu(mfd->iclient,
 						node->ihdl,

@@ -147,7 +147,7 @@ void mdp4_overlay_iommu_unmap_freelist(int mixer)
 			continue;
 		pr_debug("%s: mixer=%d i=%d ihdl=0x%p\n", __func__,
 					mixer, i, ihdl);
-		ion_unmap_iommu(display_iclient, ihdl, DISPLAY_READ_DOMAIN,
+		ion_unmap_iommu(display_iclient, ihdl, DISPLAY_DOMAIN,
 							GEN_POOL);
 		mdp4_stat.iommu_unmap++;
 		pr_debug("%s: map=%d unmap=%d drop=%d\n", __func__,
@@ -252,7 +252,7 @@ int mdp4_overlay_iommu_map_buf(int mem_id,
 	pr_debug("mixer %u, pipe %u, plane %u\n", pipe->mixer_num,
 		pipe->pipe_ndx, plane);
 	if (ion_map_iommu(display_iclient, *srcp_ihdl,
-		DISPLAY_READ_DOMAIN, GEN_POOL, SZ_4K, size, start,
+		DISPLAY_DOMAIN, GEN_POOL, SZ_4K, size, start,
 		len, 0, ION_IOMMU_UNMAP_DELAYED)) {
 		ion_free(display_iclient, *srcp_ihdl);
 		pr_err("%s(): ion_map_iommu() failed\n",
@@ -300,7 +300,7 @@ void mdp4_iommu_unmap(struct mdp4_overlay_pipe *pipe)
 					iom_pipe_info->prev_ihdl[i]);
 				ion_unmap_iommu(display_iclient,
 					iom_pipe_info->prev_ihdl[i],
-					DISPLAY_READ_DOMAIN, GEN_POOL);
+					DISPLAY_DOMAIN, GEN_POOL);
 				ion_free(display_iclient,
 					iom_pipe_info->prev_ihdl[i]);
 				iom_pipe_info->prev_ihdl[i] = NULL;
@@ -314,7 +314,7 @@ void mdp4_iommu_unmap(struct mdp4_overlay_pipe *pipe)
 						iom_pipe_info->ihdl[i]);
 					ion_unmap_iommu(display_iclient,
 						iom_pipe_info->ihdl[i],
-						DISPLAY_READ_DOMAIN, GEN_POOL);
+						DISPLAY_DOMAIN, GEN_POOL);
 					ion_free(display_iclient,
 						iom_pipe_info->ihdl[i]);
 					iom_pipe_info->ihdl[i] = NULL;
@@ -3590,22 +3590,22 @@ static struct msm_iommu_ctx msm_iommu_ctx_names[] = {
 	/* Display read*/
 	{
 		.name = "mdp_port0_cb0",
-		.domain = DISPLAY_READ_DOMAIN,
+		.domain = DISPLAY_DOMAIN,
 	},
 	/* Display read*/
 	{
 		.name = "mdp_port0_cb1",
-		.domain = DISPLAY_READ_DOMAIN,
+		.domain = DISPLAY_DOMAIN,
 	},
 	/* Display write */
 	{
 		.name = "mdp_port1_cb0",
-		.domain = DISPLAY_READ_DOMAIN,
+		.domain = DISPLAY_DOMAIN,
 	},
 	/* Display write */
 	{
 		.name = "mdp_port1_cb1",
-		.domain = DISPLAY_READ_DOMAIN,
+		.domain = DISPLAY_DOMAIN,
 	},
 };
 
@@ -3613,22 +3613,22 @@ static struct msm_iommu_ctx msm_iommu_split_ctx_names[] = {
 	/* Display read*/
 	{
 		.name = "mdp_port0_cb0",
-		.domain = DISPLAY_READ_DOMAIN,
+		.domain = DISPLAY_DOMAIN,
 	},
 	/* Display read*/
 	{
 		.name = "mdp_port0_cb1",
-		.domain = DISPLAY_WRITE_DOMAIN,
+		.domain = DISPLAY_DOMAIN,
 	},
 	/* Display write */
 	{
 		.name = "mdp_port1_cb0",
-		.domain = DISPLAY_READ_DOMAIN,
+		.domain = DISPLAY_DOMAIN,
 	},
 	/* Display write */
 	{
 		.name = "mdp_port1_cb1",
-		.domain = DISPLAY_WRITE_DOMAIN,
+		.domain = DISPLAY_DOMAIN,
 	},
 };
 

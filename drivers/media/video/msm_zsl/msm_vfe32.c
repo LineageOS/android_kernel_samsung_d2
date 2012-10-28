@@ -23,6 +23,8 @@
 #include <media/v4l2-subdev.h>
 #include <media/msm_isp.h>
 
+#include <linux/hrtimer.h>
+
 #include "msm.h"
 #include "msm_vfe32.h"
 #include "msm_ispif.h"		/*aswoogi_zsl */
@@ -437,15 +439,19 @@ static void vfe32_stop(void)
 
 static void vfe32_subdev_notify(int id, int path)
 {
-	struct msm_vfe_resp rp;
+	struct msm_vfe_resp *rp;
 	unsigned long flags = 0;
 	spin_lock_irqsave(&vfe32_ctrl->sd_notify_lock, flags);
+	rp = msm_isp_sync_alloc(sizeof(struct msm_vfe_resp), GFP_ATOMIC);
+	if (!rp) {
+		CDBG("rp: cannot allocate buffer\n");
+		return;
+	}
 	CDBG("vfe32_subdev_notify : msgId = %d\n", id);
-	memset(&rp, 0, sizeof(struct msm_vfe_resp));
-	rp.evt_msg.type   = MSM_CAMERA_MSG;
-	rp.evt_msg.msg_id = path;
-	rp.type	   = id;
-	v4l2_subdev_notify(&vfe32_ctrl->subdev, NOTIFY_VFE_BUF_EVT, &rp);
+	rp->evt_msg.type = MSM_CAMERA_MSG;
+	rp->evt_msg.msg_id = path;
+	rp->type = id;
+	v4l2_subdev_notify(&vfe32_ctrl->subdev, NOTIFY_VFE_BUF_EVT, rp);
 	spin_unlock_irqrestore(&vfe32_ctrl->sd_notify_lock, flags);
 }
 
@@ -1438,6 +1444,15 @@ static int vfe32_proc_general(struct msm_isp_cmd *cmd)
 
 	CDBG("vfe32_proc_general: cmdID = %s, length = %d\n",
 	     vfe32_general_cmd[cmd->id], cmd->length);
+
+	if (vfe32_ctrl->vfebase == NULL) {
+	    pr_err("Error : vfe32_ctrl->vfebase is NULL!!\n");
+	    pr_err("vfe32_proc_general: cmdID = %s, length = %d\n",
+		 vfe32_general_cmd[cmd->id], cmd->length);
+	    rc = -EINVAL;
+	    goto proc_general_done;
+	}
+
 	switch (cmd->id) {
 	case VFE_CMD_RESET:
 		CDBG("vfe32_proc_general: cmdID = %s\n",
@@ -3066,6 +3081,9 @@ static void vfe32_process_output_path_irq_0(void)
 	} else {
 		vfe32_ctrl->outpath.out0.frame_drop_cnt++;
 		CDBG("path_irq_0 - no free buffer!\n");
+		if (no_free_buffer_flag == 0)
+		    pr_warn("Waiting output 0 buffer."
+			    " but it doesn't matter.\n");
 	}
 }
 
@@ -3084,17 +3102,58 @@ static void vfe32_process_zsl_frame(void)
 	bool s_avail = false;
 	struct msm_free_buf *free_buf_t = NULL;
 	struct msm_free_buf *free_buf_s = NULL;
+	struct timespec tv;
+	unsigned int time_diff = 0;
+
 	CDBG("nishu process zsl handled\n");	/*aswoogi_zsl */
+
+	getnstimeofday(&tv);
+	CDBG("[%s:%d] sec %ld, nsec %ld\n", __func__, __LINE__, tv.tv_sec, tv.tv_nsec);
 
 	t_avail = vfe32_is_free_buf_avail(VFE_MSG_OUTPUT_T);
 	s_avail = vfe32_is_free_buf_avail(VFE_MSG_OUTPUT_S);
 	if (!(t_avail && s_avail)) {
-		if (!t_avail)
-			pr_err("nishu zsl no free thumbnail buffer\n");
+	    if (pre_frame_sec != 0 && pre_frame_msec != 0) {
+		if (pre_frame_sec == tv.tv_sec)
+		    time_diff = TV_MSEC(tv.tv_nsec) - pre_frame_msec;
+		else
+		    time_diff = (TV_MSEC(tv.tv_nsec) + 1000) - pre_frame_msec;
+
+		if (time_diff <= 70) /* 70msec is a frame when fps is 15*/
+		    no_free_buffer_count++;
+		else
+		    no_free_buffer_count = 0;
+		CDBG("count %d\n", no_free_buffer_count);
+		CDBG("time_diff %d, tv_msec %d, pre_frame_msec %d\n",
+		       time_diff, TV_MSEC(tv.tv_nsec), pre_frame_msec);
+		/* max 66msec * 60 = 3960msec */
+		/* min 33msec * 60 = 1980msec */
+		if (no_free_buffer_count > 60)
+		    no_free_buffer_flag = 1;
+		else
+		    no_free_buffer_flag = 0;
+	    }
+	    
+	    if (no_free_buffer_flag) {
 		if (!s_avail)
-			pr_err("nishu zsl no free snapshot buffer\n");
+		    pr_err("%d : nishu zsl no free snapshot buffer\n", __LINE__);
+		if (!t_avail)
+		    pr_err("%d : nishu zsl no free thumbnail buffer\n", __LINE__);
+	    } else {
+		if (!s_avail)
+		    CDBG("nishu zsl no free snapshot buffer\n");
+		if (!t_avail)
+		    CDBG("nishu zsl no free thumbnail buffer\n");
+	    }
+	    pre_frame_sec = tv.tv_sec;
+	    pre_frame_msec = TV_MSEC(tv.tv_nsec);
+
 		return;
 	}
+	pre_frame_sec = 0;
+	pre_frame_msec = 0;
+	no_free_buffer_count = 0;
+	no_free_buffer_flag = 0;
 
 	ping_pong = msm_io_r(vfe32_ctrl->vfebase + VFE_BUS_PING_PONG_STATUS);
 	CDBG("%s: ping_pong = %d\n", __func__, ping_pong);
@@ -3241,6 +3300,7 @@ static void vfe32_process_output_path_irq_1(void)
 	} else {
 		vfe32_ctrl->outpath.out1.frame_drop_cnt++;
 		CDBG("path_irq_1 - no free buffer!\n");
+		pr_warn("Waiting output 1 buffer.\n");
 	}
 }
 
@@ -3508,9 +3568,8 @@ static void vfe32_do_tasklet(unsigned long data)
 			return;
 		}
 
-		list_del_init(&qcmd->list);
-		spin_unlock_irqrestore(&vfe32_ctrl->tasklet_lock,
-			flags);
+		list_del(&qcmd->list);
+		spin_unlock_irqrestore(&vfe32_ctrl->tasklet_lock, flags);
 
 		if (qcmd->vfeInterruptStatus0 &
 			VFE_IRQ_STATUS0_CAMIF_SOF_MASK) {
@@ -3646,6 +3705,8 @@ static void vfe32_do_tasklet(unsigned long data)
 	CDBG("=== vfe32_do_tasklet end ===\n");
 }
 
+DECLARE_TASKLET(vfe32_tasklet, vfe32_do_tasklet, 0);
+
 static irqreturn_t vfe32_parse_irq(int irq_num, void *data)
 {
 	unsigned long flags;
@@ -3685,7 +3746,7 @@ static irqreturn_t vfe32_parse_irq(int irq_num, void *data)
 
 	atomic_add(1, &irq_cnt);
 	spin_unlock_irqrestore(&vfe32_ctrl->tasklet_lock, flags);
-	tasklet_schedule(&vfe32_ctrl->vfe32_tasklet);
+	tasklet_schedule(&vfe32_tasklet);
 	return IRQ_HANDLED;
 }
 
@@ -4085,6 +4146,14 @@ int msm_vfe_subdev_init(struct v4l2_subdev *sd, void *data,
 	if (rc < 0)
 		goto vfe_clk_enable_failed;
 
+	rc = request_irq(vfe32_ctrl->vfeirq->start, vfe32_parse_irq,
+			 IRQF_TRIGGER_RISING, "vfe", 0);
+	if (rc < 0) {
+		pr_err("%s: irq request fail\n", __func__);
+		rc = -EBUSY;
+		goto request_irq_failed;
+	}
+
 	msm_camio_set_perf_lvl(S_INIT);
 	msm_camio_set_perf_lvl(S_PREVIEW);
 
@@ -4094,27 +4163,24 @@ int msm_vfe_subdev_init(struct v4l2_subdev *sd, void *data,
 	else
 		vfe32_ctrl->register_total = VFE33_REGISTER_TOTAL;
 
-	enable_irq(vfe32_ctrl->vfeirq->start);
-
 	return rc;
 
+request_irq_failed:
+	msm_cam_clk_enable(&vfe32_ctrl->pdev->dev, vfe32_clk_info,
+			vfe32_ctrl->vfe_clk, ARRAY_SIZE(vfe32_clk_info),
+			0);
 vfe_clk_enable_failed:
 	regulator_disable(vfe32_ctrl->fs_vfe);
 	regulator_put(vfe32_ctrl->fs_vfe);
 	vfe32_ctrl->fs_vfe = NULL;
 vfe_fs_failed:
 	iounmap(vfe32_ctrl->vfebase);
-	vfe32_ctrl->vfebase = NULL;
 vfe_remap_failed:
-	disable_irq(vfe32_ctrl->vfeirq->start);
 	return rc;
 }
 
 void msm_vfe_subdev_release(struct platform_device *pdev)
 {
-	CDBG("%s, free_irq\n", __func__);
-	disable_irq(vfe32_ctrl->vfeirq->start);
-	tasklet_kill(&vfe32_ctrl->vfe32_tasklet);
 	msm_cam_clk_enable(&vfe32_ctrl->pdev->dev, vfe32_clk_info,
 			   vfe32_ctrl->vfe_clk, ARRAY_SIZE(vfe32_clk_info), 0);
 	if (vfe32_ctrl->fs_vfe) {
@@ -4122,8 +4188,10 @@ void msm_vfe_subdev_release(struct platform_device *pdev)
 		regulator_put(vfe32_ctrl->fs_vfe);
 		vfe32_ctrl->fs_vfe = NULL;
 	}
+	CDBG("%s, free_irq\n", __func__);
+	free_irq(vfe32_ctrl->vfeirq->start, 0);
+	tasklet_kill(&vfe32_tasklet);
 	iounmap(vfe32_ctrl->vfebase);
-	vfe32_ctrl->vfebase = NULL;
 
 	if (atomic_read(&irq_cnt))
 		pr_warning("%s, Warning IRQ Count not ZERO\n", __func__);
@@ -4175,18 +4243,6 @@ static int __devinit vfe32_probe(struct platform_device *pdev)
 		goto vfe32_no_resource;
 	}
 
-	rc = request_irq(vfe32_ctrl->vfeirq->start, vfe32_parse_irq,
-				IRQF_TRIGGER_RISING, "vfe", 0);
-	if (rc < 0) {
-		pr_err("%s: irq request fail\n", __func__);
-		rc = -EBUSY;
-		goto vfe32_no_resource;
-	}
-
-	disable_irq(vfe32_ctrl->vfeirq->start);
-
-	tasklet_init(&vfe32_ctrl->vfe32_tasklet,
-			vfe32_do_tasklet, (unsigned long)vfe32_ctrl);
 
 	vfe32_ctrl->pdev = pdev;
 	return 0;

@@ -206,7 +206,7 @@ int msm_rotator_iommu_map_buf(int mem_id, int domain,
 		}
 	} else {
 		if (ion_map_iommu(msm_rotator_dev->client,
-			*pihdl,	ROTATOR_SRC_DOMAIN, GEN_POOL,
+			*pihdl,	ROTATOR_DOMAIN, GEN_POOL,
 			SZ_4K, 0, start, len, 0, ION_IOMMU_UNMAP_DELAYED)) {
 			pr_err("Non split rot ion_map_iommu() failed\n");
 			return -EINVAL;
@@ -905,7 +905,7 @@ static void put_img(struct file *p_file, struct ion_handle *p_ihdl,
 					p_ihdl, domain, GEN_POOL);
 		} else {
 			ion_unmap_iommu(msm_rotator_dev->client,
-				p_ihdl, ROTATOR_SRC_DOMAIN, GEN_POOL);
+				p_ihdl, ROTATOR_DOMAIN, GEN_POOL);
 		}
 
 		ion_free(msm_rotator_dev->client, p_ihdl);
@@ -973,7 +973,7 @@ static int msm_rotator_do_rotate(unsigned long arg)
 		goto do_rotate_unlock_mutex;
 	}
 
-	rc = get_img(&info.src, ROTATOR_SRC_DOMAIN, (unsigned long *)&in_paddr,
+	rc = get_img(&info.src, ROTATOR_DOMAIN, (unsigned long *)&in_paddr,
 			(unsigned long *)&src_len, &srcp0_file, &ps0_need,
 			&srcp0_ihdl, 0);
 	if (rc) {
@@ -982,7 +982,7 @@ static int msm_rotator_do_rotate(unsigned long arg)
 		goto do_rotate_unlock_mutex;
 	}
 
-	rc = get_img(&info.dst, ROTATOR_DST_DOMAIN, (unsigned long *)&out_paddr,
+	rc = get_img(&info.dst, ROTATOR_DOMAIN, (unsigned long *)&out_paddr,
 			(unsigned long *)&dst_len, &dstp0_file, &p_need,
 			&dstp0_ihdl, img_info->secure);
 	if (rc) {
@@ -1012,7 +1012,7 @@ static int msm_rotator_do_rotate(unsigned long arg)
 			goto do_rotate_unlock_mutex;
 		}
 
-		rc = get_img(&info.src_chroma, ROTATOR_SRC_DOMAIN,
+		rc = get_img(&info.src_chroma, ROTATOR_DOMAIN,
 				(unsigned long *)&in_chroma_paddr,
 				(unsigned long *)&src_len, &srcp1_file, &p_need,
 				&srcp1_ihdl, 0);
@@ -1022,7 +1022,7 @@ static int msm_rotator_do_rotate(unsigned long arg)
 			goto do_rotate_unlock_mutex;
 		}
 
-		rc = get_img(&info.dst_chroma, ROTATOR_DST_DOMAIN,
+		rc = get_img(&info.dst_chroma, ROTATOR_DOMAIN,
 				(unsigned long *)&out_chroma_paddr,
 				(unsigned long *)&dst_len, &dstp1_file, &p_need,
 				&dstp1_ihdl, img_info->secure);
@@ -1196,17 +1196,17 @@ do_rotate_exit:
 #endif
 	schedule_delayed_work(&msm_rotator_dev->rot_clk_work, HZ);
 do_rotate_unlock_mutex:
-	put_img(dstp1_file, dstp1_ihdl, ROTATOR_DST_DOMAIN,
+	put_img(dstp1_file, dstp1_ihdl, ROTATOR_DOMAIN,
 		msm_rotator_dev->img_info[s]->secure);
-	put_img(srcp1_file, srcp1_ihdl, ROTATOR_SRC_DOMAIN, 0);
-	put_img(dstp0_file, dstp0_ihdl, ROTATOR_DST_DOMAIN,
+	put_img(srcp1_file, srcp1_ihdl, ROTATOR_DOMAIN, 0);
+	put_img(dstp0_file, dstp0_ihdl, ROTATOR_DOMAIN,
 		msm_rotator_dev->img_info[s]->secure);
 
 	/* only source may use frame buffer */
 	if (info.src.flags & MDP_MEMORY_ID_TYPE_FB)
 		fput_light(srcp0_file, ps0_need);
 	else
-		put_img(srcp0_file, srcp0_ihdl, ROTATOR_SRC_DOMAIN, 0);
+		put_img(srcp0_file, srcp0_ihdl, ROTATOR_DOMAIN, 0);
 	mutex_unlock(&msm_rotator_dev->rotator_lock);
 	dev_dbg(msm_rotator_dev->device, "%s() returning rc = %d\n",
 		__func__, rc);

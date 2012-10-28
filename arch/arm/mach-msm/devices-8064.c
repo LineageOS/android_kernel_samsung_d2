@@ -989,12 +989,12 @@ struct msm_iommu_domain_name apq8064_iommu_ctx_names[] = {
 	/* Rotator src*/
 	{
 		.name = "rot_src",
-		.domain = ROTATOR_SRC_DOMAIN,
+		.domain = ROTATOR_DOMAIN,
 	},
 	/* Rotator dst */
 	{
 		.name = "rot_dst",
-		.domain = ROTATOR_DST_DOMAIN,
+		.domain = ROTATOR_DOMAIN,
 	},
 	/* Video */
 	{
@@ -1095,19 +1095,19 @@ static struct msm_iommu_domain apq8064_iommu_domains[] = {
 			.iova_pools = apq8064_camera_pools,
 			.npools = ARRAY_SIZE(apq8064_camera_pools),
 		},
-		[DISPLAY_READ_DOMAIN] = {
+		[DISPLAY_DOMAIN] = {
 			.iova_pools = apq8064_display_read_pools,
 			.npools = ARRAY_SIZE(apq8064_display_read_pools),
 		},
-		[DISPLAY_WRITE_DOMAIN] = {
+		[DISPLAY_DOMAIN] = {
 			.iova_pools = apq8064_display_write_pools,
 			.npools = ARRAY_SIZE(apq8064_display_write_pools),
 		},
-		[ROTATOR_SRC_DOMAIN] = {
+		[ROTATOR_DOMAIN] = {
 			.iova_pools = apq8064_rotator_src_pools,
 			.npools = ARRAY_SIZE(apq8064_rotator_src_pools),
 		},
-		[ROTATOR_DST_DOMAIN] = {
+		[ROTATOR_DOMAIN] = {
 			.iova_pools = apq8064_rotator_dst_pools,
 			.npools = ARRAY_SIZE(apq8064_rotator_dst_pools),
 		},

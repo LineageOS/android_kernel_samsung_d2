@@ -3411,12 +3411,12 @@ struct msm_iommu_domain_name msm8960_iommu_ctx_names[] = {
 	/* Rotator */
 	{
 		.name = "rot_src",
-		.domain = ROTATOR_SRC_DOMAIN,
+		.domain = ROTATOR_DOMAIN,
 	},
 	/* Rotator */
 	{
 		.name = "rot_dst",
-		.domain = ROTATOR_SRC_DOMAIN,
+		.domain = ROTATOR_DOMAIN,
 	},
 	/* Video */
 	{
@@ -3499,11 +3499,11 @@ static struct msm_iommu_domain msm8960_iommu_domains[] = {
 			.iova_pools = msm8960_camera_pools,
 			.npools = ARRAY_SIZE(msm8960_camera_pools),
 		},
-		[DISPLAY_READ_DOMAIN] = {
+		[DISPLAY_DOMAIN] = {
 			.iova_pools = msm8960_display_read_pools,
 			.npools = ARRAY_SIZE(msm8960_display_read_pools),
 		},
-		[ROTATOR_SRC_DOMAIN] = {
+		[ROTATOR_DOMAIN] = {
 			.iova_pools = msm8960_rotator_src_pools,
 			.npools = ARRAY_SIZE(msm8960_rotator_src_pools),
 		},
