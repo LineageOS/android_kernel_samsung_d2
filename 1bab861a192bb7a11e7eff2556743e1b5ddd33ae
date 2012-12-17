@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "AAAAbH//+Ng\u003d",
+        "filename": "arch/arm/mach-msm/Kconfig",
+        "patchSetId": 1
+      },
+      "lineNbr": 1302,
+      "author": {
+        "id": 596
+      },
+      "writtenOn": "2012-12-17T13:14:22Z",
+      "side": 1,
+      "message": "Can we rename to something not d2usc specific since d2cri will have this issue as well.",
+      "revId": "1bab861a192bb7a11e7eff2556743e1b5ddd33ae",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    }
+  ]
+}
