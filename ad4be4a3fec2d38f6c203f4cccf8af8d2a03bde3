@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "AAAAbn//+z4\u003d",
+        "filename": "drivers/video/msm/msm_dss_io_8960.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 762,
+      "author": {
+        "id": 1935
+      },
+      "writtenOn": "2012-12-30T03:38:42Z",
+      "side": 1,
+      "message": "); ?",
+      "revId": "ad4be4a3fec2d38f6c203f4cccf8af8d2a03bde3",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    }
+  ]
+}
