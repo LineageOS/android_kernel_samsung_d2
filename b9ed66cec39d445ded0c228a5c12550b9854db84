@@ -1,0 +1,9 @@
+Change-Id: Ib9ed66cec39d445ded0c228a5c12550b9854db84
+Code-Review+2: Dan Pasanen <dan.pasanen@gmail.com>
+Verified+1: Dan Pasanen <dan.pasanen@gmail.com>
+Code-Review+1: rbox <androidrbox@gmail.com>
+Submitted-by: Dan Pasanen <dan.pasanen@gmail.com>
+Submitted-at: Mon, 11 Mar 2013 21:26:25 -0700
+Reviewed-on: http://review.cyanogenmod.org/33696
+Project: CyanogenMod/android_kernel_samsung_d2
+Branch: refs/heads/jb_2.5-staging
