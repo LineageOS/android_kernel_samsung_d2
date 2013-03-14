@@ -1,0 +1,8 @@
+Change-Id: Ia802ae9d08ec03ba659cd27eae46de0bb215e77f
+Code-Review+2: Steve Kondik <shade@chemlab.org>
+Verified+1: Steve Kondik <shade@chemlab.org>
+Submitted-by: Steve Kondik <shade@chemlab.org>
+Submitted-at: Wed, 13 Mar 2013 21:47:53 -0700
+Reviewed-on: http://review.cyanogenmod.org/33811
+Project: CyanogenMod/android_kernel_samsung_d2
+Branch: refs/heads/jb_2.5-staging
