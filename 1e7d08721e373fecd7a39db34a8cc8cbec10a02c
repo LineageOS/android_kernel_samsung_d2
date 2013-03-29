@@ -1,0 +1,8 @@
+Change-Id: I1e7d08721e373fecd7a39db34a8cc8cbec10a02c
+Code-Review+2: Steve Kondik <shade@chemlab.org>
+Verified+1: Steve Kondik <shade@chemlab.org>
+Submitted-by: Steve Kondik <shade@chemlab.org>
+Submitted-at: Fri, 29 Mar 2013 05:24:30 -0700
+Reviewed-on: http://review.cyanogenmod.org/34783
+Project: CyanogenMod/android_kernel_samsung_d2
+Branch: refs/heads/cm-10.1
