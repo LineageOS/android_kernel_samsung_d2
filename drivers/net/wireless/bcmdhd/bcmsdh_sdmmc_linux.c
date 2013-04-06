@@ -1,7 +1,7 @@
 /*
  * BCMSDH Function Driver for the native SDIO/MMC driver in the Linux Kernel
  *
- * Copyright (C) 1999-2012, Broadcom Corporation
+ * Copyright (C) 1999-2013, Broadcom Corporation
  * 
  *      Unless you and Broadcom execute a separate written software license
  * agreement governing use of this software, this software is licensed to you
@@ -21,7 +21,7 @@
  * software in any way with any other Broadcom software provided under a license
  * other than the GPL, without Broadcom's express prior written consent.
  *
- * $Id: bcmsdh_sdmmc_linux.c 381548 2013-01-28 17:25:38Z $
+ * $Id: bcmsdh_sdmmc_linux.c 383841 2013-02-08 00:10:58Z $
  */
 
 #include <typedefs.h>
@@ -195,7 +195,7 @@ static int bcmsdh_sdmmc_suspend(struct device *pdev)
 	if (func->num != 2)
 		return 0;
 
-	sd_trace_hw4(("%s Enter\n", __FUNCTION__));
+	sd_trace(("%s Enter\n", __FUNCTION__));
 
 	if (dhd_os_check_wakelock(bcmsdh_get_drvdata()))
 		return -EBUSY;
@@ -235,7 +235,7 @@ static int bcmsdh_sdmmc_resume(struct device *pdev)
 	struct sdio_func *func = dev_to_sdio_func(pdev);
 #endif /* defined(OOB_INTR_ONLY) */
 #endif /* defined(CUSTOMER_HW4) */
-	sd_trace_hw4(("%s Enter\n", __FUNCTION__));
+	sd_trace(("%s Enter\n", __FUNCTION__));
 
 	dhd_mmc_suspend = FALSE;
 #if !defined(CUSTOMER_HW4)
@@ -415,7 +415,7 @@ int sdio_function_init(void)
 	error = sdio_register_driver(&bcmsdh_sdmmc_driver);
 	if (error && gInstance) {
 		kfree(gInstance);
-		gInstance = 0;
+		gInstance = NULL;
 	}
 
 	return error;
@@ -432,6 +432,8 @@ void sdio_function_cleanup(void)
 
 	sdio_unregister_driver(&bcmsdh_sdmmc_driver);
 
-	if (gInstance)
-		kfree(gInstance);
+	if (gInstance) {
+ 		kfree(gInstance);
+		gInstance = NULL;
+	}
 }

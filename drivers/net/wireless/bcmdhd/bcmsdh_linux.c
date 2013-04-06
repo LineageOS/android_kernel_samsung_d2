@@ -1,7 +1,7 @@
 /*
  * SDIO access interface for drivers - linux specific (pci only)
  *
- * Copyright (C) 1999-2012, Broadcom Corporation
+ * Copyright (C) 1999-2013, Broadcom Corporation
  * 
  *      Unless you and Broadcom execute a separate written software license
  * agreement governing use of this software, this software is licensed to you
@@ -21,7 +21,7 @@
  * software in any way with any other Broadcom software provided under a license
  * other than the GPL, without Broadcom's express prior written consent.
  *
- * $Id: bcmsdh_linux.c 347638 2012-07-27 11:39:03Z $
+ * $Id: bcmsdh_linux.c 384887 2013-02-13 13:23:52Z $
  */
 
 /**
@@ -79,6 +79,8 @@ struct bcmsdh_hc {
 #endif /* defined(OOB_INTR_ONLY) || defined(BCMSPI_ANDROID) */
 };
 static bcmsdh_hc_t *sdhcinfo = NULL;
+
+struct device *pm_dev;
 
 /* driver info, initialized when bcmsdh_register is called */
 static bcmsdh_driver_t drvinfo = {NULL, NULL};
@@ -157,7 +159,7 @@ static
 int bcmsdh_probe(struct device *dev)
 {
 	osl_t *osh = NULL;
-	bcmsdh_hc_t *sdhc = NULL;
+	bcmsdh_hc_t *sdhc = NULL, *sdhc_org = sdhcinfo;
 	ulong regs = 0;
 	bcmsdh_info_t *sdh = NULL;
 #if !defined(BCMLXSDMMC) && defined(BCMPLATFORM_BUS) && !defined(BCMSPI_ANDROID)
@@ -175,7 +177,7 @@ int bcmsdh_probe(struct device *dev)
 	pdev = to_platform_device(dev);
 	r = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	irq = platform_get_irq(pdev, 0);
-	if (!r || irq == NO_IRQ)
+	if (!r || irq < 0)
 		return -ENXIO;
 #endif /* !defined(BCMLXSDMMC) && defined(BCMPLATFORM_BUS) && !defined(BCMSPI_ANDROID) */
 
@@ -191,7 +193,7 @@ int bcmsdh_probe(struct device *dev)
 	irq = dhd_customer_oob_irq_map(&irq_flags);
 	if  (irq < 0) {
 		SDLX_MSG(("%s: Host irq is not defined\n", __FUNCTION__));
-		return 1;
+		goto err;
 	}
 #endif /* defined(OOB_INTR_ONLY) || defined(BCMSPI_ANDROID) */
 	/* allocate SDIO Host Controller state info */
@@ -236,6 +238,11 @@ int bcmsdh_probe(struct device *dev)
 	sdhc->next = sdhcinfo;
 	sdhcinfo = sdhc;
 
+#if !defined(CONFIG_HAS_WAKELOCK) && (LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 36))
+	if (!device_init_wakeup(dev, 1))
+		pm_dev = dev;
+#endif /* !CONFIG_HAS_WAKELOCK */
+
 #if defined(CUSTOMER_HW4) && defined(CONFIG_PM_SLEEP) && defined(PLATFORM_SLP)
 	/* SLP_wakelock_alternative_code */
 	pm_dev = sdhc->dev;
@@ -261,6 +268,7 @@ err:
 		if (sdhc->sdh)
 			bcmsdh_detach(sdhc->osh, sdhc->sdh);
 		MFREE(osh, sdhc, sizeof(bcmsdh_hc_t));
+		sdhcinfo = sdhc_org;
 	}
 	if (osh)
 		osl_detach(osh);
@@ -275,22 +283,25 @@ int bcmsdh_remove(struct device *dev)
 	bcmsdh_hc_t *sdhc, *prev;
 	osl_t *osh;
 
-	sdhc = sdhcinfo;
+	int sdhcinfo_null = false;
 #if defined(CUSTOMER_HW4) && defined(CONFIG_PM_SLEEP) && defined(PLATFORM_SLP)
 	/* SLP_wakelock_alternative_code */
 	device_init_wakeup(pm_dev, 0);
 	printf("%s : device_init_wakeup(pm_dev) disable\n", __func__);
 #endif /* CUSTOMER_HW4 && CONFIG_PM_SLEEP && PLATFORM_SLP */
-	drvinfo.detach(sdhc->ch);
-	bcmsdh_detach(sdhc->osh, sdhc->sdh);
 
 	/* find the SDIO Host Controller state for this pdev and take it out from the list */
 	for (sdhc = sdhcinfo, prev = NULL; sdhc; sdhc = sdhc->next) {
 		if (sdhc->dev == (void *)dev) {
 			if (prev)
 				prev->next = sdhc->next;
-			else
-				sdhcinfo = NULL;
+			else {
+				if (sdhc->next != NULL) {
+					SDLX_MSG(("%s: more SDHC exist, should be care about it\n",
+						__FUNCTION__));
+				}
+				sdhcinfo_null = true;
+			}
 			break;
 		}
 		prev = sdhc;
@@ -299,6 +310,20 @@ int bcmsdh_remove(struct device *dev)
 		SDLX_MSG(("%s: failed\n", __FUNCTION__));
 		return 0;
 	}
+
+	/* detach ch & sdhc if dev is valid */
+	drvinfo.detach(sdhc->ch);
+	bcmsdh_detach(sdhc->osh, sdhc->sdh);
+
+#if !defined(CONFIG_HAS_WAKELOCK) && (LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 36))
+	if (pm_dev) {
+		device_init_wakeup(pm_dev, 0);
+		pm_dev = NULL;
+	}
+#endif /* !CONFIG_HAS_WAKELOCK */
+
+	if (sdhcinfo_null == true)
+		sdhcinfo = NULL;
 
 	/* release SDIO Host Controller info */
 	osh = sdhc->osh;
@@ -424,6 +449,10 @@ bcmsdh_pci_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 	/* match this pci device with what we support */
 	/* we can't solely rely on this to believe it is our SDIO Host Controller! */
 	if (!bcmsdh_chipmatch(pdev->vendor, pdev->device)) {
+		if (pdev->vendor == VENDOR_BROADCOM) {
+			SDLX_MSG(("%s: Unknown Broadcom device (vendor: %#x, device: %#x).\n",
+				__FUNCTION__, pdev->vendor, pdev->device));
+		}
 		return -ENODEV;
 	}
 
@@ -737,11 +766,10 @@ module_param(sd_f2_blocksize, int, 0);
 #ifdef BCMSDIOH_STD
 extern int sd_uhsimode;
 module_param(sd_uhsimode, int, 0);
-#endif
-
-#ifdef BCMSDIOH_TXGLOM
-extern uint sd_txglom;
-module_param(sd_txglom, uint, 0);
+extern uint sd_tuning_period;
+module_param(sd_tuning_period, uint, 0);
+extern int sd_delay_value;
+module_param(sd_delay_value, uint, 0);
 #endif
 
 #ifdef BCMSDH_MODULE

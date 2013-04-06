@@ -2,7 +2,7 @@
  * Broadcom SDIO/PCMCIA
  * Software-specific definitions shared between device and host side
  *
- * Copyright (C) 1999-2012, Broadcom Corporation
+ * Copyright (C) 1999-2013, Broadcom Corporation
  * 
  *      Unless you and Broadcom execute a separate written software license
  * agreement governing use of this software, this software is licensed to you
@@ -22,7 +22,7 @@
  * software in any way with any other Broadcom software provided under a license
  * other than the GPL, without Broadcom's express prior written consent.
  *
- * $Id: bcmsdpcm.h 291086 2011-10-21 01:17:24Z $
+ * $Id: bcmsdpcm.h 364353 2012-10-23 20:31:46Z $
  */
 
 #ifndef	_bcmsdpcm_h_
