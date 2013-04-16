@@ -758,6 +758,13 @@ config VP_A2220
 	  This option enables voice processing audience chip.Please enable this chip
 	  if you want to enable voice processing during call.
 
+config FASTCHG
+	boolean "USB Fast Charge"
+	default n
+	help
+	  This enables USB fast charge originally written by Chad Froebel and
+	  modified by imoseyon
+
 config ADC_STMPE811
 	tristate "ADC stmpe811 driver"
 	default n

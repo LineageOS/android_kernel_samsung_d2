@@ -136,7 +136,9 @@
 #define	ADC_CARDOCK		0x1d
 #define	ADC_OPEN		0x1f
 
+#ifdef CONFIG_FASTCHG
 extern int force_fast_charge;
+#endif
 
 int uart_connecting;
 EXPORT_SYMBOL(uart_connecting);
@@ -647,12 +649,17 @@ static int fsa9485_detect_dev(struct fsa9485_usbsw *usbsw)
 		if (val1 & DEV_USB || val2 & DEV_T2_USB_MASK) {
 			dev_info(&client->dev, "usb connect\n");
 
+#ifdef CONFIG_FASTCHG
 			if (pdata->usb_cb) {
 				if (pdata->charger_cb && force_fast_charge != 0) {
 				  dev_info(&client->dev, "[imoseyon] fastcharge\n");
 				  pdata->charger_cb(FSA9485_ATTACHED);
 				} else pdata->usb_cb(FSA9485_ATTACHED);
 			}
+#else
+			if (pdata->usb_cb)
+				pdata->usb_cb(FSA9485_ATTACHED);
+#endif
 
 			if (usbsw->mansw) {
 				ret = i2c_smbus_write_byte_data(client,
@@ -827,12 +834,17 @@ static int fsa9485_detect_dev(struct fsa9485_usbsw *usbsw)
 		/* USB */
 		if (usbsw->dev1 & DEV_USB ||
 				usbsw->dev2 & DEV_T2_USB_MASK) {
+#ifdef CONFIG_FASTCHG
 			if (pdata->usb_cb) {
 			  if (pdata->charger_cb && force_fast_charge != 0) {
                             dev_info(&client->dev, "[imoseyon] fastcharge detached\n");
-			    pdata->charger_cb(FSA9485_DETACHED); 
+			    pdata->charger_cb(FSA9485_DETACHED);
 			  } else pdata->usb_cb(FSA9485_DETACHED);
 			}
+#else
+			if (pdata->usb_cb)
+				pdata->usb_cb(FSA9485_DETACHED);
+#endif
 		} else if (usbsw->dev1 & DEV_USB_CHG) {
 			if (pdata->usb_cdp_cb)
 				pdata->usb_cdp_cb(FSA9485_DETACHED);
