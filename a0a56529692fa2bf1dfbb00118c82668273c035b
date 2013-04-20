@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "AAAAen//4Rs\u003d",
+        "filename": "drivers/net/wireless/bcmdhd/include/wlioctl.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 1787,
+      "author": {
+        "id": 444
+      },
+      "writtenOn": "2013-04-20T23:06:16Z",
+      "side": 0,
+      "message": "Try reverting this to get WEP working.",
+      "revId": "a0a56529692fa2bf1dfbb00118c82668273c035b",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    }
+  ]
+}
