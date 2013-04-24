@@ -171,7 +171,6 @@ static int max17040_read_word(struct i2c_client *client, int reg)
 	return ret;
 }
 
-#ifdef CONFIG_SEC_DEBUG_FUELGAUGE_LOG
 static void max17040_dump_regs(struct i2c_client *client)
 {
 	int i;
@@ -184,17 +183,20 @@ static void max17040_dump_regs(struct i2c_client *client)
 
 	for (i = 0x2; i < 0x1c; i += 2) {
 		data = max17040_read_word(client, i);
+#ifdef CONFIG_SEC_DEBUG_FUELGAUGE_LOG
 		sprintf(str+strlen(str), "%04xh,", data);
+#endif
 	}
 
 	data = max17040_read_word(client, 0xff);
+#ifdef CONFIG_SEC_DEBUG_FUELGAUGE_LOG
 	sprintf(str+strlen(str), "%04xh,", data);
+#endif
 
 	dev_info(&client->dev, "%s", str);
 
 	kfree(str);
 }
-#endif
 
 static void max17040_reset(struct i2c_client *client)
 {
@@ -461,9 +463,7 @@ static void max17040_work(struct work_struct *work)
 		max17040_read_word(chip->client, 0x1a),
 		chip->temperature);
 
-#ifdef CONFIG_SEC_DEBUG_FUELGAUGE_LOG
 	max17040_dump_regs(chip->client);
-#endif
 
 	if ((chip->soc >= 5) && (chip->is_wakelock_active)) {
 		pr_info("%s : unlock lowbat_wake lock, charging\n", __func__);
