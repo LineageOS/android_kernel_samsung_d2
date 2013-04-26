@@ -912,9 +912,13 @@ struct vfe32_ctrl_type {
 	spinlock_t  aec_ack_lock;
 	spinlock_t  awb_ack_lock;
 	spinlock_t  af_ack_lock;
+	spinlock_t  ihist_ack_lock;
+	spinlock_t  rs_ack_lock;
+	spinlock_t  cs_ack_lock;
 
 	uint32_t extlen;
 	void *extdata;
+	struct mutex vfe_lock;
 
 	int8_t start_ack_pending;
 	int8_t stop_ack_pending;
