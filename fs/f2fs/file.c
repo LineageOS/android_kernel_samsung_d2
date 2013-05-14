@@ -72,9 +72,10 @@ static int f2fs_vm_page_mkwrite(struct vm_area_struct *vma,
 	f2fs_put_dnode(&dn);
 	mutex_unlock_op(sbi, ilock);
 
+	file_update_time(vma->vm_file);
 	lock_page(page);
 	if (page->mapping != inode->i_mapping ||
-			page_offset(page) >= i_size_read(inode) ||
+			page_offset(page) > i_size_read(inode) ||
 			!PageUptodate(page)) {
 		unlock_page(page);
 		err = -EFAULT;
@@ -85,10 +86,7 @@ static int f2fs_vm_page_mkwrite(struct vm_area_struct *vma,
 	 * check to see if the page is mapped already (no holes)
 	 */
 	if (PageMappedToDisk(page))
-		goto out;
-
-	/* fill the page */
-	wait_on_page_writeback(page);
+		goto mapped;
 
 	/* page is wholly or partially inside EOF */
 	if (((page->index + 1) << PAGE_CACHE_SHIFT) > i_size_read(inode)) {
@@ -99,7 +97,9 @@ static int f2fs_vm_page_mkwrite(struct vm_area_struct *vma,
 	set_page_dirty(page);
 	SetPageUptodate(page);
 
-	file_update_time(vma->vm_file);
+mapped:
+	/* fill the page */
+	wait_on_page_writeback(page);
 out:
 	return block_page_mkwrite_return(err);
 }
@@ -108,6 +108,24 @@ static const struct vm_operations_struct f2fs_file_vm_ops = {
 	.fault        = filemap_fault,
 	.page_mkwrite = f2fs_vm_page_mkwrite,
 };
+
+static int get_parent_ino(struct inode *inode, nid_t *pino)
+{
+	struct dentry *dentry;
+
+	inode = igrab(inode);
+	dentry = d_find_any_alias(inode);
+	iput(inode);
+	if (!dentry)
+		return 0;
+
+	inode = igrab(dentry->d_parent->d_inode);
+	dput(dentry);
+
+	*pino = inode->i_ino;
+	iput(inode);
+	return 1;
+}
 
 int f2fs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
 {
@@ -121,7 +139,7 @@ int f2fs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
 		.for_reclaim = 0,
 	};
 
-	if (inode->i_sb->s_flags & MS_RDONLY)
+	if (f2fs_readonly(inode->i_sb))
 		return 0;
 
 	trace_f2fs_sync_file_enter(inode);
@@ -141,7 +159,7 @@ int f2fs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
 
 	if (!S_ISREG(inode->i_mode) || inode->i_nlink != 1)
 		need_cp = true;
-	else if (is_cp_file(inode))
+	else if (file_wrong_pino(inode))
 		need_cp = true;
 	else if (!space_for_roll_forward(sbi))
 		need_cp = true;
@@ -149,11 +167,23 @@ int f2fs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
 		need_cp = true;
 
 	if (need_cp) {
+		nid_t pino;
+
 		/* all the dirty node pages should be flushed for POR */
 		ret = f2fs_sync_fs(inode->i_sb, 1);
+		if (file_wrong_pino(inode) && inode->i_nlink == 1 &&
+					get_parent_ino(inode, &pino)) {
+			F2FS_I(inode)->i_pino = pino;
+			file_got_pino(inode);
+			mark_inode_dirty_sync(inode);
+			ret = f2fs_write_inode(inode, NULL);
+			if (ret)
+				goto out;
+		}
 	} else {
 		/* if there is no written node page, write its inode page */
 		while (!sync_node_pages(sbi, inode->i_ino, &wbc)) {
+			mark_inode_dirty_sync(inode);
 			ret = f2fs_write_inode(inode, NULL);
 			if (ret)
 				goto out;
@@ -176,7 +206,7 @@ static int f2fs_file_mmap(struct file *file, struct vm_area_struct *vma)
 	return 0;
 }
 
-static int truncate_data_blocks_range(struct dnode_of_data *dn, int count)
+int truncate_data_blocks_range(struct dnode_of_data *dn, int count)
 {
 	int nr_free = 0, ofs = dn->ofs_in_node;
 	struct f2fs_sb_info *sbi = F2FS_SB(dn->inode->i_sb);
@@ -193,10 +223,10 @@ static int truncate_data_blocks_range(struct dnode_of_data *dn, int count)
 
 		update_extent_cache(NULL_ADDR, dn);
 		invalidate_blocks(sbi, blkaddr);
-		dec_valid_block_count(sbi, dn->inode, 1);
 		nr_free++;
 	}
 	if (nr_free) {
+		dec_valid_block_count(sbi, dn->inode, nr_free);
 		set_page_dirty(dn->node_page);
 		sync_inode_page(dn);
 	}
@@ -299,7 +329,7 @@ void f2fs_truncate(struct inode *inode)
 	}
 }
 
-static int f2fs_getattr(struct vfsmount *mnt,
+int f2fs_getattr(struct vfsmount *mnt,
 			 struct dentry *dentry, struct kstat *stat)
 {
 	struct inode *inode = dentry->d_inode;
@@ -395,7 +425,7 @@ static void fill_zero(struct inode *inode, pgoff_t index,
 	f2fs_balance_fs(sbi);
 
 	ilock = mutex_lock_op(sbi);
-	page = get_new_data_page(inode, index, false);
+	page = get_new_data_page(inode, NULL, index, false);
 	mutex_unlock_op(sbi, ilock);
 
 	if (!IS_ERR(page)) {
@@ -583,10 +613,10 @@ long f2fs_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 	int ret;
 
 	switch (cmd) {
-	case FS_IOC_GETFLAGS:
+	case F2FS_IOC_GETFLAGS:
 		flags = fi->i_flags & FS_FL_USER_VISIBLE;
 		return put_user(flags, (int __user *) arg);
-	case FS_IOC_SETFLAGS:
+	case F2FS_IOC_SETFLAGS:
 	{
 		unsigned int oldflags;
 
