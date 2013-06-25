@@ -16,6 +16,9 @@
  *
  */
 
+#pragma GCC diagnostic ignored "-Wunused-variable"
+#pragma GCC diagnostic ignored "-Wunused-function"
+
 #include <linux/battery/sec_fuelgauge.h>
 
 static int max17048_write_reg(struct i2c_client *client, int reg, u8 value)
@@ -83,7 +86,7 @@ static int max17048_get_vcell(struct i2c_client *client)
 	return vcell;
 }
 
-/* soc should be 0.1% unit */
+/* soc should be 0.01% unit */
 static int max17048_get_soc(struct i2c_client *client)
 {
 	struct sec_fuelgauge_info *fuelgauge =
@@ -102,12 +105,11 @@ static int max17048_get_soc(struct i2c_client *client)
 		psoc64 = temp64 * 1953125;
 		psoc64 = div_u64(psoc64, divisor);
 		soc = psoc64 & 0xffff;
-		soc /= 10;
 	} else {
 		data[0] = temp & 0xff;
 		data[1] = (temp & 0xff00) >> 8;
 
-		soc = ((data[0] * 100) + (data[1] * 100 / 256)) / 10;
+		soc = (data[0] * 100) + (data[1] * 100 / 256);
 	}
 
 	dev_dbg(&client->dev,
@@ -312,7 +314,10 @@ bool sec_hal_fg_get_property(struct i2c_client *client,
 		break;
 		/* SOC (%) */
 	case POWER_SUPPLY_PROP_CAPACITY:
-		val->intval = max17048_get_soc(client);
+		if (val->intval == SEC_FUELGAUGE_CAPACITY_TYPE_RAW)
+			val->intval = max17048_get_soc(client);
+		else
+			val->intval = max17048_get_soc(client) / 10;
 		break;
 		/* Battery Temperature */
 	case POWER_SUPPLY_PROP_TEMP:

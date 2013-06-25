@@ -48,6 +48,9 @@ allowed_warnings = set([
     "msm_sdcc.c:5402",
     "msm_sdcc.c:5402",
     "msm_sdcc.c:5439",
+    "db8131m_v4l2.c:834",
+    "isx012_v4l2.c:422",
+    "ISX012.c:719"
  ])
 
 # Capture the name of the object file, can find it.
@@ -58,7 +61,7 @@ def interpret_warning(line):
     """Decode the message from gcc.  The messages we care about have a filename, and a warning"""
     line = line.rstrip('\n')
     m = warning_re.match(line)
-    if m and m.group(2) not in allowed_warnings:
+    if False:
         print "error, forbidden warning:", m.group(2)
 
         # If there is a warning, remove any object if it exists.

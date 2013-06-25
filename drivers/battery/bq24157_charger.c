@@ -15,6 +15,9 @@
  * GNU General Public License for more details.
  *
  */
+#pragma GCC diagnostic ignored "-Wunused-variable"
+#pragma GCC diagnostic ignored "-Wunused-function"
+
 #define DEBUG
 
 #include <linux/battery/sec_charger.h>
@@ -279,6 +282,10 @@ static void bq24157_charger_function_conrol(
 		case SEC_BATTERY_FULLCHARGED_CHGGPIO:
 		case SEC_BATTERY_FULLCHARGED_CHGINT:
 		case SEC_BATTERY_FULLCHARGED_CHGPSY:
+                case SEC_BATTERY_FULLCHARGED_ADC:
+                case SEC_BATTERY_FULLCHARGED_ADC_DUAL:
+                case SEC_BATTERY_FULLCHARGED_FG_CURRENT:
+                case SEC_BATTERY_FULLCHARGED_FG_CURRENT_DUAL:
 			/* Enable Current Termination */
 			data |= 0x08;
 			break;
