@@ -113,7 +113,7 @@ static int parse_text(char *src, int len)
 	int i, count, ret;
 	int index = 0;
 	int j = 0;
-	char *str_line[300];
+	static char *str_line[300];
 	char *sstart;
 	char *c;
 	unsigned int data1, data2, data3;
