@@ -219,7 +219,7 @@
 /*----------------------------------------------------------------------------*/
 /*                            Other Configuration                             */
 /*----------------------------------------------------------------------------*/
-//#undef YAS_SENSOR_KERNEL_DEVFILE_INTERFACE
+#undef YAS_SENSOR_KERNEL_DEVFILE_INTERFACE
 #define YAS_SUPPORT_FUSION_DRIVER           (0)
 #define YAS_SUPPORT_SOFTWARE_GYROSCOPE      (0)
 
