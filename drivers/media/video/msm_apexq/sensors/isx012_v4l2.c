@@ -62,6 +62,8 @@
 #include <linux/slab.h>
 #include <linux/uaccess.h>
 
+unsigned int system_rev = 0x8;
+
 static char *isx012_regs_table;
 static int isx012_regs_table_size;
 static int isx012_write_regs_from_sd(char *name);
@@ -1388,6 +1390,7 @@ static void isx012_set_flash(int mode)
 #if defined(CONFIG_MACH_EXPRESS)
 	if (mode == MOVIE_FLASH) {
 		CAM_DEBUG(" MOVIE FLASH ON");
+/*
 		if (system_rev >= BOARD_REV05) {
 			if ((system_rev == BOARD_REV05)\
 				|| (system_rev == BOARD_REV06))
@@ -1399,6 +1402,7 @@ static void isx012_set_flash(int mode)
 				sensor_platform_info->flash_en, 0);
 		}
 		if (system_rev >= BOARD_REV05) {
+*/
 			for (i = 1; i > 0; i--) {
 				gpio_set_value_cansleep(isx012_ctrl->
 					sensordata->sensor_platform_info->
@@ -1409,6 +1413,7 @@ static void isx012_set_flash(int mode)
 						flash_en, 1);
 				udelay(1);
 			}
+/*
 		} else {
 			for (i = FLASH_PULSE_CNT; i > 0; i--) {
 				gpio_set_value_cansleep(isx012_ctrl->
@@ -1424,7 +1429,9 @@ static void isx012_set_flash(int mode)
 				sensor_platform_info->flash_set, 1);
 			usleep(2 * 1000);
 		}
+*/
 	} else if (mode == CAPTURE_FLASH) {
+/*
 		if (system_rev >= BOARD_REV05) {
 			CAM_DEBUG(" CAPTURE FLASH ON EXPRESS REV 05");
 			if ((system_rev == BOARD_REV05)\
@@ -1432,6 +1439,7 @@ static void isx012_set_flash(int mode)
 				gpio_set_value_cansleep(isx012_ctrl->
 					sensordata->sensor_platform_info->
 						flash_set, 0);
+*/
 			for (i = 11 ; i > 0; i--) {
 				gpio_set_value_cansleep(isx012_ctrl->
 					sensordata->sensor_platform_info->
@@ -1443,6 +1451,7 @@ static void isx012_set_flash(int mode)
 				udelay(1);
 			}
 			usleep(2 * 1000);
+/*
 		} else {
 			CAM_DEBUG(" CAPTURE FLASH ON ");
 			gpio_set_value_cansleep(isx012_ctrl->sensordata->
@@ -1450,12 +1459,16 @@ static void isx012_set_flash(int mode)
 			gpio_set_value_cansleep(isx012_ctrl->sensordata->
 				sensor_platform_info->flash_set, 0);
 		}
+*/
 	} else {
+/*
 		if (system_rev >= BOARD_REV07) {
+*/
 			CAM_DEBUG(" FLASH OFF");
 			gpio_set_value_cansleep(isx012_ctrl->
 				sensordata->sensor_platform_info->
 					flash_en, 0);
+/*
 		} else {
 			CAM_DEBUG(" FLASH OFF");
 			gpio_set_value_cansleep(isx012_ctrl->
@@ -1465,6 +1478,7 @@ static void isx012_set_flash(int mode)
 				sensordata->sensor_platform_info->
 					flash_set, 0);
 		}
+*/
 	}
 #else
 	if (mode == MOVIE_FLASH) {
