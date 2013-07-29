@@ -261,6 +261,11 @@ struct msm_mctl_pp_info {
 	struct msm_mctl_pp_ctrl pp_ctrl;
 
 };
+struct msm_mctl_stats_t {
+	spinlock_t pmem_stats_spinlock;
+	struct msm_mctl_pp_info pmem_stats_list;
+
+};
 /* "Media Controller" represents a camera steaming session,
  * which consists of a "sensor" device and an "isp" device
  * (such as VFE, if needed), connected via an "IO" device,

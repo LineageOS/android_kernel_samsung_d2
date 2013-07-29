@@ -471,7 +471,7 @@ static int accel_do_calibrate(int enable)
 	for (i = 0; i < 100; i++) {
 		err = read_accel_raw_xyz(&data->cal_data);
 		if (err < 0) {
-			pr_err("%s: accel_read_accel_raw_xyz() "
+			pr_err("%s: read_accel_raw_xyz() "
 				"failed in the %dth loop\n", __func__, i);
 			return err;
 		}
