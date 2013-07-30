@@ -956,8 +956,9 @@ void limPostFTPreAuthRsp(tpAniSirGlobal pMac, tSirRetStatus status,
     PELOGE(limLog( pMac, LOGE, "Posted Auth Rsp to SME with status of 0x%x", status);)
 #endif
 #ifdef FEATURE_WLAN_DIAG_SUPPORT_LIM //FEATURE_WLAN_DIAG_SUPPORT
-    if( status == eHAL_STATUS_SUCCESS )
-        limDiagEventReport(pMac, WLAN_PE_DIAG_PREAUTH_DONE, psessionEntry, status, 0);
+    if (status == eSIR_SUCCESS)
+        limDiagEventReport(pMac, WLAN_PE_DIAG_PREAUTH_DONE, psessionEntry,
+                           status, 0);
 #endif
     limSysProcessMmhMsgApi(pMac, &mmhMsg,  ePROT);
 }
@@ -1078,7 +1079,11 @@ void limProcessMlmFTReassocReq(tpAniSirGlobal pMac, tANI_U32 *pMsgBuf,
     limDiagEventReport(pMac, WLAN_PE_DIAG_REASSOCIATING, psessionEntry, 0, 0);
 #endif
 
-
+    if (NULL == pMac->ft.ftPEContext.pAddBssReq)
+    {
+        limLog(pMac, LOGE, FL("pAddBssReq is NULL"));
+        return;
+    }
     if( eHAL_STATUS_SUCCESS != palAllocateMemory( pMac->hHdd, (void **)&pMlmReassocReq,
         sizeof(tLimMlmReassocReq)))
     {
@@ -1211,6 +1216,7 @@ void limProcessFTPreauthRspTimeout(tpAniSirGlobal pMac)
 
     // We have failed pre auth. We need to resume link and get back on
     // home channel.
+    limLog(pMac, LOG1, FL("FT Pre-Auth Time Out!!!!"));
 
     if((psessionEntry = peFindSessionBySessionId(pMac, pMac->lim.limTimers.gLimFTPreAuthRspTimer.sessionId))== NULL) 
     {

@@ -33,10 +33,14 @@
 #define MAX17048_VER_LSB	0x09
 #define MAX17048_RCOMP_MSB	0x0C
 #define MAX17048_RCOMP_LSB	0x0D
+#define MAX17048_OCV_MSB	0x0E
+#define MAX17048_OCV_LSB	0x0F
 #define MAX17048_CMD_MSB	0xFE
 #define MAX17048_CMD_LSB	0xFF
 
 #define RCOMP0_TEMP	20
+
+#define AVER_SAMPLE_CNT		5
 
 struct battery_data_t {
 	u8 RCOMP0;

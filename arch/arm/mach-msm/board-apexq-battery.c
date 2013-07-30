@@ -39,6 +39,25 @@
 #define SEC_BATTERY_PMIC_NAME ""
 
 static unsigned int sec_bat_recovery_mode;
+/* Note, the following types must be synced to those
+defined in power_supply.h */
+
+static sec_charging_current_t charging_current_table[] = {
+	{0,	0,	0,	0}, /* UNKNOWN */
+	{0,	0,	0,	0}, /* BATTERY */
+	{0,	0,	0,	0}, /* UPS */
+	{1000,	950,	200,	0}, /* MAINS */
+	{1000,	500,	200,	0}, /* USB */
+	{1000,	500,	200,	0}, /* USB_DCP */
+	{1000,	500,	200,	0}, /* USB_CDP */
+	{1000,	500,	200,	0}, /* USB ACA */
+	{0,	0,	0,	0}, /* BMS */
+	{1000,	700,	200,	0}, /* MISC */
+	{1000,	950,	200,	0}, /* CARDOCK */
+	{1000,	950,	200,	0}, /* UARTOFF */
+	{0,	0,	0,	0}, /* WIRELESS/DUMMY */
+	{0,	0,	0,	0}, /* OTG */
+};
 
 static int msm_otg_pmic_gpio_config(
 		int gpio, int direction, int pullup, int value)
@@ -217,7 +236,9 @@ static int sec_bat_check_cable_callback(void)
 	 * Add msleep to fix the this issue.
 	 */
 	msleep(500);
-	
+
+/* Detect dumb chargers as UARTOFF type */
+
 	if (current_cable_type ==
 		POWER_SUPPLY_TYPE_BATTERY &&
 		gpio_get_value_cansleep(
@@ -300,9 +321,11 @@ static bool sec_bat_check_callback(void)
 	}
 
 	pm8921_enable_batt_therm(0);
+#if defined(CONFIG_SEC_DEBUG_FUELGAUGE_LOG)
 	pr_info("%s : battery is %s (%d time%c)\n",
 		__func__, present ? "present" : "absent",
 		i, (i == 1) ? ' ' : 's');
+#endif
 
 	return present ? true : false;
 }
@@ -330,7 +353,7 @@ static bool sec_bat_get_temperature_callback(
 		union power_supply_propval *val) {return true; }
 static bool sec_fg_fuelalert_process(bool is_fuel_alerted) {return true; }
 
-static const int temp_table[][2] = {
+static const sec_bat_adc_table_data_t temp_table[] = {
 	{26546,	800},
 	{26832,	750},
 	{27208,	700},
@@ -375,22 +398,6 @@ static sec_bat_adc_region_t cable_adc_value_table[] = {
 	{0,	0},
 	{0,	0},
 	{0,	0},
-};
-
-static sec_charging_current_t charging_current_table[] = {
-	{0,	0,	0,	0},
-	{0,	0,	0,	0},
-	{0,	0,	0,	0},
-	{1000,	950,	200,	0},
-	{1000,	500,	200,	0},
-	{1000,	500,	200,	0},
-	{1000,	500,	200,	0},
-	{1000,	500,	200,	0},
-	{1000,	700,	200,	0},
-	{1000,	950,	200,	0},
-	{0,	0,	0,	0},
-	{0,	0,	0,	0},
-	{1000,	950,	200,	0},
 };
 
 static int polling_time_table[] = {
@@ -507,10 +514,10 @@ static sec_battery_platform_data_t sec_battery_pdata = {
 
 	/* Temperature check */
 	.thermal_source = SEC_BATTERY_THERMAL_SOURCE_ADC,
-	.temp_adc_table = (void *)temp_table,
+	.temp_adc_table = temp_table,
 	.temp_adc_table_size =
 		sizeof(temp_table)/sizeof(sec_bat_adc_table_data_t),
-	.temp_amb_adc_table = (void *)temp_table,
+	.temp_amb_adc_table = temp_table,
 	.temp_amb_adc_table_size =
 		sizeof(temp_table)/sizeof(sec_bat_adc_table_data_t),
 
@@ -530,12 +537,14 @@ static sec_battery_platform_data_t sec_battery_pdata = {
 	.temp_low_recovery_lpm = -10,
 
 	.full_check_type = SEC_BATTERY_FULLCHARGED_CHGPSY,
+	.full_check_type_2nd = SEC_BATTERY_FULLCHARGED_NONE,
 	.full_check_count = 3,
-	.full_check_adc_1st = 20000,
-	.full_check_adc_2nd = 20000,
 	.chg_gpio_full_check = 0,
 	.chg_polarity_full_check = 1,
-	.full_condition_type = 0,
+	.full_condition_type = SEC_BATTERY_FULL_CONDITION_SOC |
+		SEC_BATTERY_FULL_CONDITION_VCELL,
+	.full_condition_soc = 97,
+	.full_condition_vcell = 4280,
 
 	.recharge_condition_type =
 		SEC_BATTERY_RECHARGE_CONDITION_SOC |
@@ -563,6 +572,7 @@ static sec_battery_platform_data_t sec_battery_pdata = {
 	.capacity_min = 11,
 
 	/* Charger */
+	.charger_name = "sec-charger",
 	.chg_gpio_en = PM8921_GPIO_PM_TO_SYS(PMIC_GPIO_CHG_EN),
 	.chg_polarity_en = 0,
 	.chg_gpio_status = 0,

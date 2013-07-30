@@ -73,8 +73,19 @@ limProcessDeauthFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo, tpPESession p
 
     if ((eLIM_STA_ROLE == psessionEntry->limSystemRole) && (eLIM_SME_WT_DEAUTH_STATE == psessionEntry->limSmeState))
     {
-       MTRACE(macTrace(pMac, TRACE_CODE_INFO_LOG, 0, eLOG_PROC_DEAUTH_FRAME_SCENARIO));
-       return;
+        /*Every 15th deauth frame will be logged in kmsg*/
+        if(!(pMac->lim.deauthMsgCnt & 0xF))
+        {
+            PELOGE(limLog(pMac, LOGE,
+             FL("received Deauth frame in DEAUTH_WT_STATE"
+                "(already processing previously received DEAUTH frame).."
+                "Dropping this.. Deauth Failed %d \n "),++pMac->lim.deauthMsgCnt);)
+        }
+        else
+        {
+            pMac->lim.deauthMsgCnt++;
+        }
+        return;
     }
 
     if (limIsGroupAddr(pHdr->sa))
@@ -461,7 +472,12 @@ limProcessDeauthFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo, tpPESession p
                eSIR_MAC_UNSPEC_FAILURE_STATUS, psessionEntry);
         return;
     }
-
+    /* reset the deauthMsgCnt here since we are able to Process
+     * the deauth frame and sending up the indication as well */
+    if(pMac->lim.deauthMsgCnt != 0)
+    {
+        pMac->lim.deauthMsgCnt = 0;
+    }
     /// Deauthentication from peer MAC entity
     limPostSmeMessage(pMac, LIM_MLM_DEAUTH_IND, (tANI_U32 *) &mlmDeauthInd);
 

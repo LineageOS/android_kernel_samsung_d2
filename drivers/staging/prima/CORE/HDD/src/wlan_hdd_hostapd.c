@@ -638,6 +638,11 @@ VOS_STATUS hdd_hostapd_SAPEventCB( tpSap_Event pSapEvent, v_PVOID_t usrDataForCa
                 if (!VOS_IS_STATUS_SUCCESS(vos_status))
                    hddLog(LOGE, FL("Failed to start AP inactivity timer\n"));
             }
+            if (VOS_TIMER_STATE_RUNNING ==
+                    vos_timer_getCurrentState(&pHddCtx->hdd_p2p_go_conn_is_in_progress))
+            {
+                vos_timer_stop(&pHddCtx->hdd_p2p_go_conn_is_in_progress);
+            }
 #ifdef WLAN_OPEN_SOURCE
             if (wake_lock_active(&pHddCtx->sap_wake_lock))
             {
@@ -719,6 +724,11 @@ VOS_STATUS hdd_hostapd_SAPEventCB( tpSap_Event pSapEvent, v_PVOID_t usrDataForCa
                     else
                         VOS_ASSERT(vos_timer_getCurrentState(&pHddApCtx->hdd_ap_inactivity_timer) == VOS_TIMER_STATE_STOPPED);
                 }
+            }
+            if (VOS_TIMER_STATE_RUNNING ==
+                    vos_timer_getCurrentState(&pHddCtx->hdd_p2p_go_conn_is_in_progress))
+            {
+                vos_timer_stop(&pHddCtx->hdd_p2p_go_conn_is_in_progress);
             }
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,38))
             cfg80211_del_sta(dev,
@@ -1224,6 +1234,24 @@ static iw_softap_set_max_tx_power(struct net_device *dev,
         return -EIO;
     }
 
+    return 0;
+}
+
+int
+static iw_display_data_path_snapshot(struct net_device *dev,
+                        struct iw_request_info *info,
+                        union iwreq_data *wrqu, char *extra)
+{
+
+    /* Function intitiating dumping states of
+     *  HDD(WMM Tx Queues)
+     *  TL State (with Per Client infor)
+     *  DXE Snapshot (Called at the end of TL Snapshot)
+     */
+    hdd_adapter_t *pHostapdAdapter = (netdev_priv(dev));
+    hddLog(LOGE, "%s: called for SAP",__func__);
+    hdd_wmm_tx_snapshot(pHostapdAdapter);
+    WLANTL_TLDebugMessage(VOS_TRUE);
     return 0;
 }
 
@@ -2854,6 +2882,8 @@ static const struct iw_priv_args hostapd_private_args[] = {
         IW_PRIV_TYPE_INT| IW_PRIV_SIZE_FIXED | 1,
         0,
         "setTxMaxPower" },
+    { QCSAP_IOCTL_DATAPATH_SNAP_SHOT,
+      IW_PRIV_TYPE_NONE | IW_PRIV_TYPE_NONE, 0, "dataSnapshot" },
 };
 
 static const iw_handler hostapd_private[] = {
@@ -2879,6 +2909,7 @@ static const iw_handler hostapd_private[] = {
    [QCSAP_IOCTL_PRIV_GET_SOFTAP_LINK_SPEED - SIOCIWFIRSTPRIV]     = iw_get_softap_linkspeed,
    [QCSAP_IOCTL_SET_TX_POWER - SIOCIWFIRSTPRIV]   = iw_softap_set_tx_power,
    [QCSAP_IOCTL_SET_MAX_TX_POWER - SIOCIWFIRSTPRIV]   = iw_softap_set_max_tx_power,
+   [QCSAP_IOCTL_DATAPATH_SNAP_SHOT - SIOCIWFIRSTPRIV]  =   iw_display_data_path_snapshot,
 };
 const struct iw_handler_def hostapd_handler_def = {
    .num_standard     = sizeof(hostapd_handler) / sizeof(hostapd_handler[0]),

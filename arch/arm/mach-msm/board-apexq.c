@@ -56,11 +56,7 @@
 #include <mach/board.h>
 #include <mach/msm_iomap.h>
 #include <mach/msm_spi.h>
-#ifdef CONFIG_USB_MSM_OTG_72K
-#include <mach/msm_hsusb.h>
-#else
 #include <linux/usb/msm_hsusb.h>
-#endif
 #include <linux/usb/android.h>
 #include <mach/usbdiag.h>
 #include <mach/socinfo.h>
@@ -113,9 +109,6 @@
 #endif
 #ifdef CONFIG_PM8921_SEC_CHARGER
 #include <linux/mfd/pm8xxx/pm8921-sec-charger.h>
-#endif
-#ifdef CONFIG_BATTERY_MAX17040
-#include <linux/max17040_battery.h>
 #endif
 #if defined(CONFIG_KEYBOARD_ADP5588) || defined(CONFIG_KEYBOARD_ADP5588_MODULE)
 #include <linux/i2c/adp5588.h>
@@ -1123,67 +1116,9 @@ static void cypress_init(void)
 #endif
 
 #ifdef CONFIG_USB_SWITCH_FSA9485
-
 static enum cable_type_t set_cable_status;
 int msm8960_get_cable_status(void) {return (int)set_cable_status; }
 
-#ifdef CONFIG_MHL_NEW_CBUS_MSC_CMD
-static void fsa9485_mhl_cb(bool attached, int mhl_charge)
-{
-	union power_supply_propval value;
-	int i, ret = 0;
-	struct power_supply *psy;
-
-	pr_info("fsa9485_mhl_cb attached (%d), mhl_charge(%d)\n",
-			attached, mhl_charge);
-
-	if (attached) {
-		switch (mhl_charge) {
-		case 0:
-		case 1:
-			set_cable_status = CABLE_TYPE_USB;
-			break;
-		case 2:
-			set_cable_status = CABLE_TYPE_AC;
-			break;
-		}
-	} else {
-		set_cable_status = CABLE_TYPE_NONE;
-	}
-
-	for (i = 0; i < 10; i++) {
-		psy = power_supply_get_by_name("battery");
-		if (psy)
-			break;
-	}
-	if (i == 10) {
-		pr_err("%s: fail to get battery ps\n", __func__);
-		return;
-	}
-
-	switch (set_cable_status) {
-	case CABLE_TYPE_USB:
-		value.intval = POWER_SUPPLY_TYPE_USB;
-		break;
-	case CABLE_TYPE_AC:
-		value.intval = POWER_SUPPLY_TYPE_MAINS;
-		break;
-	case CABLE_TYPE_NONE:
-		value.intval = POWER_SUPPLY_TYPE_BATTERY;
-		break;
-	default:
-		pr_err("%s: invalid cable :%d\n", __func__, set_cable_status);
-		return;
-	}
-
-	ret = psy->set_property(psy, POWER_SUPPLY_PROP_ONLINE,
-		&value);
-	if (ret) {
-		pr_err("%s: fail to set power_suppy ONLINE property(%d)\n",
-			__func__, ret);
-	}
-}
-#else
 static void fsa9485_mhl_cb(bool attached)
 {
 	union power_supply_propval value;
@@ -1222,14 +1157,14 @@ static void fsa9485_mhl_cb(bool attached)
 			__func__, ret);
 	}
 }
-#endif
+
 static void fsa9485_otg_cb(bool attached)
 {
 	pr_info("fsa9485_otg_cb attached %d\n", attached);
 
 	if (attached) {
 		pr_info("%s set id state\n", __func__);
-//		msm_otg_set_id_state(attached);
+		msm_otg_set_id_state(attached);
 	}
 }
 
@@ -1243,10 +1178,10 @@ static void fsa9485_usb_cb(bool attached)
 	set_cable_status = attached ? CABLE_TYPE_USB : CABLE_TYPE_NONE;
 
 	if (system_rev >= 0x1) {
-//		if (attached) {
+		if (attached) {
 			pr_info("%s set vbus state\n", __func__);
 			msm_otg_set_vbus_state(attached);
-//		}
+		}
 	}
 
 	for (i = 0; i < 10; i++) {
@@ -1473,56 +1408,6 @@ static void fsa9485_usb_cdp_cb(bool attached)
 		pr_err("%s: fail to set power_suppy ONLINE property(%d)\n",
 			__func__, ret);
 	}
-
-}
-static void fsa9485_smartdock_cb(bool attached)
-{
-	union power_supply_propval value;
-	int i, ret = 0;
-	struct power_supply *psy;
-
-	pr_info("fsa9485_smartdock_cb attached %d\n", attached);
-
-	set_cable_status =
-		attached ? CABLE_TYPE_SMART_DOCK : CABLE_TYPE_NONE;
-
-	for (i = 0; i < 10; i++) {
-		psy = power_supply_get_by_name("battery");
-		if (psy)
-			break;
-	}
-	if (i == 10) {
-		pr_err("%s: fail to get battery ps\n", __func__);
-		return;
-	}
-
-	switch (set_cable_status) {
-	case CABLE_TYPE_SMART_DOCK:
-		value.intval = POWER_SUPPLY_TYPE_USB_CDP;
-		break;
-	case CABLE_TYPE_NONE:
-		value.intval = POWER_SUPPLY_TYPE_BATTERY;
-		break;
-	default:
-		pr_err("invalid status:%d\n", attached);
-		return;
-	}
-
-	ret = psy->set_property(psy, POWER_SUPPLY_PROP_ONLINE,
-		&value);
-	if (ret) {
-		pr_err("%s: fail to set power_suppy ONLINE property(%d)\n",
-			__func__, ret);
-	}
-
-//	msm_otg_set_smartdock_state(attached);
-}
-
-static void fsa9485_audio_dock_cb(bool attached)
-{
-	pr_info("fsa9485_audio_dock_cb attached %d\n", attached);
-
-//	msm_otg_set_smartdock_state(attached);
 }
 
 static int fsa9485_dock_init(void)
@@ -1540,32 +1425,12 @@ static int fsa9485_dock_init(void)
 
 int msm8960_get_cable_type(void)
 {
-#ifdef CONFIG_WIRELESS_CHARGING
-	union power_supply_propval value;
-	int i, ret = 0;
-	struct power_supply *psy;
-
-	for (i = 0; i < 10; i++) {
-		psy = power_supply_get_by_name("battery");
-		if (psy)
-			break;
-	}
-	if (i == 10) {
-		pr_err("%s: fail to get battery ps\n", __func__);
-		return -1;
-	}
-#endif
-
 	pr_info("cable type (%d) -----\n", set_cable_status);
 
 	if (set_cable_status != CABLE_TYPE_NONE) {
 		switch (set_cable_status) {
 		case CABLE_TYPE_MISC:
-#ifdef CONFIG_MHL_NEW_CBUS_MSC_CMD
-			fsa9485_mhl_cb(1 , 0);
-#else
 			fsa9485_mhl_cb(1);
-#endif
 			break;
 		case CABLE_TYPE_USB:
 			fsa9485_usb_cb(1);
@@ -1573,13 +1438,6 @@ int msm8960_get_cable_type(void)
 		case CABLE_TYPE_AC:
 			fsa9485_charger_cb(1);
 			break;
-#ifdef CONFIG_WIRELESS_CHARGING
-		case CABLE_TYPE_WPC:
-			value.intval = POWER_SUPPLY_TYPE_WPC;
-			ret = psy->set_property(psy, POWER_SUPPLY_PROP_ONLINE,
-				&value);
-			break;
-#endif
 		default:
 			pr_err("invalid status:%d\n", set_cable_status);
 			break;
@@ -1604,7 +1462,6 @@ static struct platform_device fsa_i2c_gpio_device = {
 };
 
 static struct fsa9485_platform_data fsa9485_pdata = {
-	.otg_cb = fsa9485_otg_cb,
 	.usb_cb = fsa9485_usb_cb,
 	.charger_cb = fsa9485_charger_cb,
 	.uart_cb = fsa9485_uart_cb,
@@ -1612,8 +1469,6 @@ static struct fsa9485_platform_data fsa9485_pdata = {
 	.dock_cb = fsa9485_dock_cb,
 	.dock_init = fsa9485_dock_init,
 	.usb_cdp_cb = fsa9485_usb_cdp_cb,
-	.smartdock_cb = fsa9485_smartdock_cb,
-	.audio_dock_cb = fsa9485_audio_dock_cb,
 };
 
 static struct i2c_board_info micro_usb_i2c_devices_info[] __initdata = {
@@ -1791,70 +1646,6 @@ static struct i2c_board_info mhl_i2c_board_info[] = {
 		I2C_BOARD_INFO("sii9234_cbus", 0xC8>>1),
 		.platform_data = &sii9234_pdata,
 	},
-};
-#endif
-
-#ifdef CONFIG_BATTERY_MAX17040
-void max17040_hw_init(void)
-{
-	gpio_tlmm_config(GPIO_CFG(GPIO_FUELGAUGE_I2C_SCL, 0, GPIO_CFG_OUTPUT,
-		 GPIO_CFG_NO_PULL, GPIO_CFG_2MA), 1);
-	gpio_tlmm_config(GPIO_CFG(GPIO_FUELGAUGE_I2C_SDA,  0, GPIO_CFG_OUTPUT,
-		 GPIO_CFG_NO_PULL, GPIO_CFG_2MA), 1);
-	gpio_set_value(GPIO_FUELGAUGE_I2C_SCL, 1);
-	gpio_set_value(GPIO_FUELGAUGE_I2C_SDA, 1);
-
-	gpio_tlmm_config(GPIO_CFG(GPIO_FUEL_INT,  0, GPIO_CFG_INPUT,
-	 GPIO_CFG_NO_PULL, GPIO_CFG_2MA), 1);
-}
-
-static int max17040_low_batt_cb(void)
-{
-	pr_err("%s: Low battery alert\n", __func__);
-
-#ifdef CONFIG_BATTERY_SEC
-	struct power_supply *psy = power_supply_get_by_name("battery");
-	union power_supply_propval value;
-
-	if (!psy) {
-		pr_err("%s: fail to get battery ps\n", __func__);
-		return -ENODEV;
-	}
-
-	value.intval = POWER_SUPPLY_CAPACITY_LEVEL_CRITICAL;
-	return psy->set_property(psy, POWER_SUPPLY_PROP_CAPACITY_LEVEL, &value);
-#else
-	return 0;
-#endif
-}
-
-static struct max17040_platform_data max17043_pdata = {
-	.hw_init = max17040_hw_init,
-	.low_batt_cb = max17040_low_batt_cb,
-	.rcomp_value = 0xe71f,
-};
-
-static struct i2c_gpio_platform_data fuelgauge_i2c_gpio_data = {
-	.sda_pin		= GPIO_FUELGAUGE_I2C_SDA,
-	.scl_pin		= GPIO_FUELGAUGE_I2C_SCL,
-	.udelay			= 2,
-	.sda_is_open_drain	= 0,
-	.scl_is_open_drain	= 0,
-	.scl_is_output_only	= 0,
-};
-
-static struct platform_device fuelgauge_i2c_gpio_device = {
-	.name			= "i2c-gpio",
-	.id			= MSM_FUELGAUGE_I2C_BUS_ID,
-	.dev.platform_data	= &fuelgauge_i2c_gpio_data,
-};
-
-static struct i2c_board_info fuelgauge_i2c_board_info[] = {
-	{
-		I2C_BOARD_INFO("max17040", (0x6D >> 1)),
-		.platform_data = &max17043_pdata,
-		.irq		= MSM_GPIO_TO_INT(GPIO_FUEL_INT),
-	}
 };
 #endif
 
@@ -3208,9 +2999,6 @@ static struct msm_spi_platform_data msm8960_qup_spi_gsbi1_pdata = {
 };
 #endif
 
-#ifdef CONFIG_USB_MSM_OTG_72K
-static struct msm_otg_platform_data msm_otg_pdata;
-#else
 static int msm_hsusb_vbus_power(bool on)
 {
 	int rc;
@@ -3227,14 +3015,14 @@ static int msm_hsusb_vbus_power(bool on)
 	};
 
 	if (vbus_is_on == on)
-		return 0;
+		return -EBUSY;
 
 	if (on) {
 		mvs_otg_switch = regulator_get(&msm8960_device_otg.dev,
 					       "vbus_otg");
 		if (IS_ERR(mvs_otg_switch)) {
 			pr_err("Unable to get mvs_otg_switch\n");
-			return -1;
+			return -EBUSY;
 		}
 
 		rc = gpio_request(PM8921_GPIO_PM_TO_SYS(PMIC_GPIO_OTG_EN),
@@ -3271,7 +3059,7 @@ free_usb_5v_en:
 put_mvs_otg:
 		regulator_put(mvs_otg_switch);
 		vbus_is_on = false;
-                return 0;
+		return -EBUSY;
 }
 
 static int phy_settings[] = {
@@ -3533,7 +3321,7 @@ static struct msm_spm_platform_data msm_spm_data[] __initdata = {
 	[1] = {
 		.reg_base_addr = MSM_SAW1_BASE,
 		.reg_init_values[MSM_SPM_REG_SAW2_CFG] = 0x1F,
-#if defined(CONFIG_MSM_AVS_HW)
+#if 0//defined(CONFIG_MSM_AVS_HW)
 		.reg_init_values[MSM_SPM_REG_SAW2_AVS_CTL] = 0x58589464,
 		.reg_init_values[MSM_SPM_REG_SAW2_AVS_HYSTERESIS] = 0x00020000,
 #endif
@@ -4653,8 +4441,8 @@ static struct platform_device *common_devices[] __initdata = {
 
 static struct platform_device *apexq_devices[] __initdata = {
 	&msm_8960_q6_lpass,
-	&msm_8960_q6_mss_sw,
 	&msm_8960_q6_mss_fw,
+	&msm_8960_q6_mss_sw,
 	&msm_8960_riva,
 	&msm_pil_tzapps,
 	&msm_pil_vidc,
@@ -4705,9 +4493,6 @@ static struct platform_device *apexq_devices[] __initdata = {
 #endif
 #ifdef CONFIG_KEYBOARD_CYPRESS_TOUCH_236
 	&touchkey_i2c_gpio_device,
-#endif
-#ifdef CONFIG_BATTERY_MAX17040
-	&fuelgauge_i2c_gpio_device,
 #endif
 #ifdef CONFIG_SAMSUNG_JACK
 	&sec_device_jack,
@@ -5014,22 +4799,6 @@ static struct i2c_registry msm8960_i2c_devices[] __initdata = {
 	ARRAY_SIZE(touchkey_i2c_devices_info),
 },
 #endif
-#ifdef CONFIG_BATTERY_MAX17040
-	{
-		I2C_SURF | I2C_FFA | I2C_FLUID,
-		MSM_FUELGAUGE_I2C_BUS_ID,
-		fuelgauge_i2c_board_info,
-		ARRAY_SIZE(fuelgauge_i2c_board_info),
-	},
-#endif
-#ifdef CONFIG_VP_A2220
-	{
-		I2C_SURF | I2C_FFA | I2C_FLUID,
-		MSM_A2220_I2C_BUS_ID,
-		a2220_device,
-		ARRAY_SIZE(a2220_device),
-	},
-#endif
 #ifdef CONFIG_NFC_PN544
 	{
 		I2C_SURF | I2C_FFA | I2C_FLUID,
@@ -5038,7 +4807,6 @@ static struct i2c_registry msm8960_i2c_devices[] __initdata = {
 		ARRAY_SIZE(pn544_info),
 	},
 #endif /* CONFIG_NFC_PN544	*/
-
 	{
 		I2C_LIQUID,
 		MSM_8960_GSBI3_QUP_I2C_BUS_ID,
@@ -5091,7 +4859,6 @@ static struct i2c_registry msm8960_i2c_devices[] __initdata = {
 		ARRAY_SIZE(tabla_device_info),
 	},
 #endif
-
 #if defined(CONFIG_KEYBOARD_ADP5588) || defined(CONFIG_KEYBOARD_ADP5588_MODULE)
 	{
 	I2C_SURF | I2C_FFA | I2C_FLUID,
@@ -5498,4 +5265,3 @@ MACHINE_START(APEXQ, "SAMSUNG APEXQ")
 	.init_very_early = msm8960_early_memory,
 	.restart = msm_restart,
 MACHINE_END
-#endif

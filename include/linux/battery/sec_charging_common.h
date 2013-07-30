@@ -77,9 +77,9 @@ enum sec_battery_adc_channel {
 enum sec_battery_charging_mode {
 	/* no charging */
 	SEC_BATTERY_CHARGING_NONE = 0,
-	/* normal charging */
-	SEC_BATTERY_CHARGING_NORMAL,
-	/* charging after 1st full-check*/
+	/* 1st charging */
+	SEC_BATTERY_CHARGING_1ST,
+	/* 2nd charging */
 	SEC_BATTERY_CHARGING_2ND,
 	/* recharging */
 	SEC_BATTERY_CHARGING_RECHARGING,
@@ -115,14 +115,15 @@ enum sec_battery_monitor_polling {
 
 /* full charged check : POWER_SUPPLY_PROP_STATUS */
 enum sec_battery_full_charged {
+	SEC_BATTERY_FULLCHARGED_NONE = 0,
 	/* current check by ADC */
 	SEC_BATTERY_FULLCHARGED_ADC,
-	/* current check by ADC and dual check (1st, 2nd top-off) */
-	SEC_BATTERY_FULLCHARGED_ADC_DUAL,
 	/* fuel gauge current check */
 	SEC_BATTERY_FULLCHARGED_FG_CURRENT,
-	/* fuel gauge current check and dual check (1st, 2nd top-off) */
-	SEC_BATTERY_FULLCHARGED_FG_CURRENT_DUAL,
+	/* time check */
+	SEC_BATTERY_FULLCHARGED_TIME,
+	/* SOC check */
+	SEC_BATTERY_FULLCHARGED_SOC,
 	/* charger GPIO, NO additional full condition */
 	SEC_BATTERY_FULLCHARGED_CHGGPIO,
 	/* charger interrupt, NO additional full condition */
@@ -139,22 +140,26 @@ enum sec_battery_full_charged {
   * full-charged by absolute-timer only in high voltage
   */
 #define SEC_BATTERY_FULL_CONDITION_NOTIMEFULL	1
+/* SEC_BATTERY_FULL_CONDITION_SLEEPINFULL
+  * change polling time as sleep polling time even in full-charged
+  */
+#define SEC_BATTERY_FULL_CONDITION_SLEEPINFULL	2
 /* SEC_BATTERY_FULL_CONDITION_SOC
   * use capacity for full-charged check
   */
-#define SEC_BATTERY_FULL_CONDITION_SOC		2
+#define SEC_BATTERY_FULL_CONDITION_SOC		4
 /* SEC_BATTERY_FULL_CONDITION_VCELL
   * use VCELL for full-charged check
   */
-#define SEC_BATTERY_FULL_CONDITION_VCELL	4
+#define SEC_BATTERY_FULL_CONDITION_VCELL	8
 /* SEC_BATTERY_FULL_CONDITION_AVGVCELL
   * use average VCELL for full-charged check
   */
-#define SEC_BATTERY_FULL_CONDITION_AVGVCELL	8
+#define SEC_BATTERY_FULL_CONDITION_AVGVCELL	16
 /* SEC_BATTERY_FULL_CONDITION_OCV
   * use OCV for full-charged check
   */
-#define SEC_BATTERY_FULL_CONDITION_OCV		16
+#define SEC_BATTERY_FULL_CONDITION_OCV		32
 
 /* recharge check condition type (can be used overlapped) */
 #define sec_battery_recharge_condition_t unsigned int
@@ -236,18 +241,26 @@ enum sec_battery_temp_check {
   * but internal charging logic is working
   */
 #define SEC_BATTERY_CABLE_CHECK_NOUSBCHARGE		1
+/* SEC_BATTERY_CABLE_CHECK_NOINCOMPATIBLECHARGE
+  * for incompatible charger
+  * (Not compliant to USB specification,
+  *  cable type is POWER_SUPPLY_TYPE_UNKNOWN),
+  * do NOT charge and show message to user
+  * (only for VZW)
+  */
+#define SEC_BATTERY_CABLE_CHECK_NOINCOMPATIBLECHARGE	2
 /* SEC_BATTERY_CABLE_CHECK_PSY
   * check cable by power supply set_property
   */
-#define SEC_BATTERY_CABLE_CHECK_PSY				2
+#define SEC_BATTERY_CABLE_CHECK_PSY			4
 /* SEC_BATTERY_CABLE_CHECK_INT
   * check cable by interrupt
   */
-#define SEC_BATTERY_CABLE_CHECK_INT				4
+#define SEC_BATTERY_CABLE_CHECK_INT			8
 /* SEC_BATTERY_CABLE_CHECK_POLLING
   * check cable by GPIO polling
   */
-#define SEC_BATTERY_CABLE_CHECK_POLLING			8
+#define SEC_BATTERY_CABLE_CHECK_POLLING			16
 
 /* check cable source (can be used overlapped) */
 #define sec_battery_cable_source_t unsigned int
@@ -339,9 +352,7 @@ struct sec_battery_platform_data {
 	bool (*fg_gpio_init)(void);
 	bool (*chg_gpio_init)(void);
 	bool (*is_lpm)(void);
-	int jig_irq;
-	unsigned long jig_irq_attr;
-	bool (*check_jig_status) (void);
+	bool (*check_jig_status)(void);
 	bool (*is_interrupt_cable_check_possible)(int);
 	int (*check_cable_callback)(void);
 	int (*get_cable_from_extended_cable_type)(int);
@@ -381,6 +392,8 @@ struct sec_battery_platform_data {
 	int bat_polarity_ta_nconnected;
 	int bat_irq;
 	unsigned long bat_irq_attr;
+	int jig_irq;
+	unsigned long jig_irq_attr;
 	sec_battery_cable_check_t cable_check_type;
 	sec_battery_cable_source_t cable_source_type;
 
@@ -409,9 +422,9 @@ struct sec_battery_platform_data {
 	sec_battery_ovp_uvlo_t ovp_uvlo_check_type;
 
 	sec_battery_thermal_source_t thermal_source;
-	sec_bat_adc_table_data_t *temp_adc_table;
+	const sec_bat_adc_table_data_t *temp_adc_table;
 	unsigned int temp_adc_table_size;
-	sec_bat_adc_table_data_t *temp_amb_adc_table;
+	const sec_bat_adc_table_data_t *temp_amb_adc_table;
 	unsigned int temp_amb_adc_table_size;
 
 	sec_battery_temp_check_t temp_check_type;
@@ -434,12 +447,14 @@ struct sec_battery_platform_data {
 	int temp_low_threshold_lpm;
 	int temp_low_recovery_lpm;
 
+	/* If these is NOT full check type or NONE full check type,
+	 * it is skipped
+	 */
+	/* 1st full check */
 	sec_battery_full_charged_t full_check_type;
+	/* 2nd full check */
+	sec_battery_full_charged_t full_check_type_2nd;
 	unsigned int full_check_count;
-	/* ADC for single termination */
-	unsigned int full_check_adc_1st;
-	/* ADC for dual termination */
-	unsigned int full_check_adc_2nd;
 	int chg_gpio_full_check;
 	/* 1 : active high, 0 : active low */
 	int chg_polarity_full_check;
@@ -511,6 +526,8 @@ static inline struct power_supply *get_power_supply_by_name(char *name)
 		return power_supply_get_by_name(name);
 }
 
+
+#if defined(CONFIG_SEC_DEBUG_FUELGAUGE_LOG)
 #define psy_do_property(name, function, property, value) \
 {	\
 	struct power_supply *psy;	\
@@ -529,15 +546,32 @@ static inline struct power_supply *get_power_supply_by_name(char *name)
 		}	\
 	}	\
 }
+#else
+#define psy_do_property(name, function, property, value) \
+{	\
+	struct power_supply *psy;	\
+	int ret;	\
+	psy = get_power_supply_by_name((name));	\
+	if (!psy) {	\
+		value.intval = 0;	\
+	} else {	\
+		ret = psy->function##_property(psy, (property), &(value)); \
+		if (ret < 0) {	\
+			value.intval = 0;	\
+		}	\
+	}	\
+}
+#endif
+
 
 #define adc_init(pdev, pdata, channel)	\
-	((pdata)->adc_api)[((pdata)->adc_type[(channel)])].init((pdev))
+	(((pdata)->adc_api)[((pdata)->adc_type[(channel)])].init((pdev)))
 
 #define adc_exit(pdata, channel)	\
-	((pdata)->adc_api)[((pdata)->adc_type[(channel)])].exit()
+	(((pdata)->adc_api)[((pdata)->adc_type[(channel)])].exit())
 
 #define adc_read(pdata, channel)	\
-	((pdata)->adc_api)[((pdata)->adc_type[(channel)])].read((channel))
+	(((pdata)->adc_api)[((pdata)->adc_type[(channel)])].read((channel)))
 
 #define get_battery_data(driver)	\
 	(((struct battery_data_t *)(driver)->pdata->battery_data)	\

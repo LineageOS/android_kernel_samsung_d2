@@ -113,7 +113,6 @@ typedef struct _smeConfigParams
 #if  defined (WLAN_FEATURE_VOWIFI_11R) || defined (FEATURE_WLAN_CCX) || defined(FEATURE_WLAN_LFR)
     tANI_U8       isFastTransitionEnabled;
     tANI_U8       RoamRssiDiff;
-    tANI_BOOLEAN  isWESModeEnabled;
 #endif
     tANI_BOOLEAN  fScanOffload;
 } tSmeConfigParams, *tpSmeConfigParams;
@@ -779,6 +778,16 @@ eHalStatus sme_GetStatistics(tHalHandle hHal, eCsrStatsRequesterType requesterId
                              tANI_U32 periodicity, tANI_BOOLEAN cache, 
                              tANI_U8 staId, void *pContext);
 
+/* ---------------------------------------------------------------------------
+    \fn smeGetTLSTAState
+    \helper function to get teh TL STA State whenever the function is called.
+
+    \param staId - The staID to be passed to the TL
+            to get the relevant TL STA State
+    \return the state as tANI_U16
+  ---------------------------------------------------------------------------*/
+tANI_U16 smeGetTLSTAState(tHalHandle hHal, tANI_U8 staId);
+
 eHalStatus sme_GetRssi(tHalHandle hHal, 
                              tCsrRssiCallback callback, 
                              tANI_U8 staId, tCsrBssid bssId, void *pContext, void* pVosContext);
@@ -1419,6 +1428,49 @@ eHalStatus sme_ChangeCountryCode( tHalHandle hHal,
                                   void *pContext,
                                   void* pVosContext,
                                   tAniBool countryFromUserSpace );
+
+/* ---------------------------------------------------------------------------
+
+    \fn sme_DHCPStartInd
+
+    \brief Indicate FW about DHCP start event.
+
+    \param hHal - The handle returned by macOpen.
+
+    \param device_mode the mode of the device
+
+    \param macAddr the macAddress of the devices
+
+    \return eHalStatus  SUCCESS.
+
+                         FAILURE or RESOURCES  The API finished and failed.
+
+  -------------------------------------------------------------------------------*/
+
+eHalStatus sme_DHCPStartInd( tHalHandle hHal,
+                             tANI_U8 device_mode,
+                             tANI_U8 *macAddr );
+
+/* ---------------------------------------------------------------------------
+
+    \fn sme_DHCPStopInd
+
+    \brief Indicate FW about DHCP stop event.
+
+    \param hHal - The handle returned by macOpen.
+
+    \param device_mode the mode of the device
+
+    \param macAddr the macAddress of the devices
+
+    \return eHalStatus  SUCCESS.
+
+                         FAILURE or RESOURCES  The API finished and failed.
+
+ -------------------------------------------------------------------------------*/
+eHalStatus sme_DHCPStopInd( tHalHandle hHal,
+                            tANI_U8 device_mode,
+                            tANI_U8 *macAddr );
 
 
 /* ---------------------------------------------------------------------------
@@ -2363,17 +2415,6 @@ eHalStatus sme_UpdateFastTransitionEnabled(tHalHandle hHal,
         v_BOOL_t isFastTransitionEnabled);
 
 /* ---------------------------------------------------------------------------
-    \fn sme_UpdateWESMode
-    \brief  Update WESMode
-            This function is called through dynamic setConfig callback function
-            to configure isWESModeEnabled
-    \param  hHal - HAL handle for device
-    \param  isWESModeEnabled - Enable/Disable WES Mode
-    \- return Success or failure
-    -------------------------------------------------------------------------*/
-eHalStatus sme_UpdateWESMode(tHalHandle hHal, v_BOOL_t isWESModeEnabled);
-
-/* ---------------------------------------------------------------------------
     \fn sme_SetRoamScanControl
     \brief  Set roam scan control
             This function is called to set roam scan control
@@ -2662,15 +2703,6 @@ eHalStatus sme_GetCountryRevision(tHalHandle hHal, tANI_U8 *pRevision);
   \sa
   --------------------------------------------------------------------------*/
 tANI_BOOLEAN sme_getIsCcxFeatureEnabled(tHalHandle hHal);
-
-/*--------------------------------------------------------------------------
-  \brief sme_getWESMode() - getWES Mode
-  This is a synchronous call
-  \param hHal - The handle returned by macOpen.
-  \return v_U8_t - WES Mode Enabled(1)/Disabled(0)
-  \sa
-  --------------------------------------------------------------------------*/
-v_BOOL_t sme_GetWESMode(tHalHandle hHal);
 
 /*--------------------------------------------------------------------------
   \brief sme_GetRoamScanControl() - get scan control

@@ -498,6 +498,17 @@ typedef struct
 } WDI_CoexIndType;
 
 /*---------------------------------------------------------------------------
+  WDI_DHCPInd
+---------------------------------------------------------------------------*/
+
+typedef struct
+{
+  wpt_uint8       device_mode;
+  wpt_uint8       macAddr[WDI_MAC_ADDR_LEN];
+}WDI_DHCPInd;
+
+/*---------------------------------------------------------------------------
+
   WDI_MacSSid
 ---------------------------------------------------------------------------*/
 typedef struct 
@@ -2154,8 +2165,8 @@ typedef struct
 ---------------------------------------------------------------------------*/
 typedef struct
 {
-   /*BSS Index of the BSS*/
-   wpt_uint8      ucBssIdx;
+  /*BSS Index of the BSS*/
+  wpt_uint16      ucBssIdx;
 
   /* Boolean to indicate if EDCA params are valid. UMAC might not have valid 
     EDCA params or might not desire to apply EDCA params during config BSS. 
@@ -9443,6 +9454,40 @@ WDI_SetPowerParamsReq
   WDI_SetPowerParamsReqParamsType* pwdiPowerParamsReqParams,
   WDI_SetPowerParamsCb             wdiPowerParamsCb,
   void*                            pUserData
+);
+/**
+ @brief WDI_dhcpStartInd
+       Forward the DHCP Start event
+
+ @param
+
+ wdiDHCPInd: device mode and MAC address is passed
+
+ @see
+ @return Result of the function call
+*/
+
+WDI_Status
+WDI_dhcpStartInd
+(
+  WDI_DHCPInd *wdiDHCPInd
+);
+/**
+ @brief WDI_dhcpStopReq
+       Forward the DHCP Stop event
+
+ @param
+
+     wdiDHCPInd: device mode and MAC address is passed
+
+ @see
+ @return Result of the function call
+*/
+
+WDI_Status
+WDI_dhcpStopInd
+(
+  WDI_DHCPInd *wdiDHCPInd
 );
 
 #ifdef WLAN_FEATURE_GTK_OFFLOAD

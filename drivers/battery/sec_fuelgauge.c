@@ -9,10 +9,25 @@
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation.
  */
-
-#define DEBUG
-
 #include <linux/battery/sec_fuelgauge.h>
+static struct device_attribute sec_fg_attrs[] = {
+	SEC_FG_ATTR(reg),
+	SEC_FG_ATTR(data),
+	SEC_FG_ATTR(regs),
+};
+
+static enum power_supply_property sec_fuelgauge_props[] = {
+	POWER_SUPPLY_PROP_STATUS,
+	POWER_SUPPLY_PROP_VOLTAGE_NOW,
+	POWER_SUPPLY_PROP_VOLTAGE_AVG,
+	POWER_SUPPLY_PROP_CURRENT_NOW,
+	POWER_SUPPLY_PROP_CURRENT_AVG,
+	POWER_SUPPLY_PROP_CHARGE_FULL,
+	POWER_SUPPLY_PROP_ENERGY_NOW,
+	POWER_SUPPLY_PROP_CAPACITY,
+	POWER_SUPPLY_PROP_TEMP,
+	POWER_SUPPLY_PROP_TEMP_AMBIENT,
+};
 
 /* capacity is  0.1% unit */
 static void sec_fg_get_scaled_capacity(
@@ -22,10 +37,11 @@ static void sec_fg_get_scaled_capacity(
 	val->intval = (val->intval < fuelgauge->pdata->capacity_min) ?
 		0 : ((val->intval - fuelgauge->pdata->capacity_min) * 1000 /
 		(fuelgauge->capacity_max - fuelgauge->pdata->capacity_min));
-
+#if defined(CONFIG_SEC_DEBUG_FUELGAUGE_LOG)
 	dev_dbg(&fuelgauge->client->dev,
 		"%s: scaled capacity (%d.%d)\n",
 		__func__, val->intval/10, val->intval%10);
+#endif
 }
 
 /* capacity is integer */
@@ -33,11 +49,37 @@ static void sec_fg_get_atomic_capacity(
 				struct sec_fuelgauge_info *fuelgauge,
 				union power_supply_propval *val)
 {
+#if 0
 	if (fuelgauge->capacity_old < val->intval)
 		val->intval = fuelgauge->capacity_old + 1;
 	else if (fuelgauge->capacity_old > val->intval)
 		val->intval = fuelgauge->capacity_old - 1;
+#endif
+	int value = 0;
+#if defined(CONFIG_SEC_DEBUG_FUELGAUGE_LOG)
+	dev_info(&fuelgauge->client->dev,
+			"%s: old : %d, current : %d\n",
+			__func__, fuelgauge->capacity_old, val->intval);
+#endif
+	if(fuelgauge->capacity_old > val->intval) {
+		value = (int)fuelgauge->capacity_old - val->intval;
+	}
+	else {
+		value = val->intval - (int)fuelgauge->capacity_old;
+	}
 
+	if(value >= 10) {
+		/* is in the quickstart? */
+		if(!fuelgauge->is_reset) {
+			dev_err(&fuelgauge->client->dev,
+					"%s: SOC error panic\n", __func__);
+			if (!sec_hal_fg_get_property(fuelgauge->client,
+						POWER_SUPPLY_PROP_MANUFACTURER, val))
+				return;
+		}
+		else
+			fuelgauge->is_reset = false;
+	}
 	/* updated old capacity */
 	fuelgauge->capacity_old = val->intval;
 }
@@ -79,7 +121,15 @@ static int sec_fg_get_property(struct power_supply *psy,
 				val->intval = 0;
 
 			/* get only integer part */
-				val->intval /= 10;
+			val->intval /= 10;
+
+			/* check whether doing the wake_unlock */
+			if ((val->intval > fuelgauge->pdata->fuel_alert_soc) &&
+					fuelgauge->is_fuel_alerted) {
+				wake_unlock(&fuelgauge->fuel_alert_wake_lock);
+				sec_hal_fg_fuelalert_init(fuelgauge->client,
+						fuelgauge->pdata->fuel_alert_soc);
+			}
 
 			/* (Only for atomic capacity)
 			 * In initial time, capacity_old is 0.
@@ -96,8 +146,9 @@ static int sec_fg_get_property(struct power_supply *psy,
 			}
 
 			if (fuelgauge->pdata->capacity_calculation_type &
-				SEC_FUELGAUGE_CAPACITY_TYPE_ATOMIC)
+					SEC_FUELGAUGE_CAPACITY_TYPE_ATOMIC)	{
 				sec_fg_get_atomic_capacity(fuelgauge, val);
+			}
 		}
 		break;
 	default:
@@ -111,10 +162,12 @@ static int sec_fg_calculate_dynamic_scale(
 {
 	union power_supply_propval raw_soc_val;
 
+	raw_soc_val.intval = SEC_FUELGAUGE_CAPACITY_TYPE_RAW;
 	if (!sec_hal_fg_get_property(fuelgauge->client,
 		POWER_SUPPLY_PROP_CAPACITY,
 		&raw_soc_val))
 		return -EINVAL;
+	raw_soc_val.intval /= 10;
 
 	if (raw_soc_val.intval <
 		fuelgauge->pdata->capacity_max -
@@ -122,22 +175,30 @@ static int sec_fg_calculate_dynamic_scale(
 		fuelgauge->capacity_max =
 			fuelgauge->pdata->capacity_max -
 			fuelgauge->pdata->capacity_max_margin;
+#if defined(CONFIG_SEC_DEBUG_FUELGAUGE_LOG)
 		dev_dbg(&fuelgauge->client->dev, "%s: capacity_max (%d)",
 			__func__, fuelgauge->capacity_max);
+#endif
 	} else {
 		fuelgauge->capacity_max =
-			(raw_soc_val.intval > 1000) ? 1000 : raw_soc_val.intval;
+			(raw_soc_val.intval >
+			fuelgauge->pdata->capacity_max +
+			fuelgauge->pdata->capacity_max_margin) ?
+			(fuelgauge->pdata->capacity_max +
+			fuelgauge->pdata->capacity_max_margin) :
+			raw_soc_val.intval;
+#if defined(CONFIG_SEC_DEBUG_FUELGAUGE_LOG)
 		dev_dbg(&fuelgauge->client->dev, "%s: raw soc (%d)",
 			__func__, fuelgauge->capacity_max);
+#endif
 	}
 
 	fuelgauge->capacity_max =
-		((fuelgauge->capacity_max - fuelgauge->pdata->capacity_min)
-		* 99 / 100) + fuelgauge->pdata->capacity_min;
-
+		(fuelgauge->capacity_max * 99 / 100);
+#if defined(CONFIG_SEC_DEBUG_FUELGAUGE_LOG)
 	dev_info(&fuelgauge->client->dev, "%s: %d is used for capacity_max\n",
 		__func__, fuelgauge->capacity_max);
-
+#endif
 	return fuelgauge->capacity_max;
 }
 
@@ -168,6 +229,7 @@ static int sec_fg_set_property(struct power_supply *psy,
 			fuelgauge->is_charging = true;
 	case POWER_SUPPLY_PROP_CAPACITY:
 		if (val->intval == SEC_FUELGAUGE_CAPACITY_TYPE_RESET) {
+			fuelgauge->is_reset = true;
 			if (!sec_hal_fg_reset(fuelgauge->client))
 				return -EINVAL;
 			else
@@ -296,6 +358,7 @@ static int __devinit sec_fuelgauge_probe(struct i2c_client *client,
 	struct i2c_adapter *adapter = to_i2c_adapter(client->dev.parent);
 	struct sec_fuelgauge_info *fuelgauge;
 	int ret = 0;
+	union power_supply_propval raw_soc_val;
 
 	dev_dbg(&client->dev,
 		"%s: SEC Fuelgauge Driver Loading\n", __func__);
@@ -322,6 +385,13 @@ static int __devinit sec_fuelgauge_probe(struct i2c_client *client,
 	fuelgauge->psy_fg.num_properties =
 		ARRAY_SIZE(sec_fuelgauge_props);
 	fuelgauge->capacity_max = fuelgauge->pdata->capacity_max;
+	raw_soc_val.intval = SEC_FUELGAUGE_CAPACITY_TYPE_RAW;
+	sec_hal_fg_get_property(fuelgauge->client,
+			POWER_SUPPLY_PROP_CAPACITY, &raw_soc_val);
+	raw_soc_val.intval /= 10;
+	fuelgauge->is_reset = false;
+	if(raw_soc_val.intval > fuelgauge->pdata->capacity_max)
+		sec_fg_calculate_dynamic_scale(fuelgauge);
 
 	if (!fuelgauge->pdata->fg_gpio_init()) {
 		dev_err(&client->dev,

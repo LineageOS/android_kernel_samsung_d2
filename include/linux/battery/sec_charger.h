@@ -34,17 +34,9 @@
 #elif defined(CONFIG_CHARGER_BQ24190) || \
 		defined(CONFIG_CHARGER_BQ24191)
 #include <linux/battery/charger/bq24190_charger.h>
-#elif defined(CONFIG_CHARGER_NCP1851)
-#include <linux/battery/charger/ncp1851_charger.h>
+#elif defined(CONFIG_CHARGER_MAX77693)
+#include <linux/battery/charger/max77693_charger.h>
 #endif
-
-static enum power_supply_property sec_charger_props[] = {
-	POWER_SUPPLY_PROP_STATUS,
-	POWER_SUPPLY_PROP_CHARGE_TYPE,
-	POWER_SUPPLY_PROP_HEALTH,
-	POWER_SUPPLY_PROP_ONLINE,
-	POWER_SUPPLY_PROP_CURRENT_NOW,
-};
 
 struct sec_charger_info {
 	struct i2c_client		*client;
@@ -53,6 +45,7 @@ struct sec_charger_info {
 	struct delayed_work isr_work;
 
 	int cable_type;
+	int status;
 	bool is_charging;
 
 	/* charging current : + charging, - OTG */
@@ -61,6 +54,7 @@ struct sec_charger_info {
 	/* register programming */
 	int reg_addr;
 	int reg_data;
+	int irq_base;
 };
 
 bool sec_hal_chg_init(struct i2c_client *);
@@ -93,12 +87,6 @@ ssize_t sec_chg_store_attrs(struct device *dev,
 	.show = sec_chg_show_attrs,			\
 	.store = sec_chg_store_attrs,			\
 }
-
-static struct device_attribute sec_charger_attrs[] = {
-	SEC_CHARGER_ATTR(reg),
-	SEC_CHARGER_ATTR(data),
-	SEC_CHARGER_ATTR(regs),
-};
 
 enum {
 	CHG_REG = 0,
