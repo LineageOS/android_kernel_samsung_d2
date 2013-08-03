@@ -4818,6 +4818,12 @@ struct i2c_registry {
 	int                    len;
 };
 
+/* AVTimer */
+static struct platform_device msm_dev_avtimer_device = {
+  .name = "dev_avtimer",
+  .dev = { .platform_data = &dev_avtimer_pdata },
+};
+
 /* Sensors DSPS platform data */
 #ifdef CONFIG_MSM_DSPS
 #define DSPS_PIL_GENERIC_NAME		"dsps"
@@ -5390,6 +5396,7 @@ static void __init samsung_apexq_init(void)
 	if (system_rev >= BOARD_REV01)
 		platform_device_register(&adp5588_keys_i2c_gpio_device);
 #endif
+	platform_device_register(&msm_dev_avtimer_device);
 }
 
 MACHINE_START(APEXQ, "SAMSUNG APEXQ")

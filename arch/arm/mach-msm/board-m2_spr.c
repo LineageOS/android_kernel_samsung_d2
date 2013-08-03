@@ -4767,6 +4767,12 @@ static struct i2c_board_info cmc624_max8952_i2c_borad_info[] = {
 };
 #endif /*CONFIG_REGULATOR_MAX8952*/
 
+/* AVTimer */
+static struct platform_device msm_dev_avtimer_device = {
+  .name = "dev_avtimer",
+  .dev = { .platform_data = &dev_avtimer_pdata },
+};
+
 /* Sensors DSPS platform data */
 #ifdef CONFIG_MSM_DSPS
 #define DSPS_PIL_GENERIC_NAME		"dsps"
@@ -5409,6 +5415,7 @@ static void __init samsung_m2_spr_init(void)
 	if (PLATFORM_IS_CHARM25())
 		platform_add_devices(mdm_devices, ARRAY_SIZE(mdm_devices));
 	ion_adjust_secure_allocation();
+	platform_device_register(&msm_dev_avtimer_device);
 }
 
 MACHINE_START(M2_SPR, "SAMSUNG M2_SPR")
