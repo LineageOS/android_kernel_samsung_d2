@@ -320,7 +320,7 @@
 	.size \name , . - \name
 	.endm
 
-#if !defined(CONFIG_MACH_APEXQ)
+#if !defined(CONFIG_HAS_OLD_TZ)
 	.macro check_uaccess, addr:req, size:req, limit:req, tmp:req, bad:req
 #ifndef CONFIG_CPU_USE_DOMAINS
 	adds	\tmp, \addr, #\size - 1

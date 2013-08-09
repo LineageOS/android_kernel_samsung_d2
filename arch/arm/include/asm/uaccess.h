@@ -101,7 +101,7 @@ extern int __get_user_1(void *);
 extern int __get_user_2(void *);
 extern int __get_user_4(void *);
 
-#if defined(CONFIG_MACH_APEXQ)
+#if defined(CONFIG_HAS_OLD_TZ)
 #define __get_user_x(__r2,__p,__e,__s,__i...)				\
 	   __asm__ __volatile__ (					\
 		__asmeq("%0", "r0") __asmeq("%1", "r2")			\

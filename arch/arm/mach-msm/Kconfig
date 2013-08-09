@@ -954,6 +954,13 @@ endmenu
 
 source "arch/arm/mach-msm/lge/Kconfig"
 
+config HAS_OLD_TZ
+	depends on ARCH_MSM8960
+	default n
+	bool "Workaround for broken bootloader"
+	help
+	  If in doubt, say no here.
+
 config MSM_STACKED_MEMORY
 	bool "Stacked Memory"
 	default y

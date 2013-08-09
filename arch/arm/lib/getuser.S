@@ -28,14 +28,14 @@
  * Note also that it is intended that __get_user_bad is not global.
  */
 #include <linux/linkage.h>
-#if !defined(CONFIG_MACH_APEXQ)
+#if !defined(CONFIG_HAS_OLD_TZ)
 #include <asm/assembler.h>
 #endif
 #include <asm/errno.h>
 #include <asm/domain.h>
 
 ENTRY(__get_user_1)
-#if !defined(CONFIG_MACH_APEXQ)
+#if !defined(CONFIG_HAS_OLD_TZ)
 	check_uaccess r0, 1, r1, r2, __get_user_bad
 #endif
 1: TUSER(ldrb)	r2, [r0]
@@ -44,7 +44,7 @@ ENTRY(__get_user_1)
 ENDPROC(__get_user_1)
 
 ENTRY(__get_user_2)
-#if defined(CONFIG_MACH_APEXQ)
+#if defined(CONFIG_HAS_OLD_TZ)
 #ifdef CONFIG_THUMB2_KERNEL
 2: TUSER(ldrb)	r2, [r0]
 3: TUSER(ldrb)	r3, [r0, #1]
@@ -65,7 +65,7 @@ rb	.req	r0
 #endif
 #endif
 
-#if defined(CONFIG_MACH_APEXQ)
+#if defined(CONFIG_HAS_OLD_TZ)
 #ifndef __ARMEB__
 	orr	r2, r2, r3, lsl #8
 #else
@@ -84,7 +84,7 @@ rb	.req	r0
 ENDPROC(__get_user_2)
 
 ENTRY(__get_user_4)
-#if !defined(CONFIG_MACH_APEXQ)
+#if !defined(CONFIG_HAS_OLD_TZ)
 	check_uaccess r0, 4, r1, r2, __get_user_bad
 #endif
 4: TUSER(ldr)	r2, [r0]
