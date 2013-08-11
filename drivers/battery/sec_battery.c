@@ -3130,3 +3130,4 @@ module_exit(sec_battery_exit);
 MODULE_DESCRIPTION("Samsung Battery Driver");
 MODULE_AUTHOR("Samsung Electronics");
 MODULE_LICENSE("GPL");
+MODULE_ALIAS("platform:sec-battery");

@@ -521,6 +521,7 @@ MODULE_DEVICE_TABLE(i2c, sec_fuelgauge_id);
 static struct i2c_driver sec_fuelgauge_driver = {
 	.driver = {
 		   .name = "sec-fuelgauge",
+		   .owner = THIS_MODULE,
 		   },
 	.probe	= sec_fuelgauge_probe,
 	.remove	= __devexit_p(sec_fuelgauge_remove),
@@ -546,3 +547,4 @@ module_exit(sec_fuelgauge_exit);
 MODULE_DESCRIPTION("Samsung Fuel Gauge Driver");
 MODULE_AUTHOR("Samsung Electronics");
 MODULE_LICENSE("GPL");
+MODULE_ALIAS("platform:sec-fuelgauge");

@@ -390,6 +390,7 @@ MODULE_DEVICE_TABLE(i2c, sec_charger_id);
 static struct i2c_driver sec_charger_driver = {
 	.driver = {
 		.name	= "sec-charger",
+		.owner = THIS_MODULE,
 	},
 	.probe	= sec_charger_probe,
 	.remove	= __devexit_p(sec_charger_remove),
@@ -415,3 +416,4 @@ module_exit(sec_charger_exit);
 MODULE_DESCRIPTION("Samsung Charger Driver");
 MODULE_AUTHOR("Samsung Electronics");
 MODULE_LICENSE("GPL");
+MODULE_ALIAS("platform:sec-charger");
