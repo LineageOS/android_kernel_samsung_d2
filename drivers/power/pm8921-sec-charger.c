@@ -1232,9 +1232,11 @@ static enum power_supply_property msm_batt_power_props[] = {
 	POWER_SUPPLY_PROP_VOLTAGE_MIN_DESIGN,
 	POWER_SUPPLY_PROP_VOLTAGE_NOW,
 	POWER_SUPPLY_PROP_CAPACITY,
+	POWER_SUPPLY_PROP_CURRENT_MAX,
 	POWER_SUPPLY_PROP_CURRENT_NOW,
 	POWER_SUPPLY_PROP_TEMP,
-	POWER_SUPPLY_PROP_ENERGY_FULL,
+	POWER_SUPPLY_PROP_CHARGE_FULL,
+	POWER_SUPPLY_PROP_CHARGE_NOW,
 };
 
 static int get_prop_battery_uvolts(struct pm8921_chg_chip *chip)
@@ -1521,14 +1523,20 @@ static int pm_batt_power_get_property(struct power_supply *psy,
 	case POWER_SUPPLY_PROP_CAPACITY:
 		val->intval = chip->batt_soc;
 		break;
+	case POWER_SUPPLY_PROP_CURRENT_MAX:
+		//Not supported by sec-charger
+		break;
 	case POWER_SUPPLY_PROP_CURRENT_NOW:
 		val->intval = get_prop_batt_current(chip);
 		break;
 	case POWER_SUPPLY_PROP_TEMP:
 		val->intval = chip->batt_temp;
 		break;
-	case POWER_SUPPLY_PROP_ENERGY_FULL:
+	case POWER_SUPPLY_PROP_CHARGE_FULL:
 		val->intval = get_prop_batt_fcc(chip) * 1000;
+		break;
+	case POWER_SUPPLY_PROP_CHARGE_NOW:
+		//Not supported by sec-charger
 		break;
 	default:
 		return -EINVAL;
