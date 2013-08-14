@@ -1220,10 +1220,10 @@ static void fsa9485_otg_cb(bool attached)
 {
 	pr_info("fsa9485_otg_cb attached %d\n", attached);
 
-	if (attached) {
+//	if (attached) {
 		pr_info("%s set id state\n", __func__);
-//		msm_otg_set_id_state(attached);
-	}
+		msm_otg_set_id_state(attached);
+//	}
 }
 
 static void fsa9485_usb_cb(bool attached)
@@ -1285,7 +1285,7 @@ static void fsa9485_charger_cb(bool attached)
 	pr_info("fsa9480_charger_cb attached %d\n", attached);
 	set_cable_status = attached ? CABLE_TYPE_AC : CABLE_TYPE_NONE;
 
-	msm_otg_set_charging_state(attached);
+//	msm_otg_set_charging_state(attached);
 
 	for (i = 0; i < 10; i++) {
 		psy = power_supply_get_by_name("battery");
@@ -3137,6 +3137,7 @@ static struct msm_spi_platform_data msm8960_qup_spi_gsbi1_pdata = {
 };
 #endif
 
+#if 0
 static int msm_hsusb_vbus_power(bool on)
 {
 	int rc;
@@ -3198,6 +3199,43 @@ put_mvs_otg:
 		regulator_put(mvs_otg_switch);
 		vbus_is_on = false;
 		return -EBUSY;
+}
+#endif
+static bool vbus_is_on;
+static int msm_hsusb_vbus_power(bool on)
+{
+        struct power_supply *psy = power_supply_get_by_name("battery");
+        union power_supply_propval value;
+        int ret = 0;
+
+        pr_info("%s, attached %d, vbus_is_on %d\n", __func__, on, vbus_is_on);
+
+        /* If VBUS is already on (or off), do nothing. */
+        if (vbus_is_on == on)
+                return -EBUSY;
+
+        if (on)
+                value.intval = POWER_SUPPLY_TYPE_OTG;
+        else
+                value.intval = POWER_SUPPLY_TYPE_BATTERY;
+
+        if (psy && psy->set_property) {
+                ret = psy->set_property(psy, POWER_SUPPLY_PROP_ONLINE, &value);
+                if (ret) {
+                        pr_err("%s: fail to set power_suppy otg property(%d)\n",
+                                __func__, ret);
+                        return -EBUSY;
+                }
+#ifdef CONFIG_USB_SWITCH_FSA9485
+                if (!on)
+                        fsa9485_otg_detach();
+#endif
+                vbus_is_on = on;
+        } else {
+                pr_err("%s : psy is null!\n", __func__);
+                return -EBUSY;
+        }
+        return 0;
 }
 
 static int phy_settings[] = {
@@ -3271,7 +3309,7 @@ static struct msm_otg_platform_data msm_otg_pdata = {
 	.vbus_power		= msm_hsusb_vbus_power,
 	.power_budget		= 750,
 	.phy_init_seq = phy_settings,
-	.smb347s		= true,
+//	.smb347s		= true,
 #ifdef CONFIG_MSM_BUS_SCALING
 	.bus_scale_table	= &usb_bus_scale_pdata,
 #endif
@@ -3459,7 +3497,7 @@ static struct msm_spm_platform_data msm_spm_data[] __initdata = {
 	[1] = {
 		.reg_base_addr = MSM_SAW1_BASE,
 		.reg_init_values[MSM_SPM_REG_SAW2_CFG] = 0x1F,
-#if 0//defined(CONFIG_MSM_AVS_HW)
+#if defined(CONFIG_MSM_AVS_HW)
 		.reg_init_values[MSM_SPM_REG_SAW2_AVS_CTL] = 0x58589464,
 		.reg_init_values[MSM_SPM_REG_SAW2_AVS_HYSTERESIS] = 0x00020000,
 #endif
