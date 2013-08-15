@@ -1110,6 +1110,9 @@ static struct pvs_table * __init select_freq_plan(u32 pte_efuse_phys,
 #if defined(CONFIG_MACH_APEXQ)
 	if (global_sec_pvs_value == 0xfafa) {
 		tbl_idx = 0;
+	} else if (tbl_idx > 1) {
+		dev_warn(drv.dev, "ACPU PVS: Found %d, defaulting to 1.",tbl_idx);
+		tbl_idx = 1;
 	}
 #endif 
 
