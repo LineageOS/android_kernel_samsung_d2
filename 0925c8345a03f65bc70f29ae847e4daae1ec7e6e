@@ -16,6 +16,24 @@
       "revId": "0925c8345a03f65bc70f29ae847e4daae1ec7e6e",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "dae975fb_89c14483",
+        "filename": "include/linux/yas_cfg.h",
+        "patchSetId": 5
+      },
+      "lineNbr": 222,
+      "author": {
+        "id": 401
+      },
+      "writtenOn": "2013-08-15T14:19:55Z",
+      "side": 0,
+      "message": "I just removed it, seems I didn\u0027t need to actually change it anyways.",
+      "parentUuid": "dae975fb_09879462",
+      "revId": "0925c8345a03f65bc70f29ae847e4daae1ec7e6e",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
     }
   ]
 }

@@ -87,6 +87,24 @@
     },
     {
       "key": {
+        "uuid": "dae975fb_c9ce2cb4",
+        "filename": "drivers/media/video/msm_apexq/msm_camera.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 315,
+      "author": {
+        "id": 401
+      },
+      "writtenOn": "2013-08-15T14:19:55Z",
+      "side": 1,
+      "message": "This was one of a few random compile fixes I made while moving along. IIRC ion_import_fd doesn\u0027t exist, so it broke the build.",
+      "parentUuid": "dae975fb_89da6477",
+      "revId": "cf5e65ec18e95be22a81e003c5be3fc9c65ffe0e",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "dae975fb_69e74041",
         "filename": "drivers/video/msm/mipi_dsi.c",
         "patchSetId": 5
@@ -98,6 +116,24 @@
       "writtenOn": "2013-08-15T14:12:11Z",
       "side": 1,
       "message": "um, no thanks. I suspect we need that u32 tmp",
+      "revId": "cf5e65ec18e95be22a81e003c5be3fc9c65ffe0e",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "dae975fb_a9c40892",
+        "filename": "drivers/video/msm/mipi_dsi.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 261,
+      "author": {
+        "id": 401
+      },
+      "writtenOn": "2013-08-15T14:19:55Z",
+      "side": 1,
+      "message": "You do, that\u0027s why I redefined it above ;)",
+      "parentUuid": "dae975fb_69e74041",
       "revId": "cf5e65ec18e95be22a81e003c5be3fc9c65ffe0e",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
       "unresolved": false
