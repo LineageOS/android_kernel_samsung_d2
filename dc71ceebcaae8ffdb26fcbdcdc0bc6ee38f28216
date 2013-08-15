@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "dae975fb_0479bb93",
+        "filename": "arch/arm/mach-msm/board-apexq-battery.c",
+        "patchSetId": 9
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 5589
+      },
+      "writtenOn": "2013-08-15T22:14:18Z",
+      "side": 1,
+      "message": "lol, not quite what I had in mind when I said look at our file but if this works for you I have no objections.",
+      "revId": "dc71ceebcaae8ffdb26fcbdcdc0bc6ee38f28216",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    }
+  ]
+}
