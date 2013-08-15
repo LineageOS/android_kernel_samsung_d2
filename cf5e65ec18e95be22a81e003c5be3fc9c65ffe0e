@@ -1,0 +1,106 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "dae975fb_29e9381b",
+        "filename": "arch/arm/mach-msm/board-express-battery.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 394,
+      "author": {
+        "id": 5589
+      },
+      "writtenOn": "2013-08-15T14:12:11Z",
+      "side": 1,
+      "message": "there are 14 types in power_supply.h on this kernel, not 13, and they are in different spots than on the stock samsung kernel. Look at the changes in the apexq-battery file or you will have charging issues, especially with dumb chargers",
+      "revId": "cf5e65ec18e95be22a81e003c5be3fc9c65ffe0e",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "dae975fb_e9f21006",
+        "filename": "arch/arm/mach-msm/board-express-camera.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 5589
+      },
+      "writtenOn": "2013-08-15T14:12:11Z",
+      "side": 1,
+      "message": "this is probably an exact copy of board-apexq-camera.c",
+      "revId": "cf5e65ec18e95be22a81e003c5be3fc9c65ffe0e",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "dae975fb_c9f74cf4",
+        "filename": "arch/arm/mach-msm/board-express-display.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 2,
+      "author": {
+        "id": 5589
+      },
+      "writtenOn": "2013-08-15T14:12:11Z",
+      "side": 1,
+      "message": "this is probably an exact copy of board-m2-display.c",
+      "revId": "cf5e65ec18e95be22a81e003c5be3fc9c65ffe0e",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "dae975fb_a9dd2872",
+        "filename": "arch/arm/mach-msm/board-express-pmic.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 5589
+      },
+      "writtenOn": "2013-08-15T14:12:11Z",
+      "side": 1,
+      "message": "this is probably an exact copy of board-m2-pmic.c",
+      "revId": "cf5e65ec18e95be22a81e003c5be3fc9c65ffe0e",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "dae975fb_89da6477",
+        "filename": "drivers/media/video/msm_apexq/msm_camera.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 315,
+      "author": {
+        "id": 5589
+      },
+      "writtenOn": "2013-08-15T14:12:11Z",
+      "side": 1,
+      "message": "what does this change do?",
+      "revId": "cf5e65ec18e95be22a81e003c5be3fc9c65ffe0e",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "dae975fb_69e74041",
+        "filename": "drivers/video/msm/mipi_dsi.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 261,
+      "author": {
+        "id": 5589
+      },
+      "writtenOn": "2013-08-15T14:12:11Z",
+      "side": 1,
+      "message": "um, no thanks. I suspect we need that u32 tmp",
+      "revId": "cf5e65ec18e95be22a81e003c5be3fc9c65ffe0e",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    }
+  ]
+}
