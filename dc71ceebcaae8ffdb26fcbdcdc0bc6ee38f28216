@@ -16,6 +16,24 @@
       "revId": "dc71ceebcaae8ffdb26fcbdcdc0bc6ee38f28216",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "dae975fb_dfd01ecc",
+        "filename": "arch/arm/mach-msm/board-apexq-battery.c",
+        "patchSetId": 9
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 401
+      },
+      "writtenOn": "2013-08-16T08:38:37Z",
+      "side": 1,
+      "message": "Heh yeah it wasn\u0027t the original plan, but once I started comparing the board files, it seemed a shame to duplicate so much stuff.",
+      "parentUuid": "dae975fb_0479bb93",
+      "revId": "dc71ceebcaae8ffdb26fcbdcdc0bc6ee38f28216",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
     }
   ]
 }
