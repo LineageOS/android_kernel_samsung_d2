@@ -1159,6 +1159,63 @@ static void cypress_init(void)
 static enum cable_type_t set_cable_status;
 int msm8960_get_cable_status(void) {return (int)set_cable_status; }
 
+#ifdef CONFIG_MHL_NEW_CBUS_MSC_CMD
+static void fsa9485_mhl_cb(bool attached, int mhl_charge)
+{
+	union power_supply_propval value;
+	int i, ret = 0;
+	struct power_supply *psy;
+
+	pr_info("fsa9485_mhl_cb attached (%d), mhl_charge(%d)\n",
+			attached, mhl_charge);
+
+	if (attached) {
+		switch (mhl_charge) {
+		case 0:
+		case 1:
+			set_cable_status = CABLE_TYPE_USB;
+			break;
+		case 2:
+			set_cable_status = CABLE_TYPE_AC;
+			break;
+		}
+	} else {
+		set_cable_status = CABLE_TYPE_NONE;
+	}
+
+	for (i = 0; i < 10; i++) {
+		psy = power_supply_get_by_name("battery");
+		if (psy)
+			break;
+	}
+	if (i == 10) {
+		pr_err("%s: fail to get battery ps\n", __func__);
+		return;
+	}
+
+	switch (set_cable_status) {
+	case CABLE_TYPE_USB:
+		value.intval = POWER_SUPPLY_TYPE_USB;
+		break;
+	case CABLE_TYPE_AC:
+		value.intval = POWER_SUPPLY_TYPE_MAINS;
+		break;
+	case CABLE_TYPE_NONE:
+		value.intval = POWER_SUPPLY_TYPE_BATTERY;
+		break;
+	default:
+		pr_err("%s: invalid cable :%d\n", __func__, set_cable_status);
+		return;
+	}
+
+	ret = psy->set_property(psy, POWER_SUPPLY_PROP_ONLINE,
+		&value);
+	if (ret) {
+		pr_err("%s: fail to set power_suppy ONLINE property(%d)\n",
+			__func__, ret);
+	}
+}
+#else
 static void fsa9485_mhl_cb(bool attached)
 {
 	union power_supply_propval value;
@@ -1197,15 +1254,16 @@ static void fsa9485_mhl_cb(bool attached)
 			__func__, ret);
 	}
 }
+#endif
 
 static void fsa9485_otg_cb(bool attached)
 {
 	pr_info("fsa9485_otg_cb attached %d\n", attached);
 
-	if (attached) {
+	//if (attached) {
 		pr_info("%s set id state\n", __func__);
 		msm_otg_set_id_state(attached);
-	}
+	//}
 }
 
 static void fsa9485_usb_cb(bool attached)
@@ -1218,10 +1276,10 @@ static void fsa9485_usb_cb(bool attached)
 	set_cable_status = attached ? CABLE_TYPE_USB : CABLE_TYPE_NONE;
 
 	if (system_rev >= BOARD_REV00) {
-		if (attached) {
+		//if (attached) {
 			pr_info("%s set vbus state\n", __func__);
 			msm_otg_set_vbus_state(attached);
-		}
+		//}
 	}
 
 	for (i = 0; i < 10; i++) {
@@ -1465,7 +1523,11 @@ int msm8960_get_cable_type(void)
 	if (set_cable_status != CABLE_TYPE_NONE) {
 		switch (set_cable_status) {
 		case CABLE_TYPE_MISC:
+#ifdef CONFIG_MHL_NEW_CBUS_MSC_CMD
+			fsa9485_mhl_cb(1 , 0);
+#else
 			fsa9485_mhl_cb(1);
+#endif
 			break;
 		case CABLE_TYPE_USB:
 			fsa9485_usb_cb(1);
@@ -3198,16 +3260,6 @@ static struct msm_otg_platform_data msm_otg_pdata = {
 	.bus_scale_table	= &usb_bus_scale_pdata,
 #endif
 };
-
-#ifdef CONFIG_USB_HOST_NOTIFY
-static void __init msm_otg_power_init(void)
-{
-	if (system_rev >= BOARD_REV00)
-		msm_otg_pdata.smb347s = true;
-	else
-		msm_otg_pdata.smb347s = false;
-}
-#endif
 
 #ifdef CONFIG_USB_EHCI_MSM_HSIC
 #define HSIC_HUB_RESET_GPIO	91
@@ -5502,10 +5554,6 @@ static void __init samsung_express_init(void)
 	}
 	android_usb_pdata.swfi_latency =
 		msm_rpmrs_levels[0].latency_us;
-
-#ifdef CONFIG_USB_HOST_NOTIFY
-	msm_otg_power_init();
-#endif
 
 #ifdef CONFIG_USB_EHCI_MSM_HSIC
 	if (machine_is_msm8960_liquid()) {
