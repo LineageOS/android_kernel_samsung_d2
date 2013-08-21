@@ -62,6 +62,11 @@
 static int vol_mv_level = 33;
 extern unsigned int system_rev;
 
+#if defined(CONFIG_MACH_APEXQ)
+int error_cnt = 0;
+int prev_code;
+int prev_press;
+#endif
 
 #define TOUCHKEY_BACKLIGHT	"button-backlight"
 
@@ -235,6 +240,16 @@ static irqreturn_t cypress_touchkey_interrupt(int irq, void *dev_id)
 	TOUCHKEY_LOG(info->keycode[code], press);
 #endif
 
+#if defined(CONFIG_MACH_APEXQ)
+	if (code == 0 && press == 0) {
+		// Only allow a menu up event through if it is preceeded
+		// by a menu down event.
+		if (prev_code != 0 || prev_press != 1)
+			goto err;
+	}
+	prev_code = code;
+	prev_press = press;
+#endif
 	if (touch_is_pressed && press) {
 		printk(KERN_ERR "[TouchKey] don't send event because touch is pressed.\n");
 		printk(KERN_ERR "[TouchKey] touch_pressed = %d\n",
@@ -244,6 +259,14 @@ static irqreturn_t cypress_touchkey_interrupt(int irq, void *dev_id)
 		input_sync(info->input_dev);
 	}
 
+	return IRQ_HANDLED;
+#if defined(CONFIG_MACH_APEXQ)
+err:
+	printk("[TouchKey] filtering out bogus menu keypress.\n");
+	error_cnt++;
+	prev_code = -1;
+	prev_press = -1;
+#endif
 out:
 	return IRQ_HANDLED;
 }
@@ -797,6 +820,14 @@ static ssize_t autocalibration_status(struct device *dev,
 		return sprintf(buf, "Disabled\n");
 }
 
+#if defined(CONFIG_MACH_APEXQ)
+static ssize_t touchkey_error_cnt_show(struct device *dev,
+				       struct device_attribute *attr, char *buf)
+{
+	return sprintf(buf, "%d\n", error_cnt);
+}
+#endif
+
 static DEVICE_ATTR(touchkey_firm_update_status,
 		S_IRUGO | S_IWUSR | S_IWGRP, touchkey_firm_status_show, NULL);
 static DEVICE_ATTR(touchkey_firm_version_panel, S_IRUGO,
@@ -827,7 +858,9 @@ static DEVICE_ATTR(autocal_stat, S_IRUGO | S_IWUSR | S_IWGRP,
 		   autocalibration_status, NULL);
 static DEVICE_ATTR(touchkey_brightness_level, S_IRUGO | S_IWUSR | S_IWGRP,
 				brightness_level_show, brightness_control);
-
+#if defined(CONFIG_MACH_APEXQ)
+static DEVICE_ATTR(touchkey_error_cnt, S_IRUGO, touchkey_error_cnt_show, NULL);
+#endif
 
 static int __devinit cypress_touchkey_probe(struct i2c_client *client,
 				  const struct i2c_device_id *id)
@@ -1126,6 +1159,14 @@ static int __devinit cypress_touchkey_probe(struct i2c_client *client,
 		dev_attr_touchkey_brightness_level.attr.name);
 		goto err_sysfs;
 	}
+#if defined(CONFIG_MACH_APEXQ)
+	if (device_create_file(sec_touchkey,
+		&dev_attr_touchkey_error_cnt) < 0) {
+		printk(KERN_ERR "Failed to create device file(%s)!\n",
+		dev_attr_touchkey_error_cnt.attr.name);
+		goto err_sysfs;
+	}
+#endif
 	info->is_powering_on = false;
 	return 0;
 
