@@ -336,7 +336,7 @@ defined(CONFIG_MACH_AEGIS2) || defined(CONFIG_MACH_COMANCHE)
 		vibrator_drvdata.haptic_pwr_en_gpio = GPIO_HAPTIC_PWR_EN;
 		vibrator_drvdata.vib_model = HAPTIC_PWM;
 #endif
-#if defined(CONFIG_MACH_APEXQ) || defined(CONFIG_MACH_JASPER) || \
+#if defined(CONFIG_MACH_JASPER) || \
 defined(CONFIG_MACH_GOGH) || defined(CONFIG_MACH_ESPRESSO_ATT)
 		vibrator_drvdata.vib_pwm_gpio = GPIO_MOTOR_EN;
 		vibrator_drvdata.vib_en_gpio = GPIO_MOTOR_EN;

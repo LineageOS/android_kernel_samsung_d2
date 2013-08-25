@@ -1822,11 +1822,11 @@ static struct platform_device msm_device_kb_leds = {
 #endif
 #ifdef CONFIG_VIBETONZ
 static struct vibrator_platform_data msm_8960_vibrator_pdata = {
-	.vib_model = HAPTIC_MOTOR,
-	.vib_pwm_gpio = -1,
-	.haptic_pwr_en_gpio = GPIO_MOTOR_EN,
-	.vib_en_gpio = -1,
-	.is_pmic_vib_en = 0,
+	.vib_model = HAPTIC_PWM,
+	.vib_pwm_gpio = GPIO_VIB_PWM,
+	.haptic_pwr_en_gpio = GPIO_HAPTIC_PWR_EN,
+	.vib_en_gpio = PMIC_GPIO_VIB_ON,
+	.is_pmic_vib_en = 1,
 	.is_pmic_haptic_pwr_en = 0,
 };
 static struct platform_device vibetonz_device = {
