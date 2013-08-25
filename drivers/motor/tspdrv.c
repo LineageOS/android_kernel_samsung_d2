@@ -212,7 +212,8 @@ static void vibetonz_start(void)
 	if (ret < 0)
 		DbgOut((KERN_ERR
 		"tspdrv: timed_output_dev_register fail\n"));
-
+#if !defined(CONFIG_MACH_APEXQ) && !defined(CONFIG_MACH_JASPER) && \
+!defined(CONFIG_MACH_GOGH) && !defined(CONFIG_MACH_ESPRESSO_ATT)
     ret = device_create_file(timed_output_vt.dev, &dev_attr_pwm_value);
 	if (ret < 0)
 		DbgOut((KERN_ERR
@@ -237,6 +238,7 @@ static void vibetonz_start(void)
 	if (ret < 0) {
 		pr_err("vibrator_init(): create sysfs fail: pwm_threshold\n");
 	}
+#endif
 }
 
 /* File IO */

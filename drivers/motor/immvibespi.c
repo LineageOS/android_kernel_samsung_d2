@@ -344,6 +344,8 @@ static int32_t ImmVibeSPI_ForceOut_SetSamples(u_int8_t nActuatorIndex,
 	}
 	return VIBE_S_SUCCESS;
 }
+#if !defined(CONFIG_MACH_APEXQ) && !defined(CONFIG_MACH_JASPER) && \
+!defined(CONFIG_MACH_GOGH) && !defined(CONFIG_MACH_ESPRESSO_ATT)
 static ssize_t pwm_max_show(struct device *dev,
                             struct device_attribute *attr, char *buf)
 {
@@ -430,6 +432,7 @@ ssize_t pwm_value_store(struct device *dev, struct device_attribute *attr,
 
 static DEVICE_ATTR(pwm_value, S_IRUGO | S_IWUSR,
     pwm_value_show, pwm_value_store);
+#endif
 
 /*
 ** Called to get the device name (device name must be returned as ANSI char)
