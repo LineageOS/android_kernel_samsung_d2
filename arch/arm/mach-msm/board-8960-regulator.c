@@ -75,7 +75,9 @@ VREG_CONSUMERS(L9) = {
 };
 VREG_CONSUMERS(L10) = {
 	REGULATOR_SUPPLY("8921_l10",		NULL),
+#ifdef CONFIG_WCNSS_CORE
 	REGULATOR_SUPPLY("iris_vddpa",		"wcnss_wlan.0"),
+#endif
 
 };
 VREG_CONSUMERS(L11) = {
@@ -592,7 +594,7 @@ msm_rpm_regulator_init_data[] __devinitdata = {
 	RPM_LDO(L8,	 0, 1, 0, 2800000, 3000000, NULL,      0, 0),
 	RPM_LDO(L9,	 0, 1, 0, 3000000, 3000000, NULL,      0, 0),
 #endif
-	RPM_LDO(L10,	 0, 1, 0, 3000000, 3000000, NULL,      0, 0),
+	RPM_LDO(L10,	 0, 1, 0, 100000, 3300000, NULL,      0, 0),
 #if defined(CONFIG_MACH_M2) || defined(CONFIG_MACH_APEXQ) || defined(CONFIG_MACH_EXPRESS)
 	RPM_LDO(L11,	 0, 1, 0, 2800000, 3300000, NULL,      0, 0),
 #else
