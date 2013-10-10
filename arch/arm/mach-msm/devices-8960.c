@@ -1155,7 +1155,11 @@ struct msm_vidc_platform_data vidc_platform_data = {
 #endif
 	.disable_dmx = 0,
 	.disable_fullhd = 0,
+#if defined(CONFIG_MACH_M2) || defined (CONFIG_MACH_APEXQ) || defined(CONFIG_MACH_EXPRESS) || defined(CONFIG_MACH_AEGIS2)
+	.cont_mode_dpb_count = 14,
+#else
 	.cont_mode_dpb_count = 18,
+#endif
 	.fw_addr = 0x9fe00000,
 	.enable_sec_metadata = 0,
 };
