@@ -4571,17 +4571,6 @@ NV    RW    NP
 HAL
 0    1    1
 *
-* Oxygen network data (prop IE for IBSS)
-*
-WNI_CFG_OXYGEN_NETWORK_DATA   I    2    0
-V    RW    NP
-SCH
-0    0x2000   0x2000
-V    RW    NP
-SCH
-0    0x2000   0x2000
-
-*
 * FlexConnect Power Factor
 * Default is set to 0 (disable)
 *
@@ -4609,3 +4598,15 @@ HAL
 V    RW    NP
 HAL
 0    3    0
+
+* GO Link Monitor Timeout (TU)
+*
+WNI_CFG_GO_LINK_MONITOR_TIMEOUT    I    4    7
+V    RW    NP
+HAL
+3   50    10
+V    RW    NP
+HAL
+3   50    10
+*
+*

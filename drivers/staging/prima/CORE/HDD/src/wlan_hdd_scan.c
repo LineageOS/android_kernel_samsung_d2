@@ -534,7 +534,7 @@ static eHalStatus hdd_IndicateScanResult(hdd_scan_info_t *scanInfo, tCsrScanResu
    /* AGE */
    event.cmd = IWEVCUSTOM;
    p = custom;
-   p += snprintf(p, MAX_CUSTOM_LEN, " Age: %lu",
+   p += scnprintf(p, MAX_CUSTOM_LEN, " Age: %lu",
                  vos_timer_get_system_ticks() - descriptor->nReceivedTime);
    event.u.data.length = p - custom;
    current_event = iwe_stream_add_point (scanInfo->info,current_event, end,
@@ -1173,8 +1173,8 @@ exit_point:
 }
 
 /* Abort any MAC scan if in progress */
-void hdd_abort_mac_scan(hdd_context_t* pHddCtx)
+void hdd_abort_mac_scan(hdd_context_t* pHddCtx, tANI_U8 sessionId)
 {
-    sme_AbortMacScan(pHddCtx->hHal);
+    sme_AbortMacScan(pHddCtx->hHal, sessionId);
 }
 

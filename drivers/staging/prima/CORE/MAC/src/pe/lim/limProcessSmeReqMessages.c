@@ -646,9 +646,6 @@ __limHandleSmeStartBssRequest(tpAniSirGlobal pMac, tANI_U32 *pMsgBuf)
         psessionEntry->txLdpcIniFeatureEnabled = 
                                     pSmeStartBssReq->txLdpcIniFeatureEnabled;
 
-        psessionEntry->oxygenNwkIniFeatureEnabled =
-                                    pSmeStartBssReq->oxygenNwkIniFeatureEnabled;
-
         vos_mem_copy((void*)&psessionEntry->rateSet,
             (void*)&pSmeStartBssReq->operationalRateSet,
             sizeof(tSirMacRateSet));
@@ -1670,6 +1667,7 @@ __limProcessSmeJoinReq(tpAniSirGlobal pMac, tANI_U32 *pMsgBuf)
             }
         }   
         handleHTCapabilityandHTInfo(pMac, psessionEntry);
+        psessionEntry->isAmsduSupportInAMPDU = pSmeJoinReq->isAmsduSupportInAMPDU;
 
         /* Store Session related parameters */
         /* Store PE session Id in session Table */
@@ -2045,7 +2043,7 @@ __limProcessSmeReassocReq(tpAniSirGlobal pMac, tANI_U32 *pMsgBuf)
    if((psessionEntry = peFindSessionByBssid(pMac,pReassocReq->bssDescription.bssId,&sessionId))==NULL)
     {
         limPrintMacAddr(pMac, pReassocReq->bssDescription.bssId, LOGE);
-        limLog(pMac, LOGP, FL("Session does not exist for given bssId"));
+        limLog(pMac, LOGE, FL("Session does not exist for given bssId"));
         retCode = eSIR_SME_INVALID_PARAMETERS;
         goto end;
     }
@@ -3105,6 +3103,8 @@ void limProcessSmeGetScanChannelInfo(tpAniSirGlobal pMac, tANI_U32 *pMsgBuf)
     tSirMsgQ         mmhMsg;
     tpSmeGetScanChnRsp  pSirSmeRsp;
     tANI_U16 len = 0;
+    tANI_U8 sessionId;
+    tANI_U16 transactionId;
 
     if(pMac->lim.scanChnInfo.numChnInfo > SIR_MAX_SUPPORTED_CHANNEL_LIST)
     {
@@ -3131,7 +3131,14 @@ void limProcessSmeGetScanChannelInfo(tpAniSirGlobal pMac, tANI_U32 *pMsgBuf)
 
     pSirSmeRsp->mesgType = eWNI_SME_GET_SCANNED_CHANNEL_RSP;
     pSirSmeRsp->mesgLen = len;
-    pSirSmeRsp->sessionId = 0;
+
+    if (pMac->fScanOffload)
+    {
+        limGetSessionInfo(pMac,(tANI_U8 *)pMsgBuf,&sessionId,&transactionId);
+        pSirSmeRsp->sessionId = sessionId;
+    }
+    else
+        pSirSmeRsp->sessionId = 0;
 
     if(pMac->lim.scanChnInfo.numChnInfo)
     {
@@ -4059,16 +4066,6 @@ __limProcessSmeStatsRequest(tpAniSirGlobal pMac, tANI_U32 *pMsgBuf)
             return;
     }
 
-    if ( !pMac->lim.gLimRspReqd )
-    {
-        vos_mem_free( pMsgBuf );
-        return;
-    }
-    else
-    {
-        pMac->lim.gLimRspReqd = FALSE;
-    }
-
     msgQ.reserved = 0;
     msgQ.bodyptr = pMsgBuf;
     msgQ.bodyval = 0;
@@ -4114,16 +4111,6 @@ __limProcessSmeGetStatisticsRequest(tpAniSirGlobal pMac, tANI_U32 *pMsgBuf)
 
     msgQ.type = WDA_GET_STATISTICS_REQ;    
 
-    if ( !pMac->lim.gLimRspReqd )
-    {
-        vos_mem_free( pMsgBuf );
-        return;
-    }
-    else
-    {
-        pMac->lim.gLimRspReqd = FALSE;
-    }
-
     msgQ.reserved = 0;
     msgQ.bodyptr = pMsgBuf;
     msgQ.bodyval = 0;
@@ -4160,16 +4147,6 @@ __limProcessSmeGetRoamRssiRequest(tpAniSirGlobal pMac, tANI_U32 *pMsgBuf)
 
     pPEGetRoamRssiReq = (tpAniGetRssiReq) pMsgBuf;
     msgQ.type = WDA_GET_ROAM_RSSI_REQ;
-
-    if ( !pMac->lim.gLimRspReqd )
-    {
-        vos_mem_free( pMsgBuf );
-        return;
-    }
-    else
-    {
-        pMac->lim.gLimRspReqd = FALSE;
-    }
 
     msgQ.reserved = 0;
     msgQ.bodyptr = pMsgBuf;

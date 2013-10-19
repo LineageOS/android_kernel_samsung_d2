@@ -623,11 +623,6 @@ REG_TABLE_ENTRY g_registry_table[] =
                         VAR_FLAGS_OPTIONAL,
                         (void *)CFG_INTF3_MAC_ADDR_DEFAULT ),
 
-   REG_VARIABLE_STRING( CFG_CRDA_DEFAULT_COUNTRY_CODE, WLAN_PARAM_String,
-                        hdd_config_t, crdaDefaultCountryCode,
-                        VAR_FLAGS_OPTIONAL,
-                        (void *)CFG_CRDA_DEFAULT_COUNTRY_CODE_DEFAULT ),
-
    REG_VARIABLE( CFG_AP_QOS_UAPSD_MODE_NAME , WLAN_PARAM_Integer,
                  hdd_config_t, apUapsdEnabled,
                  VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
@@ -737,6 +732,13 @@ REG_TABLE_ENTRY g_registry_table[] =
                  CFG_AP_LINK_MONITOR_PERIOD_DEFAULT,
                  CFG_AP_LINK_MONITOR_PERIOD_MIN,
                  CFG_AP_LINK_MONITOR_PERIOD_MAX),
+
+   REG_VARIABLE( CFG_GO_LINK_MONITOR_PERIOD_NAME, WLAN_PARAM_Integer,
+                 hdd_config_t, goLinkMonitorPeriod,
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_GO_LINK_MONITOR_PERIOD_DEFAULT,
+                 CFG_GO_LINK_MONITOR_PERIOD_MIN,
+                 CFG_GO_LINK_MONITOR_PERIOD_MAX),
 
    REG_VARIABLE(CFG_DISABLE_PACKET_FILTER , WLAN_PARAM_Integer,
                  hdd_config_t, disablePacketFilter,
@@ -1443,6 +1445,342 @@ REG_TABLE_ENTRY g_registry_table[] =
                  CFG_BTC_DHCP_PROT_ON_SCO_MIN,
                  CFG_BTC_DHCP_PROT_ON_SCO_MAX ),
 
+   REG_VARIABLE( CFG_MWS_COEX_V1_WAN_FREQ_NAME , WLAN_PARAM_Integer,
+                 hdd_config_t, mwsCoexVictimWANFreq[0],
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_MWS_COEX_VX_WAN_FREQ_DEFAULT,
+                 CFG_MWS_COEX_VX_WAN_FREQ_MIN,
+                 CFG_MWS_COEX_VX_WAN_FREQ_MAX ),
+
+   REG_VARIABLE( CFG_MWS_COEX_V1_WLAN_FREQ_NAME , WLAN_PARAM_Integer,
+                 hdd_config_t, mwsCoexVictimWLANFreq[0],
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_MWS_COEX_VX_WLAN_FREQ_DEFAULT,
+                 CFG_MWS_COEX_VX_WLAN_FREQ_MIN,
+                 CFG_MWS_COEX_VX_WLAN_FREQ_MAX ),
+
+   REG_VARIABLE( CFG_MWS_COEX_V1_CONFIG_NAME , WLAN_PARAM_Integer,
+                 hdd_config_t, mwsCoexVictimConfig[0],
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_MWS_COEX_VX_CONFIG_DEFAULT,
+                 CFG_MWS_COEX_VX_CONFIG_MIN,
+                 CFG_MWS_COEX_VX_CONFIG_MAX ),
+
+   REG_VARIABLE( CFG_MWS_COEX_V1_CONFIG2_NAME , WLAN_PARAM_Integer,
+                 hdd_config_t, mwsCoexVictimConfig2[0],
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_MWS_COEX_VX_CONFIG_DEFAULT,
+                 CFG_MWS_COEX_VX_CONFIG_MIN,
+                 CFG_MWS_COEX_VX_CONFIG_MAX ),
+
+   REG_VARIABLE( CFG_MWS_COEX_V2_WAN_FREQ_NAME , WLAN_PARAM_Integer,
+                 hdd_config_t, mwsCoexVictimWANFreq[1],
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_MWS_COEX_VX_WAN_FREQ_DEFAULT,
+                 CFG_MWS_COEX_VX_WAN_FREQ_MIN,
+                 CFG_MWS_COEX_VX_WAN_FREQ_MAX ),
+
+   REG_VARIABLE( CFG_MWS_COEX_V2_WLAN_FREQ_NAME , WLAN_PARAM_Integer,
+                 hdd_config_t, mwsCoexVictimWLANFreq[1],
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_MWS_COEX_VX_WLAN_FREQ_DEFAULT,
+                 CFG_MWS_COEX_VX_WLAN_FREQ_MIN,
+                 CFG_MWS_COEX_VX_WLAN_FREQ_MAX ),
+
+   REG_VARIABLE( CFG_MWS_COEX_V2_CONFIG_NAME , WLAN_PARAM_Integer,
+                 hdd_config_t, mwsCoexVictimConfig[1],
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_MWS_COEX_VX_CONFIG_DEFAULT,
+                 CFG_MWS_COEX_VX_CONFIG_MIN,
+                 CFG_MWS_COEX_VX_CONFIG_MAX ),
+
+   REG_VARIABLE( CFG_MWS_COEX_V2_CONFIG2_NAME , WLAN_PARAM_Integer,
+                 hdd_config_t, mwsCoexVictimConfig2[1],
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_MWS_COEX_VX_CONFIG_DEFAULT,
+                 CFG_MWS_COEX_VX_CONFIG_MIN,
+                 CFG_MWS_COEX_VX_CONFIG_MAX ),
+
+   REG_VARIABLE( CFG_MWS_COEX_V3_WAN_FREQ_NAME , WLAN_PARAM_Integer,
+                 hdd_config_t, mwsCoexVictimWANFreq[2],
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_MWS_COEX_VX_WAN_FREQ_DEFAULT,
+                 CFG_MWS_COEX_VX_WAN_FREQ_MIN,
+                 CFG_MWS_COEX_VX_WAN_FREQ_MAX ),
+
+   REG_VARIABLE( CFG_MWS_COEX_V3_WLAN_FREQ_NAME , WLAN_PARAM_Integer,
+                 hdd_config_t, mwsCoexVictimWLANFreq[2],
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_MWS_COEX_VX_WLAN_FREQ_DEFAULT,
+                 CFG_MWS_COEX_VX_WLAN_FREQ_MIN,
+                 CFG_MWS_COEX_VX_WLAN_FREQ_MAX ),
+
+   REG_VARIABLE( CFG_MWS_COEX_V3_CONFIG_NAME , WLAN_PARAM_Integer,
+                 hdd_config_t, mwsCoexVictimConfig[2],
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_MWS_COEX_VX_CONFIG_DEFAULT,
+                 CFG_MWS_COEX_VX_CONFIG_MIN,
+                 CFG_MWS_COEX_VX_CONFIG_MAX ),
+
+   REG_VARIABLE( CFG_MWS_COEX_V3_CONFIG2_NAME , WLAN_PARAM_Integer,
+                 hdd_config_t, mwsCoexVictimConfig2[2],
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_MWS_COEX_VX_CONFIG_DEFAULT,
+                 CFG_MWS_COEX_VX_CONFIG_MIN,
+                 CFG_MWS_COEX_VX_CONFIG_MAX ),
+
+   REG_VARIABLE( CFG_MWS_COEX_V4_WAN_FREQ_NAME , WLAN_PARAM_Integer,
+                 hdd_config_t, mwsCoexVictimWANFreq[3],
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_MWS_COEX_VX_WAN_FREQ_DEFAULT,
+                 CFG_MWS_COEX_VX_WAN_FREQ_MIN,
+                 CFG_MWS_COEX_VX_WAN_FREQ_MAX ),
+
+   REG_VARIABLE( CFG_MWS_COEX_V4_WLAN_FREQ_NAME , WLAN_PARAM_Integer,
+                 hdd_config_t, mwsCoexVictimWLANFreq[3],
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_MWS_COEX_VX_WLAN_FREQ_DEFAULT,
+                 CFG_MWS_COEX_VX_WLAN_FREQ_MIN,
+                 CFG_MWS_COEX_VX_WLAN_FREQ_MAX ),
+
+   REG_VARIABLE( CFG_MWS_COEX_V4_CONFIG_NAME , WLAN_PARAM_Integer,
+                 hdd_config_t, mwsCoexVictimConfig[3],
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_MWS_COEX_VX_CONFIG_DEFAULT,
+                 CFG_MWS_COEX_VX_CONFIG_MIN,
+                 CFG_MWS_COEX_VX_CONFIG_MAX ),
+
+   REG_VARIABLE( CFG_MWS_COEX_V4_CONFIG2_NAME , WLAN_PARAM_Integer,
+                 hdd_config_t, mwsCoexVictimConfig2[3],
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_MWS_COEX_VX_CONFIG_DEFAULT,
+                 CFG_MWS_COEX_VX_CONFIG_MIN,
+                 CFG_MWS_COEX_VX_CONFIG_MAX ),
+
+   REG_VARIABLE( CFG_MWS_COEX_V5_WAN_FREQ_NAME , WLAN_PARAM_Integer,
+                 hdd_config_t, mwsCoexVictimWANFreq[4],
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_MWS_COEX_VX_WAN_FREQ_DEFAULT,
+                 CFG_MWS_COEX_VX_WAN_FREQ_MIN,
+                 CFG_MWS_COEX_VX_WAN_FREQ_MAX ),
+
+   REG_VARIABLE( CFG_MWS_COEX_V5_WLAN_FREQ_NAME , WLAN_PARAM_Integer,
+                 hdd_config_t, mwsCoexVictimWLANFreq[4],
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_MWS_COEX_VX_WLAN_FREQ_DEFAULT,
+                 CFG_MWS_COEX_VX_WLAN_FREQ_MIN,
+                 CFG_MWS_COEX_VX_WLAN_FREQ_MAX ),
+
+   REG_VARIABLE( CFG_MWS_COEX_V5_CONFIG_NAME , WLAN_PARAM_Integer,
+                 hdd_config_t, mwsCoexVictimConfig[4],
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_MWS_COEX_VX_CONFIG_DEFAULT,
+                 CFG_MWS_COEX_VX_CONFIG_MIN,
+                 CFG_MWS_COEX_VX_CONFIG_MAX ),
+
+   REG_VARIABLE( CFG_MWS_COEX_V5_CONFIG2_NAME , WLAN_PARAM_Integer,
+                 hdd_config_t, mwsCoexVictimConfig2[4],
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_MWS_COEX_VX_CONFIG_DEFAULT,
+                 CFG_MWS_COEX_VX_CONFIG_MIN,
+                 CFG_MWS_COEX_VX_CONFIG_MAX ),
+
+   REG_VARIABLE( CFG_MWS_COEX_V6_WAN_FREQ_NAME , WLAN_PARAM_Integer,
+                 hdd_config_t, mwsCoexVictimWANFreq[5],
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_MWS_COEX_VX_WAN_FREQ_DEFAULT,
+                 CFG_MWS_COEX_VX_WAN_FREQ_MIN,
+                 CFG_MWS_COEX_VX_WAN_FREQ_MAX ),
+
+   REG_VARIABLE( CFG_MWS_COEX_V6_WLAN_FREQ_NAME , WLAN_PARAM_Integer,
+                 hdd_config_t, mwsCoexVictimWLANFreq[5],
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_MWS_COEX_VX_WLAN_FREQ_DEFAULT,
+                 CFG_MWS_COEX_VX_WLAN_FREQ_MIN,
+                 CFG_MWS_COEX_VX_WLAN_FREQ_MAX ),
+
+   REG_VARIABLE( CFG_MWS_COEX_V6_CONFIG_NAME , WLAN_PARAM_Integer,
+                 hdd_config_t, mwsCoexVictimConfig[5],
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_MWS_COEX_VX_CONFIG_DEFAULT,
+                 CFG_MWS_COEX_VX_CONFIG_MIN,
+                 CFG_MWS_COEX_VX_CONFIG_MAX ),
+
+   REG_VARIABLE( CFG_MWS_COEX_V6_CONFIG2_NAME , WLAN_PARAM_Integer,
+                 hdd_config_t, mwsCoexVictimConfig2[5],
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_MWS_COEX_VX_CONFIG_DEFAULT,
+                 CFG_MWS_COEX_VX_CONFIG_MIN,
+                 CFG_MWS_COEX_VX_CONFIG_MAX ),
+
+   REG_VARIABLE( CFG_MWS_COEX_V7_WAN_FREQ_NAME , WLAN_PARAM_Integer,
+                 hdd_config_t, mwsCoexVictimWANFreq[6],
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_MWS_COEX_VX_WAN_FREQ_DEFAULT,
+                 CFG_MWS_COEX_VX_WAN_FREQ_MIN,
+                 CFG_MWS_COEX_VX_WAN_FREQ_MAX ),
+
+   REG_VARIABLE( CFG_MWS_COEX_V7_WLAN_FREQ_NAME , WLAN_PARAM_Integer,
+                 hdd_config_t, mwsCoexVictimWLANFreq[6],
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_MWS_COEX_VX_WLAN_FREQ_DEFAULT,
+                 CFG_MWS_COEX_VX_WLAN_FREQ_MIN,
+                 CFG_MWS_COEX_VX_WLAN_FREQ_MAX ),
+
+   REG_VARIABLE( CFG_MWS_COEX_V7_CONFIG_NAME , WLAN_PARAM_Integer,
+                 hdd_config_t, mwsCoexVictimConfig[6],
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_MWS_COEX_VX_CONFIG_DEFAULT,
+                 CFG_MWS_COEX_VX_CONFIG_MIN,
+                 CFG_MWS_COEX_VX_CONFIG_MAX ),
+
+   REG_VARIABLE( CFG_MWS_COEX_V7_CONFIG2_NAME , WLAN_PARAM_Integer,
+                 hdd_config_t, mwsCoexVictimConfig2[6],
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_MWS_COEX_VX_CONFIG_DEFAULT,
+                 CFG_MWS_COEX_VX_CONFIG_MIN,
+                 CFG_MWS_COEX_VX_CONFIG_MAX ),
+
+   REG_VARIABLE( CFG_MWS_COEX_V8_WAN_FREQ_NAME , WLAN_PARAM_Integer,
+                 hdd_config_t, mwsCoexVictimWANFreq[7],
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_MWS_COEX_VX_WAN_FREQ_DEFAULT,
+                 CFG_MWS_COEX_VX_WAN_FREQ_MIN,
+                 CFG_MWS_COEX_VX_WAN_FREQ_MAX ),
+
+   REG_VARIABLE( CFG_MWS_COEX_V8_WLAN_FREQ_NAME , WLAN_PARAM_Integer,
+                 hdd_config_t, mwsCoexVictimWLANFreq[7],
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_MWS_COEX_VX_WLAN_FREQ_DEFAULT,
+                 CFG_MWS_COEX_VX_WLAN_FREQ_MIN,
+                 CFG_MWS_COEX_VX_WLAN_FREQ_MAX ),
+
+   REG_VARIABLE( CFG_MWS_COEX_V8_CONFIG_NAME , WLAN_PARAM_Integer,
+                 hdd_config_t, mwsCoexVictimConfig[7],
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_MWS_COEX_VX_CONFIG_DEFAULT,
+                 CFG_MWS_COEX_VX_CONFIG_MIN,
+                 CFG_MWS_COEX_VX_CONFIG_MAX ),
+
+   REG_VARIABLE( CFG_MWS_COEX_V8_CONFIG2_NAME , WLAN_PARAM_Integer,
+                 hdd_config_t, mwsCoexVictimConfig2[7],
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_MWS_COEX_VX_CONFIG_DEFAULT,
+                 CFG_MWS_COEX_VX_CONFIG_MIN,
+                 CFG_MWS_COEX_VX_CONFIG_MAX ),
+
+   REG_VARIABLE( CFG_MWS_COEX_V9_WAN_FREQ_NAME , WLAN_PARAM_Integer,
+                 hdd_config_t, mwsCoexVictimWANFreq[8],
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_MWS_COEX_VX_WAN_FREQ_DEFAULT,
+                 CFG_MWS_COEX_VX_WAN_FREQ_MIN,
+                 CFG_MWS_COEX_VX_WAN_FREQ_MAX ),
+
+   REG_VARIABLE( CFG_MWS_COEX_V9_WLAN_FREQ_NAME , WLAN_PARAM_Integer,
+                 hdd_config_t, mwsCoexVictimWLANFreq[8],
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_MWS_COEX_VX_WLAN_FREQ_DEFAULT,
+                 CFG_MWS_COEX_VX_WLAN_FREQ_MIN,
+                 CFG_MWS_COEX_VX_WLAN_FREQ_MAX ),
+
+   REG_VARIABLE( CFG_MWS_COEX_V9_CONFIG_NAME , WLAN_PARAM_Integer,
+                 hdd_config_t, mwsCoexVictimConfig[8],
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_MWS_COEX_VX_CONFIG_DEFAULT,
+                 CFG_MWS_COEX_VX_CONFIG_MIN,
+                 CFG_MWS_COEX_VX_CONFIG_MAX ),
+
+   REG_VARIABLE( CFG_MWS_COEX_V9_CONFIG2_NAME , WLAN_PARAM_Integer,
+                 hdd_config_t, mwsCoexVictimConfig2[8],
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_MWS_COEX_VX_CONFIG_DEFAULT,
+                 CFG_MWS_COEX_VX_CONFIG_MIN,
+                 CFG_MWS_COEX_VX_CONFIG_MAX ),
+
+   REG_VARIABLE( CFG_MWS_COEX_V10_WAN_FREQ_NAME , WLAN_PARAM_Integer,
+                 hdd_config_t, mwsCoexVictimWANFreq[9],
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_MWS_COEX_VX_WAN_FREQ_DEFAULT,
+                 CFG_MWS_COEX_VX_WAN_FREQ_MIN,
+                 CFG_MWS_COEX_VX_WAN_FREQ_MAX ),
+
+   REG_VARIABLE( CFG_MWS_COEX_V10_WLAN_FREQ_NAME , WLAN_PARAM_Integer,
+                 hdd_config_t, mwsCoexVictimWLANFreq[9],
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_MWS_COEX_VX_WLAN_FREQ_DEFAULT,
+                 CFG_MWS_COEX_VX_WLAN_FREQ_MIN,
+                 CFG_MWS_COEX_VX_WLAN_FREQ_MAX ),
+
+   REG_VARIABLE( CFG_MWS_COEX_V10_CONFIG_NAME , WLAN_PARAM_Integer,
+                 hdd_config_t, mwsCoexVictimConfig[9],
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_MWS_COEX_VX_CONFIG_DEFAULT,
+                 CFG_MWS_COEX_VX_CONFIG_MIN,
+                 CFG_MWS_COEX_VX_CONFIG_MAX ),
+
+   REG_VARIABLE( CFG_MWS_COEX_V10_CONFIG2_NAME , WLAN_PARAM_Integer,
+                 hdd_config_t, mwsCoexVictimConfig2[9],
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_MWS_COEX_VX_CONFIG_DEFAULT,
+                 CFG_MWS_COEX_VX_CONFIG_MIN,
+                 CFG_MWS_COEX_VX_CONFIG_MAX ),
+
+   REG_VARIABLE( CFG_MWS_COEX_MODEM_BACKOFF_NAME , WLAN_PARAM_Integer,
+                 hdd_config_t, mwsCoexModemBackoff,
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_MWS_COEX_MODEM_BACKOFF_DEFAULT,
+                 CFG_MWS_COEX_MODEM_BACKOFF_MIN,
+                 CFG_MWS_COEX_MODEM_BACKOFF_MAX ),
+
+   REG_VARIABLE( CFG_MWS_COEX_CONFIG1_NAME , WLAN_PARAM_Integer,
+                 hdd_config_t, mwsCoexConfig[0],
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_MWS_COEX_CONFIGX_DEFAULT,
+                 CFG_MWS_COEX_CONFIGX_MIN,
+                 CFG_MWS_COEX_CONFIGX_MAX ),
+
+   REG_VARIABLE( CFG_MWS_COEX_CONFIG2_NAME , WLAN_PARAM_Integer,
+                 hdd_config_t, mwsCoexConfig[1],
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_MWS_COEX_CONFIGX_DEFAULT,
+                 CFG_MWS_COEX_CONFIGX_MIN,
+                 CFG_MWS_COEX_CONFIGX_MAX ),
+
+   REG_VARIABLE( CFG_MWS_COEX_CONFIG3_NAME , WLAN_PARAM_Integer,
+                 hdd_config_t, mwsCoexConfig[2],
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_MWS_COEX_CONFIGX_DEFAULT,
+                 CFG_MWS_COEX_CONFIGX_MIN,
+                 CFG_MWS_COEX_CONFIGX_MAX ),
+
+   REG_VARIABLE( CFG_MWS_COEX_CONFIG4_NAME , WLAN_PARAM_Integer,
+                 hdd_config_t, mwsCoexConfig[3],
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_MWS_COEX_CONFIGX_DEFAULT,
+                 CFG_MWS_COEX_CONFIGX_MIN,
+                 CFG_MWS_COEX_CONFIGX_MAX ),
+
+   REG_VARIABLE( CFG_MWS_COEX_CONFIG5_NAME , WLAN_PARAM_Integer,
+                 hdd_config_t, mwsCoexConfig[4],
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_MWS_COEX_CONFIGX_DEFAULT,
+                 CFG_MWS_COEX_CONFIGX_MIN,
+                 CFG_MWS_COEX_CONFIGX_MAX ),
+
+   REG_VARIABLE( CFG_MWS_COEX_CONFIG6_NAME , WLAN_PARAM_Integer,
+                 hdd_config_t, mwsCoexConfig[5],
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_MWS_COEX_CONFIGX_DEFAULT,
+                 CFG_MWS_COEX_CONFIGX_MIN,
+                 CFG_MWS_COEX_CONFIGX_MAX ),
+
+   REG_VARIABLE( CFG_SAR_POWER_BACKOFF_NAME , WLAN_PARAM_Integer,
+                 hdd_config_t, SARPowerBackoff,
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_SAR_POWER_BACKOFF_DEFAULT,
+                 CFG_SAR_POWER_BACKOFF_MIN,
+                 CFG_SAR_POWER_BACKOFF_MAX ),
+
    REG_VARIABLE( CFG_AP_LISTEN_MODE_NAME , WLAN_PARAM_Integer,
                  hdd_config_t, nEnableListenMode,
                  VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
@@ -1727,6 +2065,13 @@ REG_TABLE_ENTRY g_registry_table[] =
                 CFG_VOS_TRACE_ENABLE_DEFAULT,
                 CFG_VOS_TRACE_ENABLE_MIN,
                 CFG_VOS_TRACE_ENABLE_MAX ),
+
+   REG_VARIABLE( CFG_VOS_TRACE_ENABLE_PMC_NAME,  WLAN_PARAM_Integer,
+                 hdd_config_t, vosTraceEnablePMC,
+                 VAR_FLAGS_OPTIONAL,
+                 CFG_VOS_TRACE_ENABLE_DEFAULT,
+                 CFG_VOS_TRACE_ENABLE_MIN,
+                 CFG_VOS_TRACE_ENABLE_MAX ),
 
    REG_VARIABLE( CFG_VOS_TRACE_ENABLE_WDA_NAME, WLAN_PARAM_Integer,
                 hdd_config_t, vosTraceEnableWDA,
@@ -2356,13 +2701,6 @@ REG_VARIABLE( CFG_TDLS_PUAPSD_RX_FRAME_THRESHOLD, WLAN_PARAM_Integer,
                  CFG_SPLIT_SCAN_TRAFFIC_MONITOR_TIMER_MIN,
                  CFG_SPLIT_SCAN_TRAFFIC_MONITOR_TIMER_MAX ),
 
-   REG_VARIABLE( CFG_ENABLE_OXYNWK_NAME, WLAN_PARAM_Integer,
-                 hdd_config_t, enableOxygenNwk,
-                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
-                 CFG_ENABLE_OXYNWK_DEFAULT,
-                 CFG_ENABLE_OXYNWK_MIN,
-                 CFG_ENABLE_OXYNWK_MAX ),
-
    REG_VARIABLE( CFG_FLEX_CONNECT_POWER_FACTOR_NAME, WLAN_PARAM_Integer,
                  hdd_config_t, flexConnectPowerFactor,
                  VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_MINMAX,
@@ -2390,6 +2728,21 @@ REG_VARIABLE( CFG_TDLS_PUAPSD_RX_FRAME_THRESHOLD, WLAN_PARAM_Integer,
                  CFG_ENABLE_SNR_MONITORING_DEFAULT,
                  CFG_ENABLE_SNR_MONITORING_MIN,
                  CFG_ENABLE_SNR_MONITORING_MAX),
+
+#ifdef FEATURE_WLAN_SCAN_PNO
+   REG_VARIABLE( CFG_PNO_SCAN_TIMER_REPEAT_VALUE, WLAN_PARAM_Integer,
+                 hdd_config_t, configPNOScanTimerRepeatValue,
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_PNO_SCAN_TIMER_REPEAT_VALUE_DEFAULT,
+                 CFG_PNO_SCAN_TIMER_REPEAT_VALUE_MIN,
+                 CFG_PNO_SCAN_TIMER_REPEAT_VALUE_MAX),
+#endif
+   REG_VARIABLE( CFG_AMSDU_SUPPORT_IN_AMPDU_NAME , WLAN_PARAM_Integer,
+                 hdd_config_t, isAmsduSupportInAMPDU,
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_AMSDU_SUPPORT_IN_AMPDU_DEFAULT,
+                 CFG_AMSDU_SUPPORT_IN_AMPDU_MIN,
+                 CFG_AMSDU_SUPPORT_IN_AMPDU_MAX ),
 
 };
 
@@ -2775,6 +3128,12 @@ static void print_hdd_cfg(hdd_context_t *pHddCtx)
   VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH, "Name = [gFlexConnectPowerFactor] Value = [%u] ", pHddCtx->cfg_ini->flexConnectPowerFactor);
   VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH, "Name = [gEnableIbssHeartBeatOffload] Value = [%u] ", pHddCtx->cfg_ini->enableIbssHeartBeatOffload);
   VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH, "Name = [gAntennaDiversity] Value = [%u] ", pHddCtx->cfg_ini->antennaDiversity);
+  VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH, "Name = [gGoLinkMonitorPeriod] Value = [%u]",pHddCtx->cfg_ini->goLinkMonitorPeriod);
+  VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH, "Name = [gApLinkMonitorPeriod] Value = [%u]",pHddCtx->cfg_ini->apLinkMonitorPeriod);
+  VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH, "Name = [gGoKeepAlivePeriod] Value = [%u]",pHddCtx->cfg_ini->goKeepAlivePeriod);
+  VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH, "Name = [gApKeepAlivePeriod]Value = [%u]",pHddCtx->cfg_ini->apKeepAlivePeriod);
+  VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH, "Name = [gAmsduSupportInAMPDU] Value = [%lu] ",pHddCtx->cfg_ini->isAmsduSupportInAMPDU);
+
 }
 
 
@@ -2842,7 +3201,7 @@ VOS_STATUS hdd_cfg_get_config(hdd_context_t *pHddCtx, char *pBuf, int buflen)
       {
          snprintf(valueStr, CFG_VALUE_MAX_LEN, "(unhandled)");
       }
-      curlen = snprintf(configStr, CFG_ENTRY_MAX_LEN,
+      curlen = scnprintf(configStr, CFG_ENTRY_MAX_LEN,
                         "%s=[%s]%s\n",
                         pRegEntry->RegName,
                         valueStr,
@@ -3190,6 +3549,7 @@ static void hdd_set_btc_config(hdd_context_t *pHddCtx)
 {
    hdd_config_t *pConfig = pHddCtx->cfg_ini;
    tSmeBtcConfig btcParams;
+   int i;
 
    sme_BtcGetConfig(pHddCtx->hHal, &btcParams);
 
@@ -3210,6 +3570,20 @@ static void hdd_set_btc_config(hdd_context_t *pHddCtx)
    btcParams.btcMaxScoBlockPerc = pConfig->btcMaxScoBlockPerc;
    btcParams.btcDhcpProtOnA2dp = pConfig->btcDhcpProtOnA2dp;
    btcParams.btcDhcpProtOnSco = pConfig->btcDhcpProtOnSco;
+
+   for (i = 0; i < 10; i++)
+   {
+      btcParams.mwsCoexVictimWANFreq[i] = pConfig->mwsCoexVictimWANFreq[i];
+      btcParams.mwsCoexVictimWLANFreq[i] = pConfig->mwsCoexVictimWLANFreq[i];
+      btcParams.mwsCoexVictimConfig[i] = pConfig->mwsCoexVictimConfig[i];
+      btcParams.mwsCoexVictimConfig2[i] = pConfig->mwsCoexVictimConfig2[i];
+   }
+   for (i = 0; i < 6; i++)
+   {
+      btcParams.mwsCoexConfig[i] = pConfig->mwsCoexConfig[i];
+   }
+   btcParams.mwsCoexModemBackoff = pConfig->mwsCoexModemBackoff;
+   btcParams.SARPowerBackoff = pConfig->SARPowerBackoff;
 
    sme_BtcSetConfig(pHddCtx->hHal, &btcParams);
 }
@@ -3564,6 +3938,14 @@ v_BOOL_t hdd_update_config_dat( hdd_context_t *pHddCtx )
         fStatus = FALSE;
         hddLog(LOGE, "Could not pass on WNI_CFG_AP_LINK_MONITOR_TIMEOUT to CCM\n");
      }
+
+    if (ccmCfgSetInt(pHddCtx->hHal, WNI_CFG_GO_LINK_MONITOR_TIMEOUT, pConfig->goLinkMonitorPeriod,
+        NULL, eANI_BOOLEAN_FALSE)==eHAL_STATUS_FAILURE)
+     {
+        fStatus = FALSE;
+        hddLog(LOGE, "Could not pass on WNI_CFG_GO_LINK_MONITOR_TIMEOUT to CCM\n");
+     }
+
 
 #if defined WLAN_FEATURE_VOWIFI
     if (ccmCfgSetInt(pHddCtx->hHal, WNI_CFG_RRM_ENABLED, pConfig->fRrmEnable,
@@ -3959,6 +4341,7 @@ VOS_STATUS hdd_set_sme_config( hdd_context_t *pHddCtx )
 
    hdd_config_t *pConfig = pHddCtx->cfg_ini;
 
+
    vos_mem_zero( &smeConfig, sizeof( smeConfig ) );
 
    VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH,
@@ -3966,8 +4349,7 @@ VOS_STATUS hdd_set_sme_config( hdd_context_t *pHddCtx )
               pConfig->WmmMode, pConfig->b80211eIsEnabled, pConfig->dot11Mode);
 
    // Config params obtained from the registry
-   if (is_crda_regulatory_entry_valid() == VOS_TRUE)
-       sme_setRegInfo(pHddCtx->hHal, pConfig->crdaDefaultCountryCode);
+
    smeConfig.csrConfig.RTSThreshold             = pConfig->RTSThreshold;
    smeConfig.csrConfig.FragmentationThreshold   = pConfig->FragmentationThreshold;
    smeConfig.csrConfig.shortSlotTime            = pConfig->ShortSlotTimeEnabled;
@@ -4138,8 +4520,7 @@ VOS_STATUS hdd_set_sme_config( hdd_context_t *pHddCtx )
 
    smeConfig.csrConfig.enableTxLdpc = pConfig->enableTxLdpc;
 
-   // Prop IE enabling/disabling option
-   smeConfig.csrConfig.enableOxygenNwk = pConfig->enableOxygenNwk;
+   smeConfig.csrConfig.isAmsduSupportInAMPDU = pConfig->isAmsduSupportInAMPDU;
 
    /* update SSR config */
    sme_UpdateEnableSSR((tHalHandle)(pHddCtx->hHal), pHddCtx->cfg_ini->enableSSR);

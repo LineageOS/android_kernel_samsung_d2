@@ -273,7 +273,7 @@ static int hdd_netdev_notifier_call(struct notifier_block * nb,
         { 
            int result;
            INIT_COMPLETION(pHddCtx->scan_info.abortscan_event_var);
-           hdd_abort_mac_scan(pAdapter->pHddCtx);
+           hdd_abort_mac_scan(pAdapter->pHddCtx, pAdapter->sessionId);
            result = wait_for_completion_interruptible_timeout(
                                &pHddCtx->scan_info.abortscan_event_var,
                                msecs_to_jiffies(WLAN_WAIT_TIME_ABORTSCAN));
@@ -551,6 +551,1393 @@ void hdd_checkandupdate_dfssetting( hdd_adapter_t *pAdapter, char *country_code)
 
 }
 
+#ifdef WLAN_FEATURE_RELIABLE_MCAST
+/**---------------------------------------------------------------------------
+
+  \brief hdd_parse_setrmc_command() - HDD Parse reliable multicast command
+
+  This function parses the setrmcenable command passed in the format
+  SETRMCENABLE<space>1(to enable RMC) OR 0(to disable RMC) if no value is
+  defined then default 0 is assumed
+  For example input commands:
+  1) SETRMCENABLE 1 -> This is translated into enable reliable multicast
+  2) SETRMCENABLE 0 -> This is translated into disable reliable multicast
+  2) SETRMCENABLE -> This is translated into disable reliable multicast
+
+  \param  - pValue Pointer to setrmcenable command
+  \param  - pRmcEnable Pointer to local RMC enable variable
+
+  \return - 0 for success non-zero for failure
+
+  --------------------------------------------------------------------------*/
+static int hdd_parse_setrmcenable_command(tANI_U8 *pValue, tANI_U8 *pRmcEnable)
+{
+    tANI_U8 *inPtr = pValue;
+    int tempInt;
+    int v = 0;
+    char buf[32];
+    *pRmcEnable = 0;
+
+    inPtr = strnchr(pValue, strlen(pValue), SPACE_ASCII_VALUE);
+    /*no argument after the command*/
+    if (NULL == inPtr)
+    {
+        return 0;
+    }
+
+    /*no space after the command*/
+    else if (SPACE_ASCII_VALUE != *inPtr)
+    {
+        return 0;
+    }
+
+    /*removing empty spaces*/
+    while ((SPACE_ASCII_VALUE  == *inPtr) && ('\0' !=  *inPtr)) inPtr++;
+
+    /*no argument followed by spaces*/
+    if ('\0' == *inPtr)
+    {
+        return 0;
+    }
+
+    /*getting the first argument which enables or disables reliable
+      multicast for input IP v4 address*/
+    sscanf(inPtr, "%32s ", buf);
+    v = kstrtos32(buf, 10, &tempInt);
+    if ( v < 0)
+    {
+       return -EINVAL;
+    }
+
+    *pRmcEnable = tempInt;
+
+    VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+       "ucRmcEnable: %d", *pRmcEnable);
+
+    return 0;
+}
+/**---------------------------------------------------------------------------
+
+  \brief hdd_parse_setrmcactionperiod_command() - HDD Parse reliable multicast
+    action period command
+
+  This function parses the setrmcactionperiod command passed in the format
+  SETRMCACTIONPERIOD<space>X(action period X)
+  For example input commands:
+  1) SETRMCACTIONPERIOD 20 -> This is translated into set RMC action period
+     frequency to 20
+  1) SETRMCACTIONPERIOD 10 -> This is translated into set RMC action period
+     frequency to 10
+
+  \param  - pValue Pointer to setrmcactionperiod command
+  \param  - pActionPeriod Pointer to local RMC action period variable
+
+  \return - 0 for success non-zero for failure
+
+  --------------------------------------------------------------------------*/
+static int hdd_parse_setrmcactionperiod_command(tANI_U8 *pValue,
+           tANI_U32 *pActionPeriod)
+{
+    tANI_U8 *inPtr = pValue;
+    int tempInt;
+    int v = 0;
+    char buf[32];
+    *pActionPeriod = 0;
+
+    inPtr = strnchr(pValue, strlen(pValue), SPACE_ASCII_VALUE);
+    /*no argument after the command*/
+    if (NULL == inPtr)
+    {
+        return -EINVAL;
+    }
+
+    /*no space after the command*/
+    else if (SPACE_ASCII_VALUE != *inPtr)
+    {
+        return -EINVAL;
+    }
+
+    /*removing empty spaces*/
+    while ((SPACE_ASCII_VALUE  == *inPtr) && ('\0' !=  *inPtr)) inPtr++;
+
+    /*no argument followed by spaces*/
+    if ('\0' == *inPtr)
+    {
+        return 0;
+    }
+
+    /*getting the first argument which enables or disables reliable
+      multicast for input IP v4 address*/
+    sscanf(inPtr, "%32s ", buf);
+    v = kstrtos32(buf, 10, &tempInt);
+    if ( v < 0)
+    {
+       return -EINVAL;
+    }
+
+    *pActionPeriod = tempInt;
+
+    VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+       "uActionPeriod: %d", *pActionPeriod);
+
+    return 0;
+}
+
+/**---------------------------------------------------------------------------
+
+  \brief hdd_parse_setrmcrate_command() - HDD Parse reliable multicast
+    set rate command
+
+  This function parses the SETRMCTXRATE command passed in the format
+  SETRMCTXRATE<space>X(multicast rate in Mbps)
+  For example input commands:
+  1) SETRMCTXRATE 6 -> This is translated into set RMC multicast rate
+     to 6 Mbps
+  1) SETRMCTXRATE 0 -> This is translated into disabling fixed multicast rate
+     and enabling multicast RA in firmware
+
+  \param  - pValue Pointer to SETRMCTXRATE command
+  \param  - pRate Pointer to local RMC multicast rate variable
+  \param  - pTxFlags Pointer to local RMC multicast rate variable
+
+  \return - 0 for success non-zero for failure
+
+  --------------------------------------------------------------------------*/
+static int hdd_parse_setrmcrate_command(tANI_U8 *pValue,
+           tANI_U32 *pRate, tTxrateinfoflags *pTxFlags)
+{
+    tANI_U8 *inPtr = pValue;
+    int tempInt;
+    int v = 0;
+    char buf[32];
+    *pRate = 0;
+    *pTxFlags = 0;
+
+    inPtr = strnchr(pValue, strlen(pValue), SPACE_ASCII_VALUE);
+    /*no argument after the command*/
+    if (NULL == inPtr)
+    {
+        return -EINVAL;
+    }
+
+    /*no space after the command*/
+    else if (SPACE_ASCII_VALUE != *inPtr)
+    {
+        return -EINVAL;
+    }
+
+    /*removing empty spaces*/
+    while ((SPACE_ASCII_VALUE  == *inPtr) && ('\0' !=  *inPtr)) inPtr++;
+
+    /*no argument followed by spaces*/
+    if ('\0' == *inPtr)
+    {
+        return 0;
+    }
+
+    /*
+     * getting the first argument which sets multicast rate.
+     */
+    sscanf(inPtr, "%32s ", buf);
+    v = kstrtos32(buf, 10, &tempInt);
+    if ( v < 0)
+    {
+       return -EINVAL;
+    }
+
+    /*
+     * Validate the multicast rate.
+     */
+    switch (tempInt)
+    {
+        default:
+            VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_WARN,
+            "Unsupported rate: %d", tempInt);
+            return -EINVAL;
+        case 0:
+        case 6:
+        case 9:
+        case 12:
+        case 18:
+        case 24:
+        case 36:
+        case 48:
+        case 54:
+            *pTxFlags = eHAL_TX_RATE_LEGACY;
+            *pRate = tempInt * 10;
+            break;
+        case 65:
+            *pTxFlags = eHAL_TX_RATE_HT20;
+            *pRate = tempInt * 10;
+            break;
+        case 72:
+            *pTxFlags = eHAL_TX_RATE_HT20 | eHAL_TX_RATE_SGI;
+            *pRate = 722; /* fractional rate 72.2 Mbps */
+            break;
+    }
+
+    VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+       "Rate: %d", *pRate);
+
+    return 0;
+}
+#endif /*End WLAN_FEATURE_RELIABLE_MCAST*/
+
+#ifdef FEATURE_CESIUM_PROPRIETARY
+/**---------------------------------------------------------------------------
+
+  \brief hdd_cfg80211_get_ibss_peer_info_cb() - Callback function for IBSS
+  Peer Info request
+
+  This is an asynchronous callback function from SME when the peer info
+  is received
+
+  \pUserData -> Adapter private data
+  \pPeerInfoRsp -> Peer info response
+
+  \return - 0 for success non-zero for failure
+  --------------------------------------------------------------------------*/
+static void
+hdd_cfg80211_get_ibss_peer_info_cb(v_VOID_t *pUserData, v_VOID_t *pPeerInfoRsp)
+{
+   hdd_adapter_t *pAdapter = (hdd_adapter_t *)pUserData;
+   hdd_ibss_peer_info_t *pPeerInfo = (hdd_ibss_peer_info_t *)pPeerInfoRsp;
+   hdd_station_ctx_t *pStaCtx;
+   v_U8_t   i;
+
+   /*Sanity check*/
+   if ((NULL == pAdapter) || (WLAN_HDD_ADAPTER_MAGIC != pAdapter->magic))
+   {
+      VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_FATAL,
+         "invalid adapter or adapter has invalid magic");
+      return;
+   }
+
+   pStaCtx = WLAN_HDD_GET_STATION_CTX_PTR(pAdapter);
+   if (NULL != pStaCtx && NULL != pPeerInfo &&
+       eHAL_STATUS_SUCCESS == pPeerInfo->status)
+   {
+      pStaCtx->ibss_peer_info.status = pPeerInfo->status;
+      pStaCtx->ibss_peer_info.numIBSSPeers = pPeerInfo->numIBSSPeers;
+
+      /* Paranoia check */
+      if (pPeerInfo->numIBSSPeers < HDD_MAX_NUM_IBSS_STA)
+      {
+         for (i = 0; i < pPeerInfo->numIBSSPeers; i++)
+         {
+            memcpy(&pStaCtx->ibss_peer_info.ibssPeerList[i],
+                   &pPeerInfo->ibssPeerList[i],
+                   sizeof(hdd_ibss_peer_info_params_t));
+         }
+         VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                    "%s] Peer Info copied in HDD");
+      }
+      else
+      {
+         VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                    "%s] Number of peers %d returned is more than limit %d",
+                    __func__, pPeerInfo->numIBSSPeers, HDD_MAX_NUM_IBSS_STA);
+      }
+   }
+   else
+   {
+      VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+         "%s] peerInfo returned is NULL", __func__);
+   }
+
+   complete(&pAdapter->ibss_peer_info_comp);
+}
+
+/**---------------------------------------------------------------------------
+
+  \brief hdd_cfg80211_get_ibss_peer_info_all() -
+
+  Request function to get IBSS peer info from lower layers
+
+  \pAdapter -> Adapter context
+
+  \return - 0 for success non-zero for failure
+  --------------------------------------------------------------------------*/
+static
+VOS_STATUS hdd_cfg80211_get_ibss_peer_info_all(hdd_adapter_t *pAdapter)
+{
+   tHalHandle hHal = WLAN_HDD_GET_HAL_CTX(pAdapter);
+   int status;
+   VOS_STATUS retStatus = VOS_STATUS_E_FAILURE;
+
+   INIT_COMPLETION(pAdapter->ibss_peer_info_comp);
+
+   retStatus = sme_RequestIBSSPeerInfo(hHal, pAdapter,
+                                    hdd_cfg80211_get_ibss_peer_info_cb,
+                                    VOS_TRUE, 0xFF);
+
+   if (VOS_STATUS_SUCCESS == retStatus)
+   {
+      status = wait_for_completion_interruptible_timeout
+               (&pAdapter->ibss_peer_info_comp,
+                msecs_to_jiffies(IBSS_PEER_INFO_REQ_TIMOEUT));
+
+      /* status will be 0 if timed out */
+      if (status <= 0)
+      {
+         hddLog(VOS_TRACE_LEVEL_WARN, "%s: Warning: IBSS_PEER_INFO_TIMEOUT",
+                __func__);
+         retStatus = VOS_STATUS_E_FAILURE;
+         return retStatus;
+      }
+   }
+   else
+   {
+      hddLog(VOS_TRACE_LEVEL_WARN,
+             "%s: Warning: sme_RequestIBSSPeerInfo Request failed", __func__);
+   }
+
+   return retStatus;
+}
+
+/**---------------------------------------------------------------------------
+
+  \brief hdd_cfg80211_get_ibss_peer_info() -
+
+  Request function to get IBSS peer info from lower layers
+
+  \pAdapter -> Adapter context
+  \staIdx -> Sta index for which the peer info is requested
+
+  \return - 0 for success non-zero for failure
+  --------------------------------------------------------------------------*/
+static VOS_STATUS
+hdd_cfg80211_get_ibss_peer_info(hdd_adapter_t *pAdapter, v_U8_t staIdx)
+{
+    int status;
+    tHalHandle hHal = WLAN_HDD_GET_HAL_CTX(pAdapter);
+    VOS_STATUS retStatus = VOS_STATUS_E_FAILURE;
+
+    INIT_COMPLETION(pAdapter->ibss_peer_info_comp);
+
+    retStatus = sme_RequestIBSSPeerInfo(hHal, pAdapter,
+                                     hdd_cfg80211_get_ibss_peer_info_cb,
+                                     VOS_FALSE, staIdx);
+
+    if (VOS_STATUS_SUCCESS == retStatus)
+    {
+       status = wait_for_completion_interruptible_timeout
+                (&pAdapter->ibss_peer_info_comp,
+                msecs_to_jiffies(IBSS_PEER_INFO_REQ_TIMOEUT));
+
+       /* status = 0 on timeout */
+       if (status <= 0)
+       {
+          hddLog(VOS_TRACE_LEVEL_WARN, "%s: Warning: IBSS_PEER_INFO_TIMEOUT",
+                  __func__);
+          retStatus = VOS_STATUS_E_FAILURE;
+          return retStatus;
+       }
+    }
+    else
+    {
+       hddLog(VOS_TRACE_LEVEL_WARN,
+              "%s: Warning: sme_RequestIBSSPeerInfo Request failed", __func__);
+    }
+
+    return retStatus;
+}
+
+/**---------------------------------------------------------------------------
+
+  \brief hdd_parse_get_ibss_peer_info - HDD Parse get ibss peer info all
+
+  This function parses the send action frame data passed in the format
+  GETIBSSPEERINFOALL
+
+  \param  - pValue Pointer to input data
+  \param  - pPeerMacAddr pointer to peer mac address
+  \return - 0 for success non-zero for failure
+
+  --------------------------------------------------------------------------*/
+VOS_STATUS
+hdd_parse_get_ibss_peer_info(tANI_U8 *pValue, v_MACADDR_t *pPeerMacAddr)
+{
+    tANI_U8 *inPtr = pValue;
+    inPtr = strnchr(pValue, strlen(pValue), SPACE_ASCII_VALUE);
+
+    /*no argument after the command*/
+    if (NULL == inPtr)
+    {
+        return VOS_STATUS_E_FAILURE;;
+    }
+
+    /*no space after the command*/
+    else if (SPACE_ASCII_VALUE != *inPtr)
+    {
+        return VOS_STATUS_E_FAILURE;;
+    }
+
+    /*removing empty spaces*/
+    while ((SPACE_ASCII_VALUE  == *inPtr) && ('\0' !=  *inPtr) ) inPtr++;
+
+    /*no argument followed by spaces*/
+    if ('\0' == *inPtr)
+    {
+        return VOS_STATUS_E_FAILURE;;
+    }
+
+    /*getting the first argument ie the peer mac address */
+    if (inPtr[2] != ':' || inPtr[5] != ':' || inPtr[8] != ':' ||
+        inPtr[11] != ':' || inPtr[14] != ':')
+    {
+       return VOS_STATUS_E_FAILURE;;
+    }
+    sscanf(inPtr, "%2x:%2x:%2x:%2x:%2x:%2x",
+                  (unsigned int *)&pPeerMacAddr->bytes[0],
+                  (unsigned int *)&pPeerMacAddr->bytes[1],
+                  (unsigned int *)&pPeerMacAddr->bytes[2],
+                  (unsigned int *)&pPeerMacAddr->bytes[3],
+                  (unsigned int *)&pPeerMacAddr->bytes[4],
+                  (unsigned int *)&pPeerMacAddr->bytes[5]);
+
+    /* The command buffer seems to be fine */
+    return VOS_STATUS_SUCCESS;
+}
+
+#endif /* FEATURE_CESIUM_PROPRIETARY */
+
+#ifdef FEATURE_WLAN_BATCH_SCAN
+
+/**---------------------------------------------------------------------------
+
+  \brief hdd_extract_assigned_int_from_str() - Extracts assigned integer from
+                                               input string
+
+  This function extracts assigned integer from string in below format:
+  "STRING=10" : extracts integer 10 from this string
+
+  \param  - pInPtr Pointer to input string
+  \param  - base  Base for string to int conversion(10 for decimal 16 for hex)
+  \param  - pOutPtr Pointer to variable in which extracted integer needs to be
+            assigned
+  \param  - pLastArg to tell whether it is last arguement in input string or
+            not
+
+  \return - NULL for failure cases
+            pointer to next arguement in input string for success cases
+  --------------------------------------------------------------------------*/
+static tANI_U8 *
+hdd_extract_assigned_int_from_str
+(
+    tANI_U8 *pInPtr,
+    tANI_U8 base,
+    tANI_U32 *pOutPtr,
+    tANI_U8 *pLastArg
+)
+{
+    int tempInt;
+    int v = 0;
+    char buf[32];
+    int val = 0;
+    *pLastArg = FALSE;
+
+    pInPtr = strnchr(pInPtr, strlen(pInPtr), EQUALS_TO_ASCII_VALUE);
+    if (NULL == pInPtr)
+    {
+        return NULL;
+    }
+
+    pInPtr++;
+
+    while ((SPACE_ASCII_VALUE  == *pInPtr) && ('\0' !=  *pInPtr)) pInPtr++;
+
+    val = sscanf(pInPtr, "%32s ", buf);
+    if (val < 0 && val > strlen(pInPtr))
+    {
+        return NULL;
+    }
+    pInPtr += val;
+    v = kstrtos32(buf, base, &tempInt);
+    if (v < 0)
+    {
+        return NULL;
+    }
+    *pOutPtr = tempInt;
+
+    pInPtr = strnchr(pInPtr, strlen(pInPtr), SPACE_ASCII_VALUE);
+    if (NULL == pInPtr)
+    {
+        *pLastArg = TRUE;
+        return NULL;
+    }
+    while ((SPACE_ASCII_VALUE  == *pInPtr) && ('\0' !=  *pInPtr)) pInPtr++;
+
+    return pInPtr;
+}
+
+/**---------------------------------------------------------------------------
+
+  \brief hdd_extract_assigned_char_from_str() - Extracts assigned char from
+                                                input string
+
+  This function extracts assigned character from string in below format:
+  "STRING=A" : extracts char 'A' from this string
+
+  \param  - pInPtr Pointer to input string
+  \param  - pOutPtr Pointer to variable in which extracted char needs to be
+            assigned
+  \param  - pLastArg to tell whether it is last arguement in input string or
+            not
+
+  \return - NULL for failure cases
+            pointer to next arguement in input string for success cases
+  --------------------------------------------------------------------------*/
+static tANI_U8 *
+hdd_extract_assigned_char_from_str
+(
+    tANI_U8 *pInPtr,
+    tANI_U8 *pOutPtr,
+    tANI_U8 *pLastArg
+)
+{
+    *pLastArg = FALSE;
+
+    pInPtr = strnchr(pInPtr, strlen(pInPtr), EQUALS_TO_ASCII_VALUE);
+    if (NULL == pInPtr)
+    {
+        return NULL;
+    }
+
+    pInPtr++;
+
+    while ((SPACE_ASCII_VALUE  == *pInPtr) && ('\0' !=  *pInPtr)) pInPtr++;
+
+    *pOutPtr = *pInPtr;
+
+    pInPtr = strnchr(pInPtr, strlen(pInPtr), SPACE_ASCII_VALUE);
+    if (NULL == pInPtr)
+    {
+        *pLastArg = TRUE;
+        return NULL;
+    }
+    while ((SPACE_ASCII_VALUE  == *pInPtr) && ('\0' !=  *pInPtr)) pInPtr++;
+
+    return pInPtr;
+}
+
+
+/**---------------------------------------------------------------------------
+
+  \brief hdd_parse_set_batchscan_command () - HDD parse set batch scan command
+
+  This function parses set batch scan command in below format:
+  WLS_BATCHING_SET <space> followed by below arguements
+  "SCANFREQ=XX"   : Optional defaults to 30 sec
+  "MSCAN=XX"      : Required number of scans to attempt to batch
+  "BESTN=XX"      : Best Network (RSSI) defaults to 16
+  "CHANNEL=<X,Y>" : optional defaults to all channels, can list 'A'or` B.
+                    A. implies  only 5 GHz , B. implies only 2.4GHz
+  "RTT=X"         : optional defaults to 0
+  returns the MIN of MSCAN or the max # of scans firmware can cache or -1 on
+  error
+
+  For example input commands:
+  1) WLS_BATCHING_SET SCANFREQ=60 MSCAN=10 BESTN=20 CHANNEL=A RTT=0 -> This is
+     translated into set batch scan with following parameters:
+     a) Frequence 60 seconds
+     b) Batch 10 scans together
+     c) Best RSSI to be 20
+     d) 5GHz band only
+     e) RTT is equal to 0
+
+  \param  - pValue Pointer to input channel list
+  \param  - pHddSetBatchScanReq Pointer to HDD batch scan request structure
+
+  \return - 0 for success non-zero for failure
+
+  --------------------------------------------------------------------------*/
+static int
+hdd_parse_set_batchscan_command
+(
+    tANI_U8 *pValue,
+    tSirSetBatchScanReq *pHddSetBatchScanReq
+)
+{
+    tANI_U8 *inPtr = pValue;
+    tANI_U8 val = 0;
+    tANI_U8 lastArg = 0;
+
+    /*initialize default values*/
+    pHddSetBatchScanReq->scanFrequency = HDD_SET_BATCH_SCAN_DEFAULT_FREQ;
+    pHddSetBatchScanReq->rfBand = HDD_SET_BATCH_SCAN_DEFAULT_BAND;
+    pHddSetBatchScanReq->rtt = 0;
+    pHddSetBatchScanReq->bestNetwork = HDD_SET_BATCH_SCAN_BEST_NETWORK;
+
+    /*go to space after WLS_BATCHING_SET command*/
+    inPtr = strnchr(pValue, strlen(pValue), SPACE_ASCII_VALUE);
+    /*no argument after the command*/
+    if (NULL == inPtr)
+    {
+        return -EINVAL;
+    }
+
+    /*no space after the command*/
+    else if (SPACE_ASCII_VALUE != *inPtr)
+    {
+        return -EINVAL;
+    }
+
+    /*removing empty spaces*/
+    while ((SPACE_ASCII_VALUE  == *inPtr) && ('\0' !=  *inPtr)) inPtr++;
+
+    /*no argument followed by spaces*/
+    if ('\0' == *inPtr)
+    {
+        return -EINVAL;
+    }
+
+    /*check and parse SCANFREQ*/
+    if ((strncmp(inPtr, "SCANFREQ", 8) == 0))
+    {
+        inPtr = hdd_extract_assigned_int_from_str(inPtr, 10,
+                    &pHddSetBatchScanReq->scanFrequency, &lastArg);
+        if ( (NULL == inPtr) || (TRUE == lastArg))
+        {
+            return -EINVAL;
+        }
+    }
+
+    /*check and parse MSCAN*/
+    if ((strncmp(inPtr, "MSCAN", 5) == 0))
+    {
+        inPtr = hdd_extract_assigned_int_from_str(inPtr, 10,
+                    &pHddSetBatchScanReq->numberOfScansToBatch, &lastArg);
+        if (TRUE == lastArg)
+        {
+            goto done;
+        }
+        else if (NULL == inPtr)
+        {
+            return -EINVAL;
+        }
+    }
+    else
+    {
+        return -EINVAL;
+    }
+
+    /*check and parse BESTN*/
+    if ((strncmp(inPtr, "BESTN", 5) == 0))
+    {
+        inPtr = hdd_extract_assigned_int_from_str(inPtr, 10,
+                    &pHddSetBatchScanReq->bestNetwork, &lastArg);
+        if (TRUE == lastArg)
+        {
+            goto done;
+        }
+        else if (NULL == inPtr)
+        {
+            return -EINVAL;
+        }
+    }
+
+    /*check and parse CHANNEL*/
+    if ((strncmp(inPtr, "CHANNEL", 7) == 0))
+    {
+        inPtr = hdd_extract_assigned_char_from_str(inPtr, &val, &lastArg);
+        if (TRUE == lastArg)
+        {
+            goto done;
+        }
+        else if (NULL == inPtr)
+        {
+            return -EINVAL;
+        }
+        if (('A' == val) || ('a' == val))
+        {
+            pHddSetBatchScanReq->rfBand = HDD_SET_BATCH_SCAN_24GHz_BAND_ONLY;
+        }
+        else if (('B' == val) || ('b' == val))
+        {
+            pHddSetBatchScanReq->rfBand = HDD_SET_BATCH_SCAN_5GHz_BAND_ONLY;
+        }
+        else
+        {
+            return -EINVAL;
+        }
+    }
+
+    /*check and parse RTT*/
+    if ((strncmp(inPtr, "RTT", 3) == 0))
+    {
+        inPtr = hdd_extract_assigned_int_from_str(inPtr, 10,
+                    &pHddSetBatchScanReq->rtt, &lastArg);
+        if (TRUE == lastArg)
+        {
+            goto done;
+        }
+        if (NULL == inPtr)
+        {
+            return -EINVAL;
+        }
+    }
+
+
+done:
+
+    VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+      "Received WLS_BATCHING_SET with SCANFREQ=%d "
+      "MSCAN=%d BESTN=%d CHANNEL=%d RTT=%d",
+      pHddSetBatchScanReq->scanFrequency,
+      pHddSetBatchScanReq->numberOfScansToBatch,
+      pHddSetBatchScanReq->bestNetwork,
+      pHddSetBatchScanReq->rfBand,
+      pHddSetBatchScanReq->rtt);
+
+    return 0;
+}/*End of hdd_parse_set_batchscan_command*/
+
+/**---------------------------------------------------------------------------
+
+  \brief hdd_set_batch_scan_req_callback () - This function is called after
+     receiving set batch scan response from FW and it saves set batch scan
+     response data FW to HDD context and sets the completion event on
+     which hdd_ioctl is waiting
+
+  \param  - callbackContext Pointer to HDD adapter
+  \param  - pRsp Pointer to set batch scan response data received from FW
+
+  \return - nothing
+
+  --------------------------------------------------------------------------*/
+static void hdd_set_batch_scan_req_callback
+(
+    void *callbackContext,
+    tSirSetBatchScanRsp *pRsp
+)
+{
+    hdd_adapter_t* pAdapter = (hdd_adapter_t*)callbackContext;
+    tSirSetBatchScanRsp *pHddSetBatchScanRsp;
+
+    /*sanity check*/
+    if (WLAN_HDD_ADAPTER_MAGIC != pAdapter->magic)
+    {
+        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                  "%s: Invalid pAdapter magic", __func__);
+        VOS_ASSERT(0);
+        return;
+    }
+    pHddSetBatchScanRsp = &pAdapter->hddSetBatchScanRsp;
+
+    /*save set batch scan response*/
+    pHddSetBatchScanRsp->nScansToBatch = pRsp->nScansToBatch;
+
+    VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH,
+      "Received set batch scan rsp from FW with nScansToBatch=%d",
+      pHddSetBatchScanRsp->nScansToBatch);
+
+    pAdapter->hdd_wait_for_set_batch_scan_rsp = FALSE;
+    complete(&pAdapter->hdd_set_batch_scan_req_var);
+
+    return;
+}/*End of hdd_set_batch_scan_req_callback*/
+
+
+/**---------------------------------------------------------------------------
+
+  \brief hdd_populate_batch_scan_rsp_queue () - This function stores AP meta
+     info in hdd batch scan response queue
+
+  \param  - pAdapter Pointer to hdd adapter
+  \param  - pAPMetaInfo Pointer to access point meta info
+  \param  - scanId scan ID of batch scan response
+  \param  - isLastAp tells whether AP is last AP in batch scan response or not
+
+  \return - nothing
+
+  --------------------------------------------------------------------------*/
+static void hdd_populate_batch_scan_rsp_queue( hdd_adapter_t* pAdapter,
+      tpSirBatchScanNetworkInfo pApMetaInfo, tANI_U32 scanId, v_BOOL_t isLastAp)
+{
+    tHddBatchScanRsp *pHead;
+    tHddBatchScanRsp *pNode;
+    tHddBatchScanRsp *pPrev;
+    tHddBatchScanRsp *pTemp;
+    tANI_U8 ssidLen;
+
+    /*head of hdd batch scan response queue*/
+    pHead = pAdapter->pBatchScanRsp;
+
+    pNode = (tHddBatchScanRsp *)vos_mem_malloc(sizeof(tHddBatchScanRsp));
+    if (NULL == pNode)
+    {
+        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                  "%s: Could not allocate memory", __func__);
+        VOS_ASSERT(0);
+        return;
+    }
+
+    vos_mem_copy(pNode->ApInfo.bssid, pApMetaInfo->bssid,
+        sizeof(pNode->ApInfo.bssid));
+    ssidLen = strlen(pApMetaInfo->ssid);
+    if (SIR_MAX_SSID_SIZE < ssidLen)
+    {
+       /*invalid scan result*/
+       vos_mem_free(pNode);
+       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+          "%s: Invalid AP meta info ssidlen %d", __func__, ssidLen);
+       return;
+    }
+    vos_mem_copy(pNode->ApInfo.ssid, pApMetaInfo->ssid, ssidLen);
+    /*null terminate ssid*/
+    pNode->ApInfo.ssid[ssidLen] = '\0';
+    pNode->ApInfo.ch = pApMetaInfo->ch;
+    pNode->ApInfo.rssi = pApMetaInfo->rssi;
+    pNode->ApInfo.age = pApMetaInfo->timestamp;
+    pNode->ApInfo.batchId = scanId;
+    pNode->ApInfo.isLastAp = isLastAp;
+
+    pNode->pNext = NULL;
+    if (NULL == pHead)
+    {
+         pAdapter->pBatchScanRsp = pNode;
+    }
+    else
+    {
+        pTemp = pHead;
+        while (NULL != pTemp)
+        {
+            pPrev = pTemp;
+            pTemp = pTemp->pNext;
+        }
+        pPrev->pNext = pNode;
+    }
+
+    return;
+}/*End of hdd_populate_batch_scan_rsp_queue*/
+
+/**---------------------------------------------------------------------------
+
+  \brief hdd_batch_scan_result_ind_callback () - This function is called after
+     receiving batch scan response indication from FW. It saves get batch scan
+     response data in HDD batch scan response queue. This callback sets the
+     completion event on which hdd_ioctl is waiting only after getting complete
+     batch scan response data from FW
+
+  \param  - callbackContext Pointer to HDD adapter
+  \param  - pRsp Pointer to get batch scan response data received from FW
+
+  \return - nothing
+
+  --------------------------------------------------------------------------*/
+static void hdd_batch_scan_result_ind_callback
+(
+    void *callbackContext,
+    void *pRsp
+)
+{
+    v_BOOL_t                     isLastAp;
+    tANI_U32                     numApMetaInfo;
+    tANI_U32                     numberScanList;
+    tANI_U32                     nextScanListOffset;
+    tANI_U32                     nextApMetaInfoOffset;
+    hdd_adapter_t*               pAdapter;
+    tpSirBatchScanList           pScanList;
+    tpSirBatchScanNetworkInfo    pApMetaInfo;
+    tpSirBatchScanResultIndParam pBatchScanRsp;/*batch scan rsp data from FW*/
+    tSirSetBatchScanReq          *pReq;
+
+    pAdapter = (hdd_adapter_t *)callbackContext;
+    /*sanity check*/
+    if ((NULL != pAdapter) && (WLAN_HDD_ADAPTER_MAGIC != pAdapter->magic))
+    {
+        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                  "%s: Invalid pAdapter magic", __func__);
+        VOS_ASSERT(0);
+        return;
+    }
+
+    /*initialize locals*/
+    pReq = &pAdapter->hddSetBatchScanReq;
+    pBatchScanRsp = (tpSirBatchScanResultIndParam)pRsp;
+    isLastAp = FALSE;
+    numApMetaInfo = 0;
+    numberScanList = 0;
+    nextScanListOffset = 0;
+    nextApMetaInfoOffset = 0;
+    pScanList = NULL;
+    pApMetaInfo = NULL;
+
+    if ((NULL == pBatchScanRsp) || (NULL == pReq))
+    {
+         VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+            "%s: pBatchScanRsp is %p pReq %p", __func__, pBatchScanRsp, pReq);
+            isLastAp = TRUE;
+         goto done;
+    }
+
+    pAdapter->numScanList = numberScanList =  pBatchScanRsp->numScanLists;
+    VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+        "Batch scan rsp: numberScalList %d", numberScanList);
+
+    if ((!numberScanList) || (numberScanList > pReq->numberOfScansToBatch))
+    {
+         VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+             "%s: numberScanList %d", __func__, numberScanList);
+         isLastAp = TRUE;
+         goto done;
+    }
+
+    while (numberScanList)
+    {
+        pScanList = (tpSirBatchScanList)(pBatchScanRsp->scanResults +
+                                          nextScanListOffset);
+        if (NULL == pScanList)
+        {
+            VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+              "%s: pScanList is %p", __func__, pScanList);
+            isLastAp = TRUE;
+           goto done;
+        }
+        numApMetaInfo = pScanList->numNetworksInScanList;
+        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+            "Batch scan rsp: numApMetaInfo %d", numApMetaInfo);
+
+        if ((!numApMetaInfo) || (numApMetaInfo > pReq->bestNetwork))
+        {
+            VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+              "%s: numApMetaInfo %d", __func__, numApMetaInfo);
+            isLastAp = TRUE;
+           goto done;
+        }
+
+        while (numApMetaInfo)
+        {
+            pApMetaInfo = (tpSirBatchScanNetworkInfo)(pScanList->scanList +
+                                                nextApMetaInfoOffset);
+            if (NULL == pApMetaInfo)
+            {
+                VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                  "%s: pApMetaInfo is %p", __func__, pApMetaInfo);
+                isLastAp = TRUE;
+                goto done;
+            }
+            /*calculate AP age*/
+            pApMetaInfo->timestamp =
+                pBatchScanRsp->timestamp - pApMetaInfo->timestamp;
+
+            VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH,
+               "%s: bssId 0x%x:0x%x:0x%x:0x%x:0x%x:0x%x "
+               "ch %d rssi %d timestamp %d", __func__,
+               pApMetaInfo->bssid[0],pApMetaInfo->bssid[1],
+               pApMetaInfo->bssid[2],pApMetaInfo->bssid[3],
+               pApMetaInfo->bssid[4],pApMetaInfo->bssid[5],
+               pApMetaInfo->ch, pApMetaInfo->rssi,
+               pApMetaInfo->timestamp);
+
+            /*mark last AP in batch scan response*/
+            if ((TRUE == pBatchScanRsp->isLastResult) &&
+                (1 == numberScanList) && (1 == numApMetaInfo))
+            {
+               isLastAp = TRUE;
+            }
+
+            mutex_lock(&pAdapter->hdd_batch_scan_lock);
+            /*store batch scan repsonse in hdd queue*/
+            hdd_populate_batch_scan_rsp_queue(pAdapter, pApMetaInfo,
+                pScanList->scanId, isLastAp);
+            mutex_unlock(&pAdapter->hdd_batch_scan_lock);
+
+            nextApMetaInfoOffset += sizeof(tSirBatchScanNetworkInfo);
+            numApMetaInfo--;
+        }
+
+        nextScanListOffset += (sizeof(tSirBatchScanList) - (sizeof(tANI_U8)));
+        numberScanList--;
+    }
+
+done:
+
+    /*notify hdd_ioctl only if complete batch scan rsp is received and it was
+      requested from hdd_ioctl*/
+    if ((TRUE == pAdapter->hdd_wait_for_get_batch_scan_rsp) &&
+        (TRUE == isLastAp))
+    {
+        pAdapter->hdd_wait_for_get_batch_scan_rsp = FALSE;
+        complete(&pAdapter->hdd_get_batch_scan_req_var);
+    }
+
+    return;
+}/*End of hdd_batch_scan_result_ind_callback*/
+
+/**---------------------------------------------------------------------------
+
+  \brief hdd_format_batch_scan_rsp () - This function formats batch scan
+     response as per batch scan FR request format by putting proper markers
+
+  \param  - pDest pointer to destination buffer
+  \param  - cur_len current length
+  \param  - tot_len total remaining size which can be written to user space
+  \param  - pApMetaInfo Pointer to get batch scan response AP meta info
+  \param  - pAdapter Pointer to HDD adapter
+
+  \return - ret no of characters written
+
+  --------------------------------------------------------------------------*/
+static tANI_U32
+hdd_format_batch_scan_rsp
+(
+    tANI_U8 *pDest,
+    tANI_U32 cur_len,
+    tANI_U32 tot_len,
+    tHddBatchScanRsp *pApMetaInfo,
+    hdd_adapter_t* pAdapter
+)
+{
+   tANI_U32 ret = 0;
+   tANI_U32 rem_len = 0;
+   tANI_U8  temp_len = 0;
+   tANI_U8  temp_total_len = 0;
+   tANI_U8  temp[HDD_BATCH_SCAN_AP_META_INFO_SIZE];
+   tANI_U8  *pTemp = temp;
+
+   /*Batch scan reponse needs to be returned to user space in
+     following format:
+     "scancount=X\n" where X is the number of scans in current batch
+     batch
+     "trunc\n" optional present if current scan truncated
+     "bssid=XX:XX:XX:XX:XX:XX\n"
+     "ssid=XXXX\n"
+     "freq=X\n" frequency in Mhz
+     "level=XX\n"
+     "age=X\n" ms
+     "dist=X\n" cm (-1 if not available)
+     "errror=X\n" (-1if not available)
+     "====\n" (end of ap marker)
+     "####\n" (end of scan marker)
+     "----\n" (end of results)*/
+     /*send scan result in above format to user space based on
+       available length*/
+   /*The GET response may have more data than the driver can return in its
+     buffer. In that case the buffer should be filled to the nearest complete
+     scan, ending with "%%%%".Subsequent callsshould return the remaining data
+     starting with the next scan (optional .trunc\n., .apcount=X\n., etc).
+     The final buffer should end with "----\n"*/
+
+   /*sanity*/
+   if (cur_len > tot_len)
+   {
+       VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+          "%s: invaid cur_len %d tot_len %d", __func__, cur_len, tot_len);
+       return 0;
+   }
+   else
+   {
+      rem_len = (tot_len - cur_len);
+   }
+
+   /*end scan marker*/
+   if (pApMetaInfo->ApInfo.batchId != pAdapter->prev_batch_id)
+   {
+       temp_len = snprintf(pTemp, sizeof(temp), "####\n");
+       pTemp += temp_len;
+       temp_total_len += temp_len;
+   }
+
+   /*bssid*/
+   temp_len = snprintf(pTemp, sizeof(temp),
+                "bssid=0x%x:0x%x:0x%x:0x%x:0x%x:0x%x\n",
+                pApMetaInfo->ApInfo.bssid[0], pApMetaInfo->ApInfo.bssid[1],
+                pApMetaInfo->ApInfo.bssid[2], pApMetaInfo->ApInfo.bssid[3],
+                pApMetaInfo->ApInfo.bssid[4], pApMetaInfo->ApInfo.bssid[5]);
+   pTemp += temp_len;
+   temp_total_len += temp_len;
+
+   /*ssid*/
+   temp_len = snprintf(pTemp, (sizeof(temp) - temp_total_len), "ssid=%s\n",
+                 pApMetaInfo->ApInfo.ssid);
+   pTemp += temp_len;
+   temp_total_len += temp_len;
+
+   /*freq*/
+   temp_len = snprintf(pTemp, (sizeof(temp) - temp_total_len), "freq=%d\n",
+                 pApMetaInfo->ApInfo.ch);
+   pTemp += temp_len;
+   temp_total_len += temp_len;
+
+   /*level*/
+   temp_len = snprintf(pTemp, (sizeof(temp) - temp_total_len), "level=%d\n",
+                  pApMetaInfo->ApInfo.rssi);
+   pTemp += temp_len;
+   temp_total_len += temp_len;
+
+   /*age*/
+   temp_len = snprintf(pTemp, (sizeof(temp) - temp_total_len), "age=%ld\n",
+                  pApMetaInfo->ApInfo.age);
+   pTemp += temp_len;
+   temp_total_len += temp_len;
+
+   /*dist*/
+   temp_len = snprintf(pTemp, (sizeof(temp) - temp_total_len), "dist=-1\n");
+   pTemp += temp_len;
+   temp_total_len += temp_len;
+
+   /*error*/
+   temp_len = snprintf(pTemp, (sizeof(temp) - temp_total_len), "error=-1\n");
+   pTemp += temp_len;
+   temp_total_len += temp_len;
+
+   /*end AP marker*/
+   temp_len = snprintf(pTemp, (sizeof(temp) - temp_total_len), "====\n");
+   pTemp += temp_len;
+   temp_total_len += temp_len;
+
+   /*last AP in batch scan response*/
+   if(TRUE == pApMetaInfo->ApInfo.isLastAp)
+   {
+       /*end scan marker*/
+       temp_len = snprintf(pTemp, (sizeof(temp) - temp_total_len), "####\n");
+       pTemp += temp_len;
+       temp_total_len += temp_len;
+
+       /*end batch scan result marker*/
+       temp_len = snprintf(pTemp, (sizeof(temp) - temp_total_len), "----\n");
+       pTemp += temp_len;
+       temp_total_len += temp_len;
+   }
+
+   if (temp_total_len < rem_len)
+   {
+       ret = temp_total_len + 1;
+       strlcpy(pDest, temp, ret);
+       pAdapter->isTruncated = FALSE;
+   }
+   else
+   {
+      pAdapter->isTruncated = TRUE;
+      if (rem_len >= strlen("%%%%"))
+      {
+          ret = snprintf(pDest, strlen("%%%%"), "%%%%");
+      }
+      {
+          ret = 0;
+      }
+   }
+
+   return ret;
+
+}/*End of hdd_format_batch_scan_rsp*/
+
+/**---------------------------------------------------------------------------
+
+  \brief hdd_populate_user_batch_scan_rsp() - This function populates user data
+     buffer starting with head of hdd batch scan response queue
+
+  \param - pAdapter Pointer to HDD adapter
+  \param - pDest Pointer to user data buffer
+  \param - cur_len current offset in user buffer
+  \param - rem_len remaining  no of bytes in user buffer
+
+  \return - number of bytes written in user buffer
+
+  --------------------------------------------------------------------------*/
+
+tANI_U32 hdd_populate_user_batch_scan_rsp
+(
+    hdd_adapter_t* pAdapter,
+    tANI_U8  *pDest,
+    tANI_U32 cur_len,
+    tANI_U32 rem_len
+)
+{
+    tHddBatchScanRsp *pHead;
+    tHddBatchScanRsp *pPrev;
+    tANI_U32 len;
+
+    pAdapter->prev_batch_id = 0;
+    pAdapter->isTruncated = FALSE;
+
+    /*head of hdd batch scan response queue*/
+    pHead = pAdapter->pBatchScanRsp;
+    while (pHead)
+    {
+         len = hdd_format_batch_scan_rsp(pDest, cur_len, rem_len, pHead,
+                   pAdapter);
+         pDest += len;
+         cur_len += len;
+         if(TRUE == pAdapter->isTruncated)
+         {
+              /*result is truncated return rest of scan rsp in next req*/
+              cur_len = rem_len;
+              break;
+         }
+         pPrev = pHead;
+         pHead = pHead->pNext;
+         pAdapter->pBatchScanRsp  = pHead;
+         pAdapter->prev_batch_id = pPrev->ApInfo.batchId;
+         vos_mem_free(pPrev);
+   }
+
+   return cur_len;
+}/*End of hdd_populate_user_batch_scan_rsp*/
+
+/**---------------------------------------------------------------------------
+
+  \brief hdd_return_batch_scan_rsp_to_user () - This function returns batch
+     scan response data from HDD queue to user space
+     It does following in detail:
+     a) if HDD has enough data in its queue then it 1st copies data to user
+        space and then send get batch scan indication message to FW. In this
+        case it does not wait on any event and batch scan response data will
+        be populated in HDD response queue in MC thread context after receiving
+        indication from FW
+     b) else send get batch scan indication message to FW and wait on an event
+        which will be set once HDD receives complete batch scan response from
+        FW and then this function returns batch scan response to user space
+
+  \param  - pAdapter Pointer to HDD adapter
+  \param  - pPrivData Pointer to priv_data
+
+  \return - 0 for success -EFAULT for failure
+
+  --------------------------------------------------------------------------*/
+
+int hdd_return_batch_scan_rsp_to_user
+(
+    hdd_adapter_t* pAdapter,
+    hdd_priv_data_t *pPrivData,
+    tANI_U8 *command
+)
+{
+    tANI_U8    *pDest;
+    tANI_U32   count = 0;
+    tANI_U32   len = 0;
+    tANI_U32   cur_len = 0;
+    tANI_U32   rem_len = 0;
+    eHalStatus halStatus;
+    unsigned long rc;
+    tSirTriggerBatchScanResultInd *pReq;
+
+    pReq = &pAdapter->hddTriggerBatchScanResultInd;
+    pReq->param = 0;/*batch scan client*/
+    pDest = (tANI_U8 *)(command + pPrivData->used_len);
+    pAdapter->hdd_wait_for_get_batch_scan_rsp = FALSE;
+
+    cur_len = pPrivData->used_len;
+    if (pPrivData->total_len > pPrivData->used_len)
+    {
+        rem_len = pPrivData->total_len - pPrivData->used_len;
+    }
+    else
+    {
+        VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+            "%s: Invalid user data buffer total_len %d used_len %d",
+            __func__, pPrivData->total_len, pPrivData->used_len);
+        return -EFAULT;
+    }
+
+    mutex_lock(&pAdapter->hdd_batch_scan_lock);
+    len = hdd_populate_user_batch_scan_rsp(pAdapter, pDest,
+                 cur_len, rem_len);
+    mutex_unlock(&pAdapter->hdd_batch_scan_lock);
+
+    /*enough scan result available in cache to return to user space or
+      scan result needs to be fetched 1st from fw and then return*/
+    if (len < rem_len)
+    {
+        pAdapter->hdd_wait_for_get_batch_scan_rsp = TRUE;
+        halStatus = sme_TriggerBatchScanResultInd(
+                        WLAN_HDD_GET_HAL_CTX(pAdapter), pReq,
+                        pAdapter->sessionId, hdd_batch_scan_result_ind_callback,
+                        pAdapter);
+        if ( eHAL_STATUS_SUCCESS == halStatus )
+        {
+            if (TRUE == pAdapter->hdd_wait_for_get_batch_scan_rsp)
+            {
+                INIT_COMPLETION(pAdapter->hdd_get_batch_scan_req_var);
+                rc = wait_for_completion_timeout(
+                     &pAdapter->hdd_get_batch_scan_req_var,
+                     msecs_to_jiffies(HDD_GET_BATCH_SCAN_RSP_TIME_OUT));
+                if (0 == rc)
+                {
+                    VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                    "%s: Timeout waiting to fetch batch scan rsp from fw",
+                    __func__);
+                    return -EFAULT;
+                }
+            }
+
+            len = snprintf(pDest, HDD_BATCH_SCAN_AP_META_INFO_SIZE,
+                      "scancount=%ld\n", pAdapter->numScanList);
+            pDest += len;
+            cur_len += len;
+
+            mutex_lock(&pAdapter->hdd_batch_scan_lock);
+            len = hdd_populate_user_batch_scan_rsp(pAdapter, pDest,
+                 cur_len, rem_len);
+            mutex_unlock(&pAdapter->hdd_batch_scan_lock);
+
+            count = 0;
+            len = (len - pPrivData->used_len);
+            pDest = (command + pPrivData->used_len);
+            VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+               "BATCH SCAN RESULT:");
+            while(count < len)
+            {
+                printk("%c", *(pDest + count));
+                count++;
+            }
+            VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+               "%s: copy %d data to user buffer", __func__, len);
+            if (copy_to_user(pPrivData->buf, pDest, len))
+            {
+                VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                 "%s: failed to copy data to user buffer", __func__);
+                return -EFAULT;
+            }
+        }
+        else
+        {
+            VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                "sme_GetBatchScanScan  returned failure halStatus %d",
+                halStatus);
+             return -EINVAL;
+        }
+    }
+    else
+    {
+        VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+           "%s: copy %d data to user buffer", __func__, len);
+        count = 0;
+        len = (len - pPrivData->used_len);
+        pDest = (command + pPrivData->used_len);
+        VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+            "BATCH SCAN RESULT:");
+        while(count < len)
+        {
+            printk("%c", *(pDest + count));
+            count++;
+        }
+        if (copy_to_user(pPrivData->buf, pDest, len))
+        {
+            VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+               "%s: failed to copy data to user buffer", __func__);
+            return -EFAULT;
+        }
+        pAdapter->hdd_wait_for_get_batch_scan_rsp = FALSE;
+        halStatus = sme_TriggerBatchScanResultInd(
+                        WLAN_HDD_GET_HAL_CTX(pAdapter), pReq,
+                        pAdapter->sessionId, hdd_batch_scan_result_ind_callback,
+                        pAdapter);
+        if ( eHAL_STATUS_SUCCESS != halStatus )
+        {
+            VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                "sme_GetBatchScanScan  returned failure halStatus %d",
+                halStatus);
+        }
+    }
+
+   return 0;
+} /*End of hdd_return_batch_scan_rsp_to_user*/
+
+#endif/*End of FEATURE_WLAN_BATCH_SCAN*/
+
 int hdd_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 {
    hdd_adapter_t *pAdapter = WLAN_HDD_GET_PRIV_PTR(dev);
@@ -638,16 +2025,31 @@ int hdd_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 
            country_code = command + 8;
 
+           INIT_COMPLETION(pAdapter->change_country_code);
            hdd_checkandupdate_dfssetting(pAdapter, country_code);
            hdd_checkandupdate_phymode(pAdapter, country_code);
-           ret = (int)sme_ChangeCountryCode(pHddCtx->hHal, NULL, country_code,
-                    pAdapter, pHddCtx->pvosContext, eSIR_TRUE);
-           if( 0 != ret )
+           ret = (int)sme_ChangeCountryCode(pHddCtx->hHal,
+                  (void *)(tSmeChangeCountryCallback)
+                    wlan_hdd_change_country_code_callback,
+                     country_code, pAdapter, pHddCtx->pvosContext, eSIR_TRUE);
+           if (eHAL_STATUS_SUCCESS == ret)
+           {
+               ret = wait_for_completion_interruptible_timeout(
+                       &pAdapter->change_country_code,
+                            msecs_to_jiffies(WLAN_WAIT_TIME_COUNTRY));
+               if (0 >= ret)
+               {
+                   hddLog(VOS_TRACE_LEVEL_ERROR, "%s: SME while setting country code timed out",
+                   __func__);
+               }
+           }
+           else
            {
                VOS_TRACE( VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_FATAL,
-                       "%s: SME Change Country code fail ret=%d\n",__func__, ret);
-
+                 "%s: SME Change Country code fail ret=%d", __func__, ret);
+               ret = -EINVAL;
            }
+
        }
        /*
           command should be a string having format
@@ -733,7 +2135,7 @@ int hdd_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
            char extra[32];
            tANI_U8 len = 0;
 
-           len = snprintf(extra, sizeof(extra), "%s %d", command, rssi);
+           len = scnprintf(extra, sizeof(extra), "%s %d", command, rssi);
            if (copy_to_user(priv_data.buf, &extra, len + 1))
            {
                VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
@@ -792,7 +2194,8 @@ int hdd_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
            char extra[32];
            tANI_U8 len = 0;
 
-           len = snprintf(extra, sizeof(extra), "%s %d", "GETROAMSCANPERIOD", (nEmptyScanRefreshPeriod/1000));
+           len = scnprintf(extra, sizeof(extra), "%s %d",
+                   "GETROAMSCANPERIOD", (nEmptyScanRefreshPeriod/1000));
            /* Returned value is in units of seconds */
            if (copy_to_user(priv_data.buf, &extra, len + 1))
            {
@@ -853,7 +2256,8 @@ int hdd_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
            char extra[32];
            tANI_U8 len = 0;
 
-           len = snprintf(extra, sizeof(extra), "%s %d", "GETROAMSCANREFRESHPERIOD", (value/1000));
+           len = scnprintf(extra, sizeof(extra), "%s %d",
+                   "GETROAMSCANREFRESHPERIOD", (value/1000));
            /* Returned value is in units of seconds */
            if (copy_to_user(priv_data.buf, &extra, len + 1))
            {
@@ -930,7 +2334,7 @@ int hdd_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
            else
 	       roamMode = CFG_LFR_FEATURE_ENABLED_MIN;
 
-	   len = snprintf(extra, sizeof(extra), "%s %d", command, roamMode);
+	   len = scnprintf(extra, sizeof(extra), "%s %d", command, roamMode);
 	   if (copy_to_user(priv_data.buf, &extra, len + 1))
 	   {
                VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
@@ -987,7 +2391,8 @@ int hdd_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
            char extra[32];
            tANI_U8 len = 0;
 
-           len = snprintf(extra, sizeof(extra), "%s %d", command, roamRssiDiff);
+           len = scnprintf(extra, sizeof(extra), "%s %d",
+                   command, roamRssiDiff);
            if (copy_to_user(priv_data.buf, &extra, len + 1))
            {
                VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
@@ -1005,7 +2410,7 @@ int hdd_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
            tANI_U8 len = 0;
            hdd_getBand_helper(pHddCtx, &band);
 
-           len = snprintf(extra, sizeof(extra), "%s %d", command, band);
+           len = scnprintf(extra, sizeof(extra), "%s %d", command, band);
            if (copy_to_user(priv_data.buf, &extra, len + 1))
            {
                VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
@@ -1067,10 +2472,11 @@ int hdd_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
            /* output channel list is of the format
            [Number of roam scan channels][Channel1][Channel2]... */
            /* copy the number of channels in the 0th index */
-           len = snprintf(extra, sizeof(extra), "%s %d", command, numChannels);
+           len = scnprintf(extra, sizeof(extra), "%s %d", command, numChannels);
            for (j = 0; (j < numChannels); j++)
            {
-               len += snprintf(extra + len, sizeof(extra) - len, " %d", ChannelList[j]);
+               len += scnprintf(extra + len, sizeof(extra) - len, " %d",
+                       ChannelList[j]);
            }
 
            if (copy_to_user(priv_data.buf, &extra, len + 1))
@@ -1100,7 +2506,8 @@ int hdd_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
                goto exit;
            }
 
-           len = snprintf(extra, sizeof(extra), "%s %d", "GETCCXMODE", ccxMode);
+           len = scnprintf(extra, sizeof(extra), "%s %d",
+                   "GETCCXMODE", ccxMode);
            if (copy_to_user(priv_data.buf, &extra, len + 1))
            {
                VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
@@ -1128,7 +2535,8 @@ int hdd_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
                goto exit;
            }
 
-           len = snprintf(extra, sizeof(extra), "%s %d", "GETOKCMODE", okcMode);
+           len = scnprintf(extra, sizeof(extra), "%s %d",
+                   "GETOKCMODE", okcMode);
            if (copy_to_user(priv_data.buf, &extra, len + 1))
            {
                VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
@@ -1143,7 +2551,8 @@ int hdd_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
            char extra[32];
            tANI_U8 len = 0;
 
-           len = snprintf(extra, sizeof(extra), "%s %d", "GETFASTROAM", lfrMode);
+           len = scnprintf(extra, sizeof(extra), "%s %d",
+                   "GETFASTROAM", lfrMode);
            if (copy_to_user(priv_data.buf, &extra, len + 1))
            {
                VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
@@ -1158,7 +2567,8 @@ int hdd_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
            char extra[32];
            tANI_U8 len = 0;
 
-           len = snprintf(extra, sizeof(extra), "%s %d", "GETFASTTRANSITION", ft);
+           len = scnprintf(extra, sizeof(extra), "%s %d",
+                   "GETFASTTRANSITION", ft);
            if (copy_to_user(priv_data.buf, &extra, len + 1))
            {
                VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
@@ -1319,7 +2729,8 @@ int hdd_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
            tANI_U8 len = 0;
 
            /* value is interms of msec */
-           len = snprintf(extra, sizeof(extra), "%s %d", "GETROAMSCANCHANNELMINTIME", val);
+           len = scnprintf(extra, sizeof(extra), "%s %d",
+                   "GETROAMSCANCHANNELMINTIME", val);
            if (copy_to_user(priv_data.buf, &extra, len + 1))
            {
                VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
@@ -1390,7 +2801,8 @@ int hdd_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
            tANI_U8 len = 0;
 
            /* value is interms of msec */
-           len = snprintf(extra, sizeof(extra), "%s %d", "GETSCANCHANNELTIME", val);
+           len = scnprintf(extra, sizeof(extra), "%s %d",
+                   "GETSCANCHANNELTIME", val);
            if (copy_to_user(priv_data.buf, &extra, len + 1))
            {
                VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
@@ -1445,7 +2857,8 @@ int hdd_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
            tANI_U8 len = 0;
 
            /* value is interms of msec */
-           len = snprintf(extra, sizeof(extra), "%s %d", "GETSCANHOMETIME", val);
+           len = scnprintf(extra, sizeof(extra), "%s %d",
+                   "GETSCANHOMETIME", val);
            if (copy_to_user(priv_data.buf, &extra, len + 1))
            {
                VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
@@ -1499,7 +2912,8 @@ int hdd_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
            tANI_U8 len = 0;
 
            /* value is interms of msec */
-           len = snprintf(extra, sizeof(extra), "%s %d", "GETROAMINTRABAND", val);
+           len = scnprintf(extra, sizeof(extra), "%s %d",
+                   "GETROAMINTRABAND", val);
            if (copy_to_user(priv_data.buf, &extra, len + 1))
            {
                VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
@@ -1553,7 +2967,7 @@ int hdd_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
            char extra[32];
            tANI_U8 len = 0;
 
-           len = snprintf(extra, sizeof(extra), "%s %d", command, val);
+           len = scnprintf(extra, sizeof(extra), "%s %d", command, val);
            if (copy_to_user(priv_data.buf, &extra, len + 1))
            {
                VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
@@ -1625,7 +3039,7 @@ int hdd_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
            char extra[32];
            tANI_U8 len = 0;
 
-           len = snprintf(extra, sizeof(extra), "%s %d", command, val);
+           len = scnprintf(extra, sizeof(extra), "%s %d", command, val);
            if (copy_to_user(priv_data.buf, &extra, len + 1))
            {
                VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
@@ -1771,6 +3185,50 @@ int hdd_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
            pHddCtx->cfg_ini->isFastTransitionEnabled = ft;
            sme_UpdateFastTransitionEnabled((tHalHandle)(pHddCtx->hHal), ft);
        }
+
+       else if (strncmp(command, "FASTREASSOC", 11) == 0)
+       {
+           tANI_U8 *value = command;
+           tSirMacAddr targetApBssid;
+           tANI_U8 trigger = 0;
+           eHalStatus status = eHAL_STATUS_SUCCESS;
+           hdd_station_ctx_t *pHddStaCtx = NULL;
+           pHddStaCtx = WLAN_HDD_GET_STATION_CTX_PTR(pAdapter);
+
+           /* if not associated, no need to proceed with reassoc */
+           if (eConnectionState_Associated != pHddStaCtx->conn_info.connState)
+           {
+               VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO, "%s:Not associated!",__func__);
+               ret = -EINVAL;
+               goto exit;
+           }
+
+           status = hdd_parse_reassoc_command_data(value, targetApBssid, &trigger);
+           if (eHAL_STATUS_SUCCESS != status)
+           {
+               VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                  "%s: Failed to parse reassoc command data", __func__);
+               ret = -EINVAL;
+               goto exit;
+           }
+
+           /* if the target bssid is same as currently associated AP,
+              then no need to proceed with reassoc */
+           if (VOS_TRUE == vos_mem_compare(targetApBssid,
+                                           pHddStaCtx->conn_info.bssId, sizeof(tSirMacAddr)))
+           {
+               VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                         "%s:11r Reassoc BSSID is same as currently associated AP bssid",
+                         __func__);
+               ret = -EINVAL;
+               goto exit;
+           }
+
+           /* Proceed with scan/roam */
+           smeIssueFastRoamNeighborAPEvent(WLAN_HDD_GET_HAL_CTX(pAdapter),
+                                           &targetApBssid[0],
+                                           (tSmeFastRoamTrigger)(trigger));
+       }
 #endif
 #ifdef FEATURE_WLAN_CCX
        else if (strncmp(command, "SETCCXMODE", 10) == 0)
@@ -1914,7 +3372,8 @@ int hdd_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
            char extra[32];
            tANI_U8 len = 0;
 
-           len = snprintf(extra, sizeof(extra), "%s %d", command, roamScanControl);
+           len = scnprintf(extra, sizeof(extra), "%s %d",
+                   command, roamScanControl);
            if (copy_to_user(priv_data.buf, &extra, len + 1))
            {
                VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
@@ -1986,7 +3445,7 @@ int hdd_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
            char extra[32];
            tANI_U8 len = 0;
 
-           len = snprintf(extra, sizeof(extra), "GETDWELLTIME %u\n",
+           len = scnprintf(extra, sizeof(extra), "GETDWELLTIME %u\n",
                   (int)pCfg->nActiveMaxChnTime);
            if (copy_to_user(priv_data.buf, &extra, len + 1))
            {
@@ -2076,6 +3535,766 @@ int hdd_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
                goto exit;
            }
        }
+       else if ((strncmp(command, "SETIBSSBEACONOUIDATA", 20) == 0) &&
+                (WLAN_HDD_IBSS == pAdapter->device_mode))
+       {
+           tANI_U8 *value = command;
+           unsigned int oui_data;
+           unsigned int data;
+           tHalHandle hHal = WLAN_HDD_GET_CTX(pAdapter)->hHal;
+           tpAniSirGlobal pMac = PMAC_STRUCT(hHal);
+           tANI_U32 present, len, len1, len2, len3;
+           tANI_U32 cfgId;
+           tANI_U8 addIE[WNI_CFG_PROBE_RSP_BCN_ADDNIE_DATA_LEN] = {0};
+           tANI_U8 addIEData[WNI_CFG_PROBE_RSP_ADDNIE_DATA1_LEN] = {0};
+           tANI_U8 ibssPropIe[WLAN_HDD_IBSS_PROP_IE_SIZE] = {0xDD,0x05,0x00,0x00,0x00,0x00,0x00};
+
+           VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                     "%s: received command %s", __func__, ((char *) value));
+
+           /* moving to arguments of commands */
+           value = value + 21;
+
+           sscanf(value, "%06x %04x", (unsigned int *)&oui_data,
+                      (unsigned int *)&data);
+
+           ibssPropIe[2] = (oui_data & 0x00ff0000) >> 16;
+           ibssPropIe[3] = (oui_data & 0x0000ff00) >> 8;
+           ibssPropIe[4] = (oui_data & 0x000000ff);
+
+           ibssPropIe[5] = (data & 0x0000ff00) >> 8;
+           ibssPropIe[6] = (data & 0x000000ff);
+
+           if ((ccmCfgGetInt((WLAN_HDD_GET_CTX(pAdapter))->hHal,
+                             WNI_CFG_PROBE_RSP_BCN_ADDNIE_FLAG,
+                             &present)) != eHAL_STATUS_SUCCESS)
+           {
+              VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+              "%s: unable to ftch WNI_CFG_PROBE_RSP_BCN_ADDNIE_FLAG", __func__);
+              ret = -EFAULT;
+              goto exit;
+           }
+
+           if (present)
+           {
+              if((wlan_cfgGetStrLen(PMAC_STRUCT((WLAN_HDD_GET_CTX(pAdapter))->hHal),
+                      WNI_CFG_PROBE_RSP_BCN_ADDNIE_DATA, &len)) != eSIR_SUCCESS)
+              {
+                 VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+               "%s:unable to fetch WNI_CFG_PROBE_RSP_BCN_ADDNIE_LEN", __func__);
+                 ret = -EFAULT;
+                 goto exit;
+              }
+
+              if(len <= WNI_CFG_PROBE_RSP_BCN_ADDNIE_DATA_LEN && len &&
+                ((len + WLAN_HDD_IBSS_PROP_IE_SIZE) <= SCH_MAX_BEACON_SIZE))
+              {
+
+                 if ((ccmCfgGetStr((WLAN_HDD_GET_CTX(pAdapter))->hHal,
+                        WNI_CFG_PROBE_RSP_BCN_ADDNIE_DATA, &addIE[0], &len))
+                        != eHAL_STATUS_SUCCESS)
+                 {
+                    VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                    "%s:unable to fetch WNI_PROBE_RSP_BCN_ADDNIE_DATA", __func__);
+                    ret = -EFAULT;
+                    goto exit;
+                 }
+              }
+           }
+           else {
+              len = 0;
+           }
+
+           if (len <= WNI_CFG_PROBE_RSP_BCN_ADDNIE_DATA_LEN &&
+              ((len + WLAN_HDD_IBSS_PROP_IE_SIZE) <= SCH_MAX_BEACON_SIZE))
+           {
+              vos_mem_copy (&addIE[len], ibssPropIe, WLAN_HDD_IBSS_PROP_IE_SIZE);
+              len += WLAN_HDD_IBSS_PROP_IE_SIZE;
+           }
+
+           if (ccmCfgSetStr((WLAN_HDD_GET_CTX(pAdapter))->hHal,
+               WNI_CFG_PROBE_RSP_BCN_ADDNIE_DATA, &addIE[0], len, NULL,
+               eANI_BOOLEAN_FALSE) != eHAL_STATUS_SUCCESS)
+           {
+              VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                 "%s:unable to set WNI_CFG_PRBE_RSP_BCN_ADDNIE_DATA", __func__);
+              ret = -EFAULT;
+              goto exit;
+           }
+           if (ccmCfgSetInt((WLAN_HDD_GET_CTX(pAdapter))->hHal,
+               WNI_CFG_PROBE_RSP_BCN_ADDNIE_FLAG, 1,NULL,
+               eANI_BOOLEAN_FALSE) != eHAL_STATUS_SUCCESS)
+           {
+              VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                 "%s:unble to set WNI_CFG_PROBE_RSP_BCN_ADDNIE_FLAG", __func__);
+              ret = -EFAULT;
+              goto exit;
+           }
+
+           /* Populating probe resp frame */
+           if ((ccmCfgGetInt((WLAN_HDD_GET_CTX(pAdapter))->hHal,
+                             WNI_CFG_PROBE_RSP_ADDNIE_FLAG,
+                             &present)) != eHAL_STATUS_SUCCESS)
+           {
+               VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                  "%s:unable to fetch WNI_CFG_PROBE_RSP_ADDNIE_FLAG", __func__);
+               ret = -EFAULT;
+               goto exit;
+           }
+
+           if (present) {
+
+              len1 = 0;
+              if (eSIR_SUCCESS != wlan_cfgGetStrLen(pMac,
+                                      WNI_CFG_PROBE_RSP_ADDNIE_DATA1, &len1)) {
+                 VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                    "%s: unable to fetch WNI_CFG_PROBE_RSP_ADDNIE_DATA1",
+                    __func__);
+                 ret = -EFAULT;
+                 goto exit;
+              }
+              if (len1 < WNI_CFG_PROBE_RSP_ADDNIE_DATA1_LEN && len1 &&
+                 (WLAN_HDD_IBSS_PROP_IE_SIZE + len1) <= SIR_MAX_PACKET_SIZE) {
+
+                 if ((ccmCfgGetStr((WLAN_HDD_GET_CTX(pAdapter))->hHal,
+                         WNI_CFG_PROBE_RSP_ADDNIE_DATA1, &addIEData[0], &len1))
+                         != eHAL_STATUS_SUCCESS) {
+                    VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                       "%s:unable fetch WNI_CFG_PROBE_RSP_ADDNIE_DATA1",
+                       __func__);
+                    ret = -EFAULT;
+                    goto exit;
+                 }
+                 len = len1;
+                 cfgId = WNI_CFG_PROBE_RSP_ADDNIE_DATA1;
+                 goto setcfg;
+              } /* data 1 */
+              /* reading data 2 and 3 */
+              else if (WNI_CFG_PROBE_RSP_ADDNIE_DATA1_LEN == len1) {
+
+                 len2 = 0;
+                 if (eSIR_SUCCESS != wlan_cfgGetStrLen(pMac,
+                                  WNI_CFG_PROBE_RSP_ADDNIE_DATA2, &len2) ) {
+                    VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                     "%s: unable to fetch PROBE_RSP_ADDNIE_DATA2", __func__);
+                    ret = -EFAULT;
+                    goto exit;
+                 }
+                 if (len2 < WNI_CFG_PROBE_RSP_ADDNIE_DATA2_LEN && len2 &&
+                    (WLAN_HDD_IBSS_PROP_IE_SIZE + len1 + len2)
+                       <= SIR_MAX_PACKET_SIZE) {
+
+                    if ((ccmCfgGetStr((WLAN_HDD_GET_CTX(pAdapter))->hHal,
+                        WNI_CFG_PROBE_RSP_ADDNIE_DATA2, &addIEData[0], &len2))
+                        != eHAL_STATUS_SUCCESS)
+                    {
+                        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                         "%s:unable to fetch PROBE_RSP_ADDNIE_DATA2", __func__);
+                        ret = -EFAULT;
+                        goto exit;
+                    }
+                    len = len2;
+                    cfgId = WNI_CFG_PROBE_RSP_ADDNIE_DATA2;
+                    goto setcfg;
+                 } /* data 2 */
+                 /* reading data 3 */
+                 else if (WNI_CFG_PROBE_RSP_ADDNIE_DATA2_LEN == len2) {
+                    len3 = 0;
+                    if (eSIR_SUCCESS != wlan_cfgGetStrLen(pMac,
+                                  WNI_CFG_PROBE_RSP_ADDNIE_DATA3, &len3)) {
+
+                       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                        "%s: unable to fetch PROBE_RSP_ADDNIE_DATA3", __func__);
+                       ret = -EFAULT;
+                       goto exit;
+                    }
+                    if (len3 < WNI_CFG_PROBE_RSP_ADDNIE_DATA3_LEN && len3 &&
+                       (WLAN_HDD_IBSS_PROP_IE_SIZE + len1 + len2 + len3)
+                                               <= SIR_MAX_PACKET_SIZE) {
+
+                       if ((ccmCfgGetStr((WLAN_HDD_GET_CTX(pAdapter))->hHal,
+                          WNI_CFG_PROBE_RSP_ADDNIE_DATA3, &addIEData[0], &len3))
+                           != eHAL_STATUS_SUCCESS)
+                       {
+                          VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                          "%s:unable to ftch PROBE_RSP_ADDNIE_DATA3", __func__);
+                          ret = -EFAULT;
+                          goto exit;
+                       }
+                       len = len3;
+                       cfgId = WNI_CFG_PROBE_RSP_ADDNIE_DATA3;
+                       goto setcfg;
+                    }
+                    else if (WNI_CFG_PROBE_RSP_ADDNIE_DATA3_LEN == len3) {
+                       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                          "%s: cannot accomoodate in data3", __func__);
+                       ret = -EFAULT;
+                       goto exit;
+                    }
+                 } /* data 3 */
+              } /* data 2 and 3 */
+           } /* probe rsp ADD IE present */
+           else {
+              /* probe rsp add IE is not present */
+              len = 0;
+              cfgId = WNI_CFG_PROBE_RSP_ADDNIE_DATA1;
+           } /* else */
+setcfg:
+           vos_mem_copy(&addIEData[len], ibssPropIe, WLAN_HDD_IBSS_PROP_IE_SIZE);
+           len += WLAN_HDD_IBSS_PROP_IE_SIZE;
+
+           if (ccmCfgSetStr(WLAN_HDD_GET_HAL_CTX(pAdapter),
+                               cfgId,
+                               (tANI_U8*)(&addIEData[0]),
+                               len, NULL,
+                               eANI_BOOLEAN_FALSE)
+                               == eHAL_STATUS_FAILURE) {
+              VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                 "%s: unable to copy to cfgID %ld", __func__, cfgId);
+              ret = -EFAULT;
+              goto exit;
+           }
+           if (ccmCfgSetInt(WLAN_HDD_GET_HAL_CTX(pAdapter),
+                            WNI_CFG_PROBE_RSP_ADDNIE_FLAG, 1,NULL,
+                           eANI_BOOLEAN_FALSE) == eHAL_STATUS_FAILURE)
+           {
+              VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                       "%s: unable to copy WNI_CFG_PROBE_RSP_ADDNIE_FLAG", __func__);
+              ret = -EFAULT;
+              goto exit;
+           }
+        }
+#ifdef WLAN_FEATURE_RELIABLE_MCAST
+       else if (strncmp(command, "SETRMCENABLE", 12) == 0)
+       {
+          tANI_U8 *value = command;
+          tANI_U8 ucRmcEnable = 0;
+          int  status;
+
+          if ((WLAN_HDD_IBSS != pAdapter->device_mode) &&
+              (WLAN_HDD_SOFTAP != pAdapter->device_mode))
+          {
+             VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                "Received SETRMCENABLE command in invalid mode %d \n"
+                "SETRMCENABLE command is only allowed in IBSS or SOFTAP mode",
+                pAdapter->device_mode);
+             ret = -EINVAL;
+             goto exit;
+          }
+
+          status = hdd_parse_setrmcenable_command(value, &ucRmcEnable);
+          if (status)
+          {
+             VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                "Invalid SETRMCENABLE command ");
+             ret = -EINVAL;
+             goto exit;
+          }
+
+          VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+               "%s: ucRmcEnable %d ", __func__, ucRmcEnable);
+
+          if (TRUE == ucRmcEnable)
+          {
+              status = sme_EnableReliableMcast( (tHalHandle)(pHddCtx->hHal),
+                         pAdapter->sessionId );
+          }
+          else if(FALSE == ucRmcEnable)
+          {
+              status = sme_DisableReliableMcast( (tHalHandle)(pHddCtx->hHal),
+                         pAdapter->sessionId );
+          }
+          else
+          {
+             VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                "Invalid SETRMCENABLE command %d", ucRmcEnable);
+             ret = -EINVAL;
+             goto exit;
+          }
+
+          if (VOS_STATUS_SUCCESS != status)
+          {
+              VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                 "%s: SETRMC %d failed status %d", __func__, ucRmcEnable,
+                 status);
+              ret = -EINVAL;
+              goto exit;
+          }
+       }
+       else if (strncmp(command, "SETRMCACTIONPERIOD", 18) == 0)
+       {
+          tANI_U8 *value = command;
+          tANI_U32 uActionPeriod = 0;
+          int  status;
+
+          if ((WLAN_HDD_IBSS != pAdapter->device_mode) &&
+              (WLAN_HDD_SOFTAP != pAdapter->device_mode))
+          {
+             VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                "Received SETRMC command in invalid mode %d \n"
+                "SETRMC command is only allowed in IBSS or SOFTAP mode",
+                pAdapter->device_mode);
+             ret = -EINVAL;
+             goto exit;
+          }
+
+          status = hdd_parse_setrmcactionperiod_command(value, &uActionPeriod);
+          if (status)
+          {
+             VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                "Invalid SETRMCACTIONPERIOD command ");
+             ret = -EINVAL;
+             goto exit;
+          }
+
+          VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+               "%s: uActionPeriod %d ", __func__, uActionPeriod);
+
+          if (ccmCfgSetInt(pHddCtx->hHal, WNI_CFG_RMC_ACTION_PERIOD_FREQUENCY,
+                 uActionPeriod, NULL, eANI_BOOLEAN_FALSE))
+          {
+              VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                 "%s: Could not set SETRMCACTIONPERIOD %d", __func__, uActionPeriod);
+              ret = -EINVAL;
+              goto exit;
+          }
+
+      }
+#ifdef FEATURE_CESIUM_PROPRIETARY
+      else if (strncmp(command, "GETIBSSPEERINFOALL", 18) == 0)
+      {
+         /* Peer Info All Command */
+         int status = eHAL_STATUS_SUCCESS;
+         hdd_station_ctx_t *pHddStaCtx = NULL;
+         char extra[512] = { 0 };
+         int idx = 0, length = 0;
+         v_MACADDR_t *macAddr;
+         v_U32_t txRateMbps = 0;
+
+         if (WLAN_HDD_IBSS == pAdapter->device_mode)
+         {
+            pHddStaCtx = WLAN_HDD_GET_STATION_CTX_PTR(pAdapter);
+         }
+         else
+         {
+            VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                      "%s: pAdapter is not valid for this device mode",
+                      __func__);
+            ret = -EINVAL;
+            goto exit;
+         }
+
+         /* if there are no peers, no need to continue with the command */
+         VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                 "%s: Received GETIBSSPEERINFOALL Command", __func__);
+
+         if (eConnectionState_IbssConnected != pHddStaCtx->conn_info.connState)
+         {
+            VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                      "%s:No IBSS Peers coalesced", __func__);
+            ret = -EINVAL;
+            goto exit;
+         }
+
+         /* Handle the command */
+         status = hdd_cfg80211_get_ibss_peer_info_all(pAdapter);
+         if (VOS_STATUS_SUCCESS == status)
+         {
+            /* Copy number of stations */
+            length = snprintf( extra, sizeof(extra), "%d ",
+                             pHddStaCtx->ibss_peer_info.numIBSSPeers);
+
+            for (idx = 0; idx < pHddStaCtx->ibss_peer_info.numIBSSPeers; idx++)
+            {
+               macAddr =
+                       hdd_wlan_get_ibss_mac_addr_from_staid(pAdapter,
+                                         pHddStaCtx->ibss_peer_info.ibssPeerList[idx].staIdx);
+               if (NULL != macAddr)
+               {
+                  txRateMbps =
+                     ((pHddStaCtx->ibss_peer_info.ibssPeerList[idx].txRate)*500*1000)/1000000;
+
+                  length += snprintf( (extra + length), sizeof(extra) - length,
+                                  "%02x:%02x:%02x:%02x:%02x:%02x %d %d ",
+                                  macAddr->bytes[0], macAddr->bytes[1], macAddr->bytes[2],
+                                  macAddr->bytes[3], macAddr->bytes[4], macAddr->bytes[5],
+                                  (int)txRateMbps,
+                                  (int)pHddStaCtx->ibss_peer_info.ibssPeerList[idx].rssi);
+               }
+               else
+               {
+                  VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                             "%s: MAC ADDR is NULL for staIdx: %d", __func__,
+                             pHddStaCtx->ibss_peer_info.ibssPeerList[idx].staIdx);
+               }
+            }
+
+            /* Copy the data back into buffer */
+            if (copy_to_user(priv_data.buf, &extra, length + 1))
+            {
+               VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                          "%s: Copy into user data buffer failed ", __func__);
+               ret = -EFAULT;
+               goto exit;
+            }
+         }
+         else
+         {
+            /* Command failed, log error */
+            VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                      "GETIBSSPEERINFOALL command failed with status code %d",
+                      __func__, status);
+            ret = -EINVAL;
+            goto exit;
+         }
+
+         /* Success ! */
+         VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_MED,
+                   "%s", priv_data.buf);
+         ret = 0;
+      }
+      else if(strncmp(command, "GETIBSSPEERINFO", 15) == 0)
+      {
+         /* Peer Info <Peer Addr> command */
+         tANI_U8 *value = command;
+         VOS_STATUS status;
+         hdd_station_ctx_t *pHddStaCtx = NULL;
+         char extra[32] = { 0 };
+         v_U32_t length = 0;
+         v_U8_t staIdx = 0;
+         v_U32_t txRateMbps = 0;
+         v_MACADDR_t peerMacAddr;
+
+         if (WLAN_HDD_IBSS == pAdapter->device_mode)
+         {
+            pHddStaCtx = WLAN_HDD_GET_STATION_CTX_PTR(pAdapter);
+         }
+         else
+         {
+            VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                      "%s: pAdapter is not valid for this device mode",
+                      __func__);
+            ret = -EINVAL;
+            goto exit;
+         }
+
+         /* if there are no peers, no need to continue with the command */
+         VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                 "%s: Received GETIBSSPEERINFO Command", __func__);
+
+         if (eConnectionState_IbssConnected != pHddStaCtx->conn_info.connState)
+         {
+            VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                      "%s:No IBSS Peers coalesced", __func__);
+            ret = -EINVAL;
+            goto exit;
+         }
+
+         /* Parse the incoming command buffer */
+         status = hdd_parse_get_ibss_peer_info(value, &peerMacAddr);
+         if (VOS_STATUS_SUCCESS != status)
+         {
+            VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                      "Invalid GETIBSSPEERINFO command", __func__);
+            ret = -EINVAL;
+            goto exit;
+         }
+
+         /* Get station index for the peer mac address */
+         hdd_Ibss_GetStaId(pHddStaCtx, &peerMacAddr, &staIdx);
+
+         if (staIdx < 0 || staIdx > HDD_MAX_NUM_IBSS_STA)
+         {
+            VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                      "Invalid StaIdx %d returned", __func__, staIdx);
+            ret = -EINVAL;
+            goto exit;
+         }
+
+         /* Handle the command */
+         status = hdd_cfg80211_get_ibss_peer_info(pAdapter, staIdx);
+         if (VOS_STATUS_SUCCESS == status)
+         {
+            v_U32_t txRate = pHddStaCtx->ibss_peer_info.ibssPeerList[0].txRate;
+            txRateMbps = (txRate * 500 * 1000)/1000000;
+
+            length = snprintf( extra, sizeof(extra), "%d %d", (int)txRateMbps,
+                            (int)pHddStaCtx->ibss_peer_info.ibssPeerList[0].rssi);
+
+            /* Copy the data back into buffer */
+            if (copy_to_user(priv_data.buf, &extra, length+ 1))
+            {
+               VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                  "%s: copy data to user buffer failed GETIBSSPEERINFO command",
+                  __func__);
+               ret = -EFAULT;
+               goto exit;
+            }
+         }
+         else
+         {
+            /* Command failed, log error */
+            VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                      "GETIBSSPEERINFO command failed with status code %d",
+                      __func__, status);
+            ret = -EINVAL;
+            goto exit;
+         }
+
+         /* Success ! */
+         VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_MED,
+                   "%s", priv_data.buf);
+         ret = 0;
+      }
+#endif /* FEATURE_CESIUM_PROPRIETARY */
+
+       else if (strncmp(command, "SETRMCTXRATE", 12) == 0)
+       {
+          tANI_U8 *value = command;
+          tANI_U32 uRate = 0;
+          tTxrateinfoflags txFlags = 0;
+          tSirRateUpdateInd *rateUpdateParams;
+          int  status;
+
+          if ((WLAN_HDD_IBSS != pAdapter->device_mode) &&
+              (WLAN_HDD_SOFTAP != pAdapter->device_mode))
+          {
+             VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                "Received SETRMCTXRATE command in invalid mode %d \n"
+                "SETRMC command is only allowed in IBSS or SOFTAP mode",
+                pAdapter->device_mode);
+             ret = -EINVAL;
+             goto exit;
+          }
+
+          status = hdd_parse_setrmcrate_command(value, &uRate, &txFlags);
+          if (status)
+          {
+             VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                "Invalid SETRMCTXRATE command ");
+             ret = -EINVAL;
+             goto exit;
+          }
+
+          rateUpdateParams = vos_mem_malloc(sizeof(tSirRateUpdateInd));
+          if (NULL == rateUpdateParams)
+          {
+             ret = -EINVAL;
+             goto exit;
+          }
+
+          VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+               "%s: uRate %d ", __func__, uRate);
+
+          vos_mem_zero(rateUpdateParams, sizeof(tSirRateUpdateInd ));
+
+          /* -1 implies ignore this param */
+          rateUpdateParams->ucastDataRate = -1;
+
+          /*
+           * Fill the user specifieed RMC rate param
+           * and the derived tx flags.
+           */
+          rateUpdateParams->reliableMcastDataRate = uRate;
+          rateUpdateParams->reliableMcastDataRateTxFlag = txFlags;
+
+          status = sme_SendRateUpdateInd((tHalHandle)(pHddCtx->hHal), rateUpdateParams);
+       }
+#endif
+#ifdef FEATURE_WLAN_BATCH_SCAN
+       else if (strncmp(command, "WLS_BATCHING VERSION", 20) == 0)
+       {
+           char    extra[32];
+           tANI_U8 len = 0;
+           tANI_U8 version = HDD_BATCH_SCAN_VERSION;
+
+           if (FALSE == sme_IsFeatureSupportedByFW(BATCH_SCAN))
+           {
+              VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                "%s: Batch scan feature is not supported by FW", __func__);
+              ret = -EINVAL;
+              goto exit;
+           }
+
+           if ((WLAN_HDD_INFRA_STATION != pAdapter->device_mode) &&
+              (WLAN_HDD_P2P_CLIENT != pAdapter->device_mode))
+           {
+              VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                "Received WLS_BATCHING_VERSION command in invalid mode %d "
+                "WLS_BATCHING_VERSION is only allowed in infra STA/P2P client"
+                " mode",
+                pAdapter->device_mode);
+              ret = -EINVAL;
+              goto exit;
+           }
+
+           len = snprintf(extra, sizeof(extra), "WLS_BATCHING_VERSION %d",
+                   version);
+           if (copy_to_user(priv_data.buf, &extra, len + 1))
+           {
+               VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                  "%s: failed to copy data to user buffer", __func__);
+               ret = -EFAULT;
+               goto exit;
+           }
+           ret = HDD_BATCH_SCAN_VERSION;
+       }
+       else if (strncmp(command, "WLS_BATCHING SET", 16) == 0)
+       {
+          int                 status;
+          tANI_U8             *value = (command + 16);
+          eHalStatus          halStatus;
+          unsigned long       rc;
+          tSirSetBatchScanReq *pReq = &pAdapter->hddSetBatchScanReq;
+          tSirSetBatchScanRsp *pRsp = &pAdapter->hddSetBatchScanRsp;
+
+          if (FALSE == sme_IsFeatureSupportedByFW(BATCH_SCAN))
+          {
+              VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                "%s: Batch scan feature is not supported by FW", __func__);
+              ret = -EINVAL;
+              goto exit;
+          }
+
+          if ((WLAN_HDD_INFRA_STATION != pAdapter->device_mode) &&
+              (WLAN_HDD_P2P_CLIENT != pAdapter->device_mode))
+          {
+             VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                "Received WLS_BATCHING_SET command in invalid mode %d "
+                "WLS_BATCHING_SET is only allowed in infra STA/P2P client mode",
+                pAdapter->device_mode);
+             ret = -EINVAL;
+             goto exit;
+          }
+
+          status = hdd_parse_set_batchscan_command(value, pReq);
+          if (status)
+          {
+             VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                "Invalid WLS_BATCHING_SET command");
+             ret = -EINVAL;
+             goto exit;
+          }
+          pAdapter->hdd_wait_for_set_batch_scan_rsp = TRUE;
+          halStatus = sme_SetBatchScanReq(WLAN_HDD_GET_HAL_CTX(pAdapter), pReq,
+                          pAdapter->sessionId, hdd_set_batch_scan_req_callback,
+                          pAdapter);
+
+          if ( eHAL_STATUS_SUCCESS == halStatus )
+          {
+             VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                "sme_SetBatchScanReq  returned success halStatus %d",
+                halStatus);
+             if (TRUE == pAdapter->hdd_wait_for_set_batch_scan_rsp)
+             {
+                 INIT_COMPLETION(pAdapter->hdd_set_batch_scan_req_var);
+                 rc = wait_for_completion_timeout(
+                      &pAdapter->hdd_set_batch_scan_req_var,
+                      msecs_to_jiffies(HDD_SET_BATCH_SCAN_REQ_TIME_OUT));
+                 if (0 == rc)
+                 {
+                    VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                    "%s: Timeout waiting for set batch scan to complete",
+                    __func__);
+                    ret = -EINVAL;
+                    goto exit;
+                 }
+             }
+             if ( !pRsp->nScansToBatch )
+             {
+                VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                    "%s: Received set batch scan failure response from FW",
+                     __func__, pRsp->nScansToBatch);
+                ret = -EINVAL;
+                goto exit;
+             }
+             /*As per the Batch Scan Framework API we should return the MIN of
+               either MSCAN or the max # of scans firmware can cache*/
+             ret = MIN(pReq->numberOfScansToBatch , pRsp->nScansToBatch);
+
+             VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                "%s: request MSCAN %d response MSCAN %d ret %d",
+                __func__, pReq->numberOfScansToBatch, pRsp->nScansToBatch, ret);
+          }
+          else
+          {
+             VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                "sme_SetBatchScanReq  returned failure halStatus %d",
+                halStatus);
+             ret = -EINVAL;
+             goto exit;
+          }
+       }
+       else if (strncmp(command, "WLS_BATCHING STOP", 17) == 0)
+       {
+          eHalStatus halStatus;
+          tSirStopBatchScanInd *pInd = &pAdapter->hddStopBatchScanInd;
+          pInd->param = 0;
+
+          if (FALSE == sme_IsFeatureSupportedByFW(BATCH_SCAN))
+          {
+              VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                "%s: Batch scan feature is not supported by FW", __func__);
+              ret = -EINVAL;
+              goto exit;
+          }
+
+          if ((WLAN_HDD_INFRA_STATION != pAdapter->device_mode) &&
+              (WLAN_HDD_P2P_CLIENT != pAdapter->device_mode))
+          {
+              VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                "Received WLS_BATCHING_STOP command in invalid mode %d "
+                "WLS_BATCHING_STOP is only allowed in infra STA/P2P client"
+                " mode",
+                pAdapter->device_mode);
+              ret = -EINVAL;
+              goto exit;
+          }
+
+          halStatus = sme_StopBatchScanInd(WLAN_HDD_GET_HAL_CTX(pAdapter), pInd,
+                          pAdapter->sessionId);
+          if ( eHAL_STATUS_SUCCESS == halStatus )
+          {
+             ret = 0;
+             VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                "sme_StopBatchScanInd  returned success halStatus %d",
+                halStatus);
+          }
+          else
+          {
+             VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                "sme_StopBatchScanInd  returned failure halStatus %d",
+                halStatus);
+             ret = -EINVAL;
+             goto exit;
+          }
+       }
+       else if (strncmp(command, "WLS_BATCHING GET", 16) == 0)
+       {
+          if (FALSE == sme_IsFeatureSupportedByFW(BATCH_SCAN))
+          {
+              VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                "%s: Batch scan feature is not supported by FW", __func__);
+              ret = -EINVAL;
+              goto exit;
+          }
+
+          if ((WLAN_HDD_INFRA_STATION != pAdapter->device_mode) &&
+              (WLAN_HDD_P2P_CLIENT != pAdapter->device_mode))
+          {
+              VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                "Received WLS_BATCHING_GET command in invalid mode %d "
+                "WLS_BATCHING_GET is only allowed in infra STA/P2P client"
+                " mode",
+                pAdapter->device_mode);
+              ret = -EINVAL;
+              goto exit;
+          }
+
+          priv_data.used_len = 16;
+          ret = hdd_return_batch_scan_rsp_to_user(pAdapter, &priv_data, command);
+       }
+#endif
        else {
            hddLog( VOS_TRACE_LEVEL_WARN, "%s: Unsupported GUI command %s",
                    __func__, command);
@@ -3102,6 +5321,15 @@ static hdd_adapter_t* hdd_alloc_station_adapter( hdd_context_t *pHddCtx, tSirMac
       init_completion(&pHddCtx->tx_sus_event_var);
       init_completion(&pHddCtx->rx_sus_event_var);
       init_completion(&pAdapter->ula_complete);
+      init_completion(&pAdapter->change_country_code);
+
+#ifdef FEATURE_WLAN_BATCH_SCAN
+      init_completion(&pAdapter->hdd_set_batch_scan_req_var);
+      init_completion(&pAdapter->hdd_get_batch_scan_req_var);
+      pAdapter->pBatchScanRsp = NULL;
+      pAdapter->numScanList = 0;
+      mutex_init(&pAdapter->hdd_batch_scan_lock);
+#endif
 
       pAdapter->isLinkUpSvcNeeded = FALSE; 
       pAdapter->higherDtimTransition = eANI_BOOLEAN_TRUE;
@@ -3376,6 +5604,13 @@ void hdd_deinit_adapter( hdd_context_t *pHddCtx, hdd_adapter_t *pAdapter )
       case WLAN_HDD_SOFTAP:
       case WLAN_HDD_P2P_GO:
       {
+
+         if (test_bit(WMM_INIT_DONE, &pAdapter->event_flags))
+         {
+            hdd_wmm_adapter_close( pAdapter );
+            clear_bit(WMM_INIT_DONE, &pAdapter->event_flags);
+         }
+
          hdd_cleanup_actionframe(pHddCtx, pAdapter);
 
          hdd_unregister_hostapd(pAdapter);
@@ -3410,6 +5645,24 @@ void hdd_deinit_adapter( hdd_context_t *pHddCtx, hdd_adapter_t *pAdapter )
 void hdd_cleanup_adapter( hdd_context_t *pHddCtx, hdd_adapter_t *pAdapter, tANI_U8 rtnl_held )
 {
    struct net_device *pWlanDev = pAdapter->dev;
+
+#ifdef FEATURE_WLAN_BATCH_SCAN
+      tHddBatchScanRsp *pNode;
+      tHddBatchScanRsp *pPrev;
+      if (pAdapter)
+      {
+          mutex_lock(&pAdapter->hdd_batch_scan_lock);
+          pNode = pAdapter->pBatchScanRsp;
+          while (pNode)
+          {
+              pPrev = pNode;
+              pNode = pNode->pNext;
+              vos_mem_free((v_VOID_t * )pPrev);
+          }
+          pAdapter->pBatchScanRsp = NULL;
+          mutex_unlock(&pAdapter->hdd_batch_scan_lock);
+      }
+#endif
 
    if(test_bit(NET_DEVICE_REGISTERED, &pAdapter->event_flags)) {
       if( rtnl_held )
@@ -3776,6 +6029,12 @@ hdd_adapter_t* hdd_open_adapter( hdd_context_t *pHddCtx, tANI_U8 session_type,
          pAdapter->wdev.iftype = NL80211_IFTYPE_STATION;
          pAdapter->device_mode = session_type;
          status = hdd_register_interface( pAdapter, rtnl_held );
+
+         hdd_init_tx_rx( pAdapter );
+
+         //Stop the Interface TX queue.
+         netif_tx_disable(pAdapter->dev);
+         netif_carrier_off(pAdapter->dev);
       }
          break;
       default:
@@ -3980,7 +6239,7 @@ VOS_STATUS hdd_stop_adapter( hdd_context_t *pHddCtx, hdd_adapter_t *pAdapter )
          }
          else
          {
-            hdd_abort_mac_scan(pHddCtx);
+            hdd_abort_mac_scan(pHddCtx, pAdapter->sessionId);
          }
 
          if (test_bit(SME_SESSION_OPENED, &pAdapter->event_flags)) 
@@ -4109,7 +6368,11 @@ VOS_STATUS hdd_reset_all_adapters( hdd_context_t *pHddCtx )
       pAdapter->sessionCtx.station.hdd_ReassocScenario = VOS_FALSE;
 
       hdd_deinit_tx_rx(pAdapter);
-      hdd_wmm_adapter_close(pAdapter);
+      if (test_bit(WMM_INIT_DONE, &pAdapter->event_flags))
+      {
+          hdd_wmm_adapter_close( pAdapter );
+          clear_bit(WMM_INIT_DONE, &pAdapter->event_flags);
+      }
 
       status = hdd_get_next_adapter ( pHddCtx, pAdapterNode, &pNext );
       pAdapterNode = pNext;
@@ -4125,7 +6388,6 @@ VOS_STATUS hdd_start_all_adapters( hdd_context_t *pHddCtx )
    hdd_adapter_list_node_t *pAdapterNode = NULL, *pNext = NULL;
    VOS_STATUS status;
    hdd_adapter_t      *pAdapter;
-   v_MACADDR_t  bcastMac = VOS_MAC_ADDR_BROADCAST_INITIALIZER;
    eConnectionState  connState;
 
    ENTER();
@@ -4186,11 +6448,9 @@ VOS_STATUS hdd_start_all_adapters( hdd_context_t *pHddCtx )
             break;
 
          case WLAN_HDD_P2P_GO:
-              hddLog(VOS_TRACE_LEVEL_ERROR, "%s [SSR] send restart supplicant",
+            hddLog(VOS_TRACE_LEVEL_ERROR, "%s [SSR] send stop ap to supplicant",
                                                        __func__);
-              /* event supplicant to restart */
-              cfg80211_del_sta(pAdapter->dev,
-                        (const u8 *)&bcastMac.bytes[0], GFP_KERNEL);
+            cfg80211_ap_stopped(pAdapter->dev, GFP_KERNEL);
             break;
 
          case WLAN_HDD_MONITOR:
@@ -4855,6 +7115,8 @@ void hdd_wlan_exit(hdd_context_t *pHddCtx)
       {
          pAdapter = hdd_get_adapter(pHddCtx,
                                     WLAN_HDD_INFRA_STATION);
+         if (pAdapter == NULL)
+            pAdapter = hdd_get_adapter(pHddCtx, WLAN_HDD_IBSS);
       }
    }
    /* DeRegister with platform driver as client for Suspend/Resume */
@@ -4884,22 +7146,11 @@ void hdd_wlan_exit(hdd_context_t *pHddCtx)
    // we are about to Request Full Power, and since that is synchronized,
    // the expectation is that by the time Request Full Power has completed,
    // all scans will be cancelled.
-   hdd_abort_mac_scan( pHddCtx );
-
-   //Stop the timer if already running
-   if (VOS_TIMER_STATE_RUNNING ==
-           vos_timer_getCurrentState(&pHddCtx->hdd_p2p_go_conn_is_in_progress))
-   {
-       vos_timer_stop(&pHddCtx->hdd_p2p_go_conn_is_in_progress);
-   }
-
-   // Destroy hdd_p2p_go_conn_is_in_progress timer
-   if (!VOS_IS_STATUS_SUCCESS(vos_timer_destroy(
-                         &pHddCtx->hdd_p2p_go_conn_is_in_progress)))
-   {
+   if (NULL != pAdapter)
+      hdd_abort_mac_scan( pHddCtx, pAdapter->sessionId);
+   else
        hddLog(VOS_TRACE_LEVEL_ERROR,
-           "%s: Cannot deallocate p2p connection timer", __func__);
-   }
+           "%s: pAdapter is NULL, cannot Abort scan", __func__);
 
    //Stop the traffic monitor timer
    if ( VOS_TIMER_STATE_RUNNING ==
@@ -5064,7 +7315,12 @@ void hdd_wlan_exit(hdd_context_t *pHddCtx)
    }
 
 free_hdd_ctx:
-   wiphy_unregister(wiphy) ;
+   /* FTM mode, WIPHY did not registered
+      If un-register here, system crash will happen */
+   if (VOS_FTM_MODE != hdd_get_conparam())
+   {
+      wiphy_unregister(wiphy) ;
+   }
    wiphy_free(wiphy) ;
    if (hdd_is_ssr_required())
    {
@@ -5412,7 +7668,7 @@ int hdd_wlan_startup(struct device *dev )
    /*
     * cfg80211: wiphy allocation
     */
-   wiphy = wlan_hdd_cfg80211_init(sizeof(hdd_context_t)) ;
+   wiphy = wlan_hdd_cfg80211_wiphy_alloc(sizeof(hdd_context_t)) ;
 
    if(wiphy == NULL)
    {
@@ -5453,7 +7709,7 @@ int hdd_wlan_startup(struct device *dev )
    init_completion(&pHddCtx->req_bmps_comp_var);
    init_completion(&pHddCtx->scan_info.scan_req_completion_event);
    init_completion(&pHddCtx->scan_info.abortscan_event_var);
-   init_completion(&pHddCtx->driver_crda_req);
+   init_completion(&pHddCtx->linux_reg_req);
 
    spin_lock_init(&pHddCtx->schedScan_lock);
 
@@ -5511,13 +7767,13 @@ int hdd_wlan_startup(struct device *dev )
       pHddCtx->cfg_ini->nthBeaconFilter = 1;
    }
    /*
-    * cfg80211: Initialization and registration ...
+    * cfg80211: Initialization  ...
     */
-   if (0 < wlan_hdd_cfg80211_register(dev, wiphy, pHddCtx->cfg_ini))
+   if (0 < wlan_hdd_cfg80211_init(dev, wiphy, pHddCtx->cfg_ini))
    {
       hddLog(VOS_TRACE_LEVEL_FATAL, 
-              "%s: wlan_hdd_cfg80211_register return failure", __func__);
-      goto err_wiphy_reg;
+              "%s: wlan_hdd_cfg80211_init return failure", __func__);
+      goto err_config;
    }
 
    // Update VOS trace levels based upon the cfg.ini
@@ -5533,6 +7789,8 @@ int hdd_wlan_startup(struct device *dev )
                         pHddCtx->cfg_ini->vosTraceEnableSME);
    hdd_vos_trace_enable(VOS_MODULE_ID_PE,
                         pHddCtx->cfg_ini->vosTraceEnablePE);
+   hdd_vos_trace_enable(VOS_MODULE_ID_PMC,
+                         pHddCtx->cfg_ini->vosTraceEnablePMC);
    hdd_vos_trace_enable(VOS_MODULE_ID_WDA,
                         pHddCtx->cfg_ini->vosTraceEnableWDA);
    hdd_vos_trace_enable(VOS_MODULE_ID_SYS,
@@ -5574,7 +7832,7 @@ int hdd_wlan_startup(struct device *dev )
       if(!VOS_IS_STATUS_SUCCESS( status ))
       {
          hddLog(VOS_TRACE_LEVEL_FATAL,"%s: vos_watchdog_open failed",__func__);
-         goto err_wiphy_reg;
+         goto err_wdclose;
       }
    }
 
@@ -5732,6 +7990,14 @@ int hdd_wlan_startup(struct device *dev )
       hddLog(VOS_TRACE_LEVEL_FATAL,"%s: hdd_post_voss_start_config failed", 
          __func__);
       goto err_vosstop;
+   }
+   wlan_hdd_cfg80211_update_reg_info( wiphy );
+
+   /* registration of wiphy dev with cfg80211 */
+   if (0 > wlan_hdd_cfg80211_register(wiphy))
+   {
+       hddLog(VOS_TRACE_LEVEL_ERROR,"%s: wiphy register failed", __func__);
+       goto err_vosstop;
    }
 
    if (VOS_STA_SAP_MODE == hdd_get_conparam())
@@ -5912,6 +8178,9 @@ int hdd_wlan_startup(struct device *dev )
    }
 
    mutex_init(&pHddCtx->sap_lock);
+#ifdef FEATURE_WLAN_TDLS
+   mutex_init(&pHddCtx->tdls_lock);
+#endif
 
    pHddCtx->isLoadUnloadInProgress = FALSE;
 
@@ -5936,13 +8205,6 @@ int hdd_wlan_startup(struct device *dev )
 
    // Initialize the restart logic
    wlan_hdd_restart_init(pHddCtx);
-
-   if (!VOS_IS_STATUS_SUCCESS( vos_timer_init( &pHddCtx->hdd_p2p_go_conn_is_in_progress,
-         VOS_TIMER_TYPE_SW, wlan_hdd_p2p_go_connection_in_progresscb, pAdapter) ) )
-   {
-       hddLog(VOS_TRACE_LEVEL_ERROR,
-           "%s: vos timer init failed for hdd_p2p_go_conn_is_in_progress", __func__);
-   }
 
    //Register the traffic monitor timer now
    if ( pHddCtx->cfg_ini->dynSplitscan)
@@ -5984,6 +8246,7 @@ err_bap_close:
 
 err_close_adapter:
    hdd_close_all_adapters( pHddCtx );
+   wiphy_unregister(wiphy) ;
 
 err_vosstop:
    vos_stop(pVosContext);
@@ -6003,9 +8266,6 @@ err_clkvote:
 err_wdclose:
    if(pHddCtx->cfg_ini->fIsLogpEnabled)
       vos_watchdog_close(pVosContext);
-
-err_wiphy_reg:
-   wiphy_unregister(wiphy) ; 
 
 err_config:
    kfree(pHddCtx->cfg_ini);

@@ -1,8 +1,10 @@
+KERNEL_BUILD := 1
+
 MODNAME := prima_wlan
 WLAN_ROOT := drivers/staging/prima
 
 #Whether to build debug version
-BUILD_DEBUG_VERSION := 1
+BUILD_DEBUG_VERSION := 0
 
 #Enable this flag to build driver in diag version
 BUILD_DIAG_VERSION := 0
@@ -343,10 +345,10 @@ VOSS_OBJS :=    $(VOSS_SRC_DIR)/vos_api.o \
 		$(VOSS_SRC_DIR)/vos_timer.o \
 		$(VOSS_SRC_DIR)/vos_trace.o \
 		$(VOSS_SRC_DIR)/vos_types.o \
-        $(VOSS_SRC_DIR)/vos_utils.o \
-        $(VOSS_SRC_DIR)/wlan_nv_parser.o \
-        $(VOSS_SRC_DIR)/wlan_nv_stream_read.o \
-        $(VOSS_SRC_DIR)/wlan_nv_template_builtin.o
+                $(VOSS_SRC_DIR)/vos_utils.o \
+                $(VOSS_SRC_DIR)/wlan_nv_parser.o \
+                $(VOSS_SRC_DIR)/wlan_nv_stream_read.o \
+                $(VOSS_SRC_DIR)/wlan_nv_template_builtin.o
 
 ifeq ($(BUILD_DIAG_VERSION),1)
 VOSS_OBJS += $(VOSS_SRC_DIR)/vos_diag.o
@@ -489,7 +491,10 @@ CDEFINES :=	-DANI_BUS_TYPE_PLATFORM=1 \
 		-DWLAN_FEATURE_ROAM_SCAN_OFFLOAD \
 		-DWLAN_FEATURE_GTK_OFFLOAD \
 		-DWLAN_WAKEUP_EVENTS \
-	    -DWLAN_KD_READY_NOTIFIER \
+	        -DWLAN_KD_READY_NOTIFIER \
+		-DWLAN_FEATURE_RELIABLE_MCAST \
+		-DWLAN_NL80211_TESTMODE \
+		-DFEATURE_WLAN_BATCH_SCAN \
 		-DFEATURE_WLAN_LPHB
 
 ifneq ($(CONFIG_PRONTO_WLAN),)
@@ -595,13 +600,17 @@ ifeq ($(RE_ENABLE_WIFI_ON_WDI_TIMEOUT),1)
 CDEFINES += -DWDI_RE_ENABLE_WIFI_ON_WDI_TIMEOUT
 endif
 
-# ifeq ($(KERNEL_BUILD),1)
-# CDEFINES += -DWLAN_OPEN_SOURCE
-# endif
-
-# ifeq ($(findstring opensource, $(WLAN_ROOT)), opensource)
+ifeq ($(KERNEL_BUILD),1)
 CDEFINES += -DWLAN_OPEN_SOURCE
-# endif
+endif
+
+#ifeq ($(findstring opensource, $(WLAN_ROOT)), opensource)
+#CDEFINES += -DWLAN_OPEN_SOURCE
+#endif
+
+ifeq ($(CONFIG_ENABLE_LINUX_REG), y)
+CDEFINES += -DCONFIG_ENABLE_LINUX_REG
+endif
 
 # Fix build for GCC 4.7
 EXTRA_CFLAGS += -Wno-maybe-uninitialized -Wno-unused-function

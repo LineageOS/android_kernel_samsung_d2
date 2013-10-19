@@ -150,6 +150,19 @@ typedef struct sAniSirGlobal *tpAniSirGlobal;
 
 #define SPACE_ASCII_VALUE  32
 
+#ifdef WLAN_FEATURE_RELIABLE_MCAST
+#define WLAN_IP_V4_ADDR_SIZE                             4
+/* Multicast IP address in IPv4 ranges from 224.0.0.0 through 239.255.255.255
+  (Previous class D) are reserved as multicast IP addresses */
+#define WLAN_IP_V4_MCAST_ADDR_START                      224
+#define WLAN_IP_V4_MCAST_ADDR_END                        239
+#endif
+
+#ifdef FEATURE_WLAN_BATCH_SCAN
+#define EQUALS_TO_ASCII_VALUE (61)
+#endif
+
+
 // -------------------------------------------------------------------
 // Change channel generic scheme
 typedef void (*CHANGE_CHANNEL_CALLBACK)(tpAniSirGlobal pMac, eHalStatus status, tANI_U32 *data,
@@ -920,6 +933,7 @@ tLimMlmOemDataRsp       *gpLimMlmOemDataRsp;
     tANI_U8 deferredMsgCnt;
     tSirDFSChannelList    dfschannelList;
     tANI_U8 deauthMsgCnt;
+    tANI_U8 gLimIbssStaLimit;
 } tAniSirLim, *tpAniSirLim;
 
 typedef struct sLimMgmtFrameRegistration

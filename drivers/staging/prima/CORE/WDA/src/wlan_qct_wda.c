@@ -526,6 +526,8 @@ VOS_STATUS WDA_prepareConfigTLV(v_PVOID_t pVosContext,
    tANI_U32       configParamSize;
    tANI_U32       *configDataValue;
    WDI_WlanVersionType wcnssCompiledApiVersion;
+   tANI_U8        i;
+
    if ((NULL == pMac)||(NULL == wdaContext))
    {
       VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
@@ -1371,6 +1373,68 @@ VOS_STATUS WDA_prepareConfigTLV(v_PVOID_t pVosContext,
    tlvStruct = (tHalCfg *)( (tANI_U8 *) tlvStruct 
                             + sizeof(tHalCfg) + tlvStruct->length) ; 
 
+   for (i = 0; i < QWLAN_HAL_CFG_MWS_COEX_MAX_VICTIM; i++)
+   {
+      /* [COEX] QWLAN_HAL_CFG_MWS_COEX_VX_WAN_FREQ */
+      tlvStruct->type = QWLAN_HAL_CFG_MWS_COEX_V1_WAN_FREQ + i*4;
+      tlvStruct->length = sizeof(tANI_U32);
+      configDataValue = (tANI_U32 *)(tlvStruct + 1);
+      *configDataValue = pMac->btc.btcConfig.mwsCoexVictimWANFreq[i];
+      tlvStruct = (tHalCfg *)( (tANI_U8 *) tlvStruct
+                               + sizeof(tHalCfg) + tlvStruct->length) ;
+
+      /* [COEX] QWLAN_HAL_CFG_MWS_COEX_VX_WLAN_FREQ */
+      tlvStruct->type = QWLAN_HAL_CFG_MWS_COEX_V1_WLAN_FREQ + i*4;
+      tlvStruct->length = sizeof(tANI_U32);
+      configDataValue = (tANI_U32 *)(tlvStruct + 1);
+      *configDataValue = pMac->btc.btcConfig.mwsCoexVictimWLANFreq[i];
+      tlvStruct = (tHalCfg *)( (tANI_U8 *) tlvStruct
+                               + sizeof(tHalCfg) + tlvStruct->length) ;
+
+      /* [COEX] QWLAN_HAL_CFG_MWS_COEX_VX_CONFIG */
+      tlvStruct->type = QWLAN_HAL_CFG_MWS_COEX_V1_CONFIG + i*4;
+      tlvStruct->length = sizeof(tANI_U32);
+      configDataValue = (tANI_U32 *)(tlvStruct + 1);
+      *configDataValue = pMac->btc.btcConfig.mwsCoexVictimConfig[i];
+      tlvStruct = (tHalCfg *)( (tANI_U8 *) tlvStruct
+                               + sizeof(tHalCfg) + tlvStruct->length) ;
+
+      /* [COEX] QWLAN_HAL_CFG_MWS_COEX_VX_CONFIG2 */
+      tlvStruct->type = QWLAN_HAL_CFG_MWS_COEX_V1_CONFIG2 + i*4;
+      tlvStruct->length = sizeof(tANI_U32);
+      configDataValue = (tANI_U32 *)(tlvStruct + 1);
+      *configDataValue = pMac->btc.btcConfig.mwsCoexVictimConfig2[i];
+      tlvStruct = (tHalCfg *)( (tANI_U8 *) tlvStruct
+                               + sizeof(tHalCfg) + tlvStruct->length) ;
+   }
+
+   /* [COEX] QWLAN_HAL_CFG_MWS_COEX_MODEM_BACKOFF */
+   tlvStruct->type = QWLAN_HAL_CFG_MWS_COEX_MODEM_BACKOFF  ;
+   tlvStruct->length = sizeof(tANI_U32);
+   configDataValue = (tANI_U32 *)(tlvStruct + 1);
+   *configDataValue = pMac->btc.btcConfig.mwsCoexModemBackoff;
+   tlvStruct = (tHalCfg *)( (tANI_U8 *) tlvStruct
+                            + sizeof(tHalCfg) + tlvStruct->length) ;
+
+   for (i = 0; i < QWLAN_HAL_CFG_MWS_COEX_MAX_CONFIG; i++)
+   {
+      /* [COEX] QWLAN_HAL_CFG_MWS_COEX_CONFIGX */
+      tlvStruct->type = QWLAN_HAL_CFG_MWS_COEX_CONFIG1 + i;
+      tlvStruct->length = sizeof(tANI_U32);
+      configDataValue = (tANI_U32 *)(tlvStruct + 1);
+      *configDataValue = pMac->btc.btcConfig.mwsCoexConfig[i];
+      tlvStruct = (tHalCfg *)( (tANI_U8 *) tlvStruct
+                               + sizeof(tHalCfg) + tlvStruct->length) ;
+   }
+
+   /* [COEX] QWLAN_HAL_CFG_SAR_POWER_BACKOFF */
+   tlvStruct->type = QWLAN_HAL_CFG_SAR_POWER_BACKOFF  ;
+   tlvStruct->length = sizeof(tANI_U32);
+   configDataValue = (tANI_U32 *)(tlvStruct + 1);
+   *configDataValue = pMac->btc.btcConfig.SARPowerBackoff;
+   tlvStruct = (tHalCfg *)( (tANI_U8 *) tlvStruct
+                            + sizeof(tHalCfg) + tlvStruct->length) ;
+
    /* QWLAN_HAL_CFG_WCNSS_API_VERSION */
    tlvStruct->type = QWLAN_HAL_CFG_WCNSS_API_VERSION  ;
    tlvStruct->length = sizeof(tANI_U32);
@@ -1584,6 +1648,20 @@ VOS_STATUS WDA_prepareConfigTLV(v_PVOID_t pVosContext,
       goto handle_failure;
    }
 
+   tlvStruct = (tHalCfg *)( (tANI_U8 *) tlvStruct
+                            + sizeof(tHalCfg) + tlvStruct->length) ;
+
+   /* QWLAN_HAL_CFG_GO_LINK_MONITOR_TIMEOUT   */
+   tlvStruct->type = QWLAN_HAL_CFG_GO_LINK_MONITOR_TIMEOUT  ;
+   tlvStruct->length = sizeof(tANI_U32);
+   configDataValue = (tANI_U32 *)(tlvStruct + 1);
+   if(wlan_cfgGetInt(pMac, WNI_CFG_GO_LINK_MONITOR_TIMEOUT,
+                                            configDataValue ) != eSIR_SUCCESS)
+   {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+               "Failed to get value for WNI_CFG_GO_LINK_MONITOR_TIMEOUT");
+      goto handle_failure;
+   }
    tlvStruct = (tHalCfg *)( (tANI_U8 *) tlvStruct
                             + sizeof(tHalCfg) + tlvStruct->length) ;
 
@@ -10461,6 +10539,290 @@ VOS_STATUS WDA_ProcessDelPeriodicTxPtrnInd(tWDA_CbContext *pWDA,
 }
 
 /*
+ * FUNCTION: WDA_ProcessRateUpdateInd
+ *
+ */
+VOS_STATUS WDA_ProcessRateUpdateInd(tWDA_CbContext *pWDA,
+                               tSirRateUpdateInd *pRateUpdateParams)
+{
+   WDI_Status wdiStatus;
+   WDI_RateUpdateIndParams rateUpdateParams;
+
+   vos_mem_copy(rateUpdateParams.bssid,
+            pRateUpdateParams->bssid, sizeof(tSirMacAddr));
+
+   rateUpdateParams.ucastDataRateTxFlag =
+                     pRateUpdateParams->ucastDataRateTxFlag;
+   rateUpdateParams.reliableMcastDataRateTxFlag =
+                     pRateUpdateParams->reliableMcastDataRateTxFlag;
+   rateUpdateParams.mcastDataRate24GHzTxFlag =
+                     pRateUpdateParams->mcastDataRate24GHzTxFlag;
+   rateUpdateParams.mcastDataRate5GHzTxFlag =
+                     pRateUpdateParams->mcastDataRate5GHzTxFlag;
+
+   rateUpdateParams.ucastDataRate = pRateUpdateParams->ucastDataRate;
+   rateUpdateParams.reliableMcastDataRate =
+                                 pRateUpdateParams->reliableMcastDataRate;
+   rateUpdateParams.mcastDataRate24GHz = pRateUpdateParams->mcastDataRate24GHz;
+   rateUpdateParams.mcastDataRate5GHz = pRateUpdateParams->mcastDataRate5GHz;
+
+   rateUpdateParams.wdiReqStatusCB = WDA_WdiIndicationCallback;
+   rateUpdateParams.pUserData = pWDA;
+
+   wdiStatus = WDI_RateUpdateInd(&rateUpdateParams);
+
+   if (WDI_STATUS_PENDING == wdiStatus)
+   {
+      VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+                "Pending received for %s:%d", __func__, __LINE__ );
+   }
+   else if (WDI_STATUS_SUCCESS_SYNC != wdiStatus)
+   {
+      VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                "Failure in %s:%d", __func__, __LINE__ );
+   }
+
+   vos_mem_free(pRateUpdateParams);
+
+   return CONVERT_WDI2VOS_STATUS(wdiStatus);
+}
+
+
+#ifdef FEATURE_WLAN_BATCH_SCAN
+/*
+ * FUNCTION: WDA_ProcessStopBatchScanInd
+ *
+ * DESCRIPTION: This function sends stop batch scan inidcation message to WDI
+ *
+ * PARAM:
+ * pWDA: pointer to WDA context
+ * pReq: pointer to stop batch scan request
+ */
+VOS_STATUS WDA_ProcessStopBatchScanInd(tWDA_CbContext *pWDA,
+                               tSirStopBatchScanInd *pReq)
+{
+   WDI_Status wdiStatus;
+   WDI_StopBatchScanIndType wdiReq;
+
+   wdiReq.param = pReq->param;
+
+   wdiStatus = WDI_StopBatchScanInd(&wdiReq);
+
+   if (WDI_STATUS_SUCCESS_SYNC != wdiStatus)
+   {
+      VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                "Stop batch scan ind failed %s:%d", __func__, wdiStatus);
+   }
+
+   vos_mem_free(pReq);
+
+   return CONVERT_WDI2VOS_STATUS(wdiStatus);
+}
+/*==========================================================================
+  FUNCTION WDA_ProcessTriggerBatchScanResultInd
+
+  DESCRIPTION
+    API to pull batch scan result from FW
+
+  PARAMETERS
+    pWDA: Pointer to WDA context
+    pGetBatchScanReq: Pointer to get batch scan result indication
+
+  RETURN VALUE
+    NONE
+
+===========================================================================*/
+VOS_STATUS WDA_ProcessTriggerBatchScanResultInd(tWDA_CbContext *pWDA,
+       tSirTriggerBatchScanResultInd *pReq)
+{
+   WDI_Status wdiStatus;
+   WDI_TriggerBatchScanResultIndType wdiReq;
+
+   VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO_HIGH,
+                                          "------> %s " ,__func__);
+
+   wdiReq.param = pReq->param;
+
+   wdiStatus = WDI_TriggerBatchScanResultInd(&wdiReq);
+
+   if (WDI_STATUS_SUCCESS_SYNC != wdiStatus)
+   {
+      VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+          "Trigger batch scan result ind failed %s:%d",
+          __func__, wdiStatus);
+   }
+
+   vos_mem_free(pReq);
+
+   return CONVERT_WDI2VOS_STATUS(wdiStatus);
+}
+
+/*==========================================================================
+  FUNCTION WDA_SetBatchScanRespCallback
+
+  DESCRIPTION
+    API to process set batch scan response from FW
+
+  PARAMETERS
+    pRsp: Pointer to set batch scan response
+    pUserData: Pointer to user data
+
+  RETURN VALUE
+    NONE
+
+===========================================================================*/
+void WDA_SetBatchScanRespCallback
+(
+    WDI_SetBatchScanRspType *pRsp,
+    void* pUserData
+)
+{
+   tSirSetBatchScanRsp *pHddSetBatchScanRsp;
+   tpAniSirGlobal pMac;
+   void *pCallbackContext;
+   tWDA_CbContext *pWDA = NULL ;
+   tWDA_ReqParams *pWdaParams = (tWDA_ReqParams *)pUserData;
+
+
+   VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO_HIGH,
+                                          "<------ %s " ,__func__);
+   if (NULL == pWdaParams)
+   {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+              "%s: pWdaParams received NULL", __func__);
+      VOS_ASSERT(0) ;
+      return ;
+   }
+
+   /*extract WDA context*/
+   pWDA = pWdaParams->pWdaContext;
+   if (NULL == pWDA)
+   {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+          "%s:pWDA is NULL can't invole HDD callback",
+           __func__);
+      vos_mem_free(pWdaParams->wdaWdiApiMsgParam);
+      vos_mem_free(pWdaParams->wdaMsgParam);
+      vos_mem_free(pWdaParams);
+      VOS_ASSERT(0);
+      return;
+   }
+
+   vos_mem_free(pWdaParams->wdaWdiApiMsgParam);
+   vos_mem_free(pWdaParams->wdaMsgParam);
+   vos_mem_free(pWdaParams);
+
+   pMac = (tpAniSirGlobal )VOS_GET_MAC_CTXT(pWDA->pVosContext);
+   if (NULL == pMac)
+   {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+          "%s:pMac is NULL", __func__);
+      VOS_ASSERT(0);
+      return;
+   }
+
+   pHddSetBatchScanRsp =
+     (tSirSetBatchScanRsp *)vos_mem_malloc(sizeof(tSirSetBatchScanRsp));
+   if (NULL == pHddSetBatchScanRsp)
+   {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+          "%s: VOS MEM Alloc Failure can't invoke HDD callback", __func__);
+      VOS_ASSERT(0);
+      return;
+   }
+
+   pHddSetBatchScanRsp->nScansToBatch = pRsp->nScansToBatch;
+
+   pCallbackContext = pMac->pmc.setBatchScanReqCallbackContext;
+   /*call hdd callback with set batch scan response data*/
+   if(pMac->pmc.setBatchScanReqCallback)
+   {
+       pMac->pmc.setBatchScanReqCallback(pCallbackContext, pHddSetBatchScanRsp);
+   }
+   else
+   {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+          "%s:HDD callback is null", __func__);
+      VOS_ASSERT(0);
+   }
+
+   vos_mem_free(pHddSetBatchScanRsp);
+   return ;
+}
+
+/*==========================================================================
+  FUNCTION WDA_ProcessSetBatchScanReq
+
+  DESCRIPTION
+    API to send set batch scan request to WDI
+
+  PARAMETERS
+    pWDA: Pointer to WDA context
+    pSetBatchScanReq: Pointer to set batch scan req
+
+  RETURN VALUE
+    NONE
+
+===========================================================================*/
+VOS_STATUS WDA_ProcessSetBatchScanReq(tWDA_CbContext *pWDA,
+       tSirSetBatchScanReq *pSetBatchScanReq)
+{
+   WDI_Status status;
+   tWDA_ReqParams *pWdaParams ;
+   WDI_SetBatchScanReqType *pWdiSetBatchScanReq;
+
+   VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO_HIGH,
+                                          "------> %s " ,__func__);
+
+   pWdiSetBatchScanReq =
+     (WDI_SetBatchScanReqType *)vos_mem_malloc(sizeof(WDI_SetBatchScanReqType));
+   if (NULL == pWdiSetBatchScanReq)
+   {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                           "%s: VOS MEM Alloc Failure", __func__);
+      vos_mem_free(pSetBatchScanReq);
+      VOS_ASSERT(0);
+      return VOS_STATUS_E_NOMEM;
+   }
+
+   pWdaParams = (tWDA_ReqParams *)vos_mem_malloc(sizeof(tWDA_ReqParams));
+   if (NULL == pWdaParams)
+   {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                           "%s: VOS MEM Alloc Failure", __func__);
+      VOS_ASSERT(0);
+      vos_mem_free(pSetBatchScanReq);
+      vos_mem_free(pWdiSetBatchScanReq);
+      return VOS_STATUS_E_NOMEM;
+   }
+
+   pWdiSetBatchScanReq->scanFrequency = pSetBatchScanReq->scanFrequency;
+   pWdiSetBatchScanReq->numberOfScansToBatch =
+               pSetBatchScanReq->numberOfScansToBatch;
+   pWdiSetBatchScanReq->bestNetwork = pSetBatchScanReq->bestNetwork;
+   pWdiSetBatchScanReq->rfBand = pSetBatchScanReq->rfBand;
+   pWdiSetBatchScanReq->rtt = pSetBatchScanReq->rtt;
+
+   pWdaParams->wdaWdiApiMsgParam = pWdiSetBatchScanReq;
+   pWdaParams->pWdaContext = pWDA;
+   pWdaParams->wdaMsgParam = pSetBatchScanReq;
+
+   status = WDI_SetBatchScanReq(pWdiSetBatchScanReq, pWdaParams,
+                (WDI_SetBatchScanCb)WDA_SetBatchScanRespCallback);
+   if (IS_WDI_STATUS_FAILURE(status))
+   {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+              "Failure in Set Batch Scan REQ WDI API, free all the memory " );
+      vos_mem_free(pWdaParams->wdaWdiApiMsgParam);
+      vos_mem_free(pWdaParams->wdaMsgParam);
+      vos_mem_free(pWdaParams);
+   }
+   return CONVERT_WDI2VOS_STATUS(status);
+}
+
+#endif
+
+/*
  * -------------------------------------------------------------------------
  * DATA interface with WDI for Mgmt Frames
  * ------------------------------------------------------------------------- 
@@ -11481,6 +11843,36 @@ VOS_STATUS WDA_McProcessMsg( v_CONTEXT_t pVosContext, vos_msg_t *pMsg )
          break;
       }
 
+#ifdef FEATURE_CESIUM_PROPRIETARY
+      case WDA_GET_IBSS_PEER_INFO_REQ:
+      {
+          WDA_ProcessIbssPeerInfoReq(pWDA,
+                            (tSirIbssGetPeerInfoReqParams *)pMsg->bodyptr);
+          break;
+      }
+#endif /* FEATURE_CESIUM_PROPRIETARY */
+
+#ifdef FEATURE_WLAN_BATCH_SCAN
+      case WDA_SET_BATCH_SCAN_REQ:
+      {
+          WDA_ProcessSetBatchScanReq(pWDA,
+            (tSirSetBatchScanReq *)pMsg->bodyptr);
+          break;
+      }
+      case WDA_TRIGGER_BATCH_SCAN_RESULT_IND:
+      {
+          WDA_ProcessTriggerBatchScanResultInd(pWDA,
+            (tSirTriggerBatchScanResultInd *)pMsg->bodyptr);
+          break;
+      }
+      case WDA_STOP_BATCH_SCAN_IND:
+      {
+          WDA_ProcessStopBatchScanInd(pWDA,
+            (tSirStopBatchScanInd *)pMsg->bodyptr);
+          break;
+      }
+#endif
+
       default:
       {
          VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
@@ -11940,33 +12332,33 @@ void WDA_lowLevelIndCallback(WDI_LowLevelIndType *wdiLowLevelInd,
       }
   
 #ifdef FEATURE_WLAN_LPHB
-      case WDI_LPHB_WAIT_TIMEOUT_IND:
+      case WDI_LPHB_IND:
       {
-         vos_msg_t            vosMsg;
-         tSirLPHBTimeoutInd  *lphbTimeoutInd;
+         vos_msg_t     vosMsg;
+         tSirLPHBInd  *lphbInd;
 
-         lphbTimeoutInd =
-           (tSirLPHBTimeoutInd *)vos_mem_malloc(sizeof(tSirLPHBTimeoutInd));
-         if (NULL == lphbTimeoutInd)
+         lphbInd =
+           (tSirLPHBInd *)vos_mem_malloc(sizeof(tSirLPHBInd));
+         if (NULL == lphbInd)
          {
             VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
                            "%s: LPHB IND buffer alloc Fail", __func__);
             return ;
          }
 
-         lphbTimeoutInd->sessionIdx =
+         lphbInd->sessionIdx =
               wdiLowLevelInd->wdiIndicationData.wdiLPHBTimeoutInd.sessionIdx;
-         lphbTimeoutInd->protocolType =
+         lphbInd->protocolType =
               wdiLowLevelInd->wdiIndicationData.wdiLPHBTimeoutInd.protocolType;
-         lphbTimeoutInd->eventReason =
+         lphbInd->eventReason =
               wdiLowLevelInd->wdiIndicationData.wdiLPHBTimeoutInd.eventReason;
 
          VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
-                   "Get WDI_LPHB_WAIT_TIMEOUT_IND bssIdx %d",
+                   "Get WDI_LPHB_IND bssIdx %d",
                    wdiLowLevelInd->wdiIndicationData.wdiLPHBTimeoutInd.bssIdx);
 
-         vosMsg.type    = eWNI_SME_LPHB_WAIT_TIMEOUT_IND;
-         vosMsg.bodyptr = lphbTimeoutInd;
+         vosMsg.type    = eWNI_SME_LPHB_IND;
+         vosMsg.bodyptr = lphbInd;
          vosMsg.bodyval = 0;
          /* Send message to SME */
          if (VOS_STATUS_SUCCESS !=
@@ -11974,7 +12366,7 @@ void WDA_lowLevelIndCallback(WDI_LowLevelIndType *wdiLowLevelInd,
          {
             VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_WARN,
                       "post WDI_LPHB_WAIT_TIMEOUT_IND to SME Failed");
-            vos_mem_free(lphbTimeoutInd);
+            vos_mem_free(lphbInd);
          }
          break;
       }
@@ -12016,6 +12408,99 @@ void WDA_lowLevelIndCallback(WDI_LowLevelIndType *wdiLowLevelInd,
          WDA_SendMsg(pWDA, WDA_IBSS_PEER_INACTIVITY_IND, (void *)pIbssInd, 0) ;
          break;
       }
+
+#if defined WLAN_FEATURE_RELIABLE_MCAST
+      case WDI_LBP_LEADER_PICK_NEW :
+      {
+         tSirRmcUpdateInd   *pRmcUpdateInd =
+            (tSirRmcUpdateInd *)vos_mem_malloc(sizeof(tSirRmcUpdateInd));
+
+         VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+                              "Received WDI_LBP_UPDATE_IND from WDI");
+
+         pRmcUpdateInd->indication =
+           wdiLowLevelInd->wdiIndicationData.wdiLbpPickNewLeaderInd.indication;
+         pRmcUpdateInd->role =
+           wdiLowLevelInd->wdiIndicationData.wdiLbpPickNewLeaderInd.role;
+
+         /* Copy the mcast transmitter which should be us */
+         vos_mem_copy(pRmcUpdateInd->mcastTransmitter,
+              wdiLowLevelInd->wdiIndicationData.wdiLbpPickNewLeaderInd. \
+              mcastTransmitter,
+              sizeof(tSirMacAddr));
+         /* Copy the mcast group address */
+         vos_mem_copy(pRmcUpdateInd->mcastGroup,
+              wdiLowLevelInd->wdiIndicationData.wdiLbpPickNewLeaderInd.mcastGroup,
+              sizeof(tSirMacAddr));
+         /* Copy the mcast leader address */
+         vos_mem_copy(pRmcUpdateInd->mcastLeader,
+              wdiLowLevelInd->wdiIndicationData.wdiLbpPickNewLeaderInd.mcastLeader,
+              sizeof(tSirMacAddr));
+         /* Copy the candidate leader list */
+         vos_mem_copy(pRmcUpdateInd->leader,
+              wdiLowLevelInd->wdiIndicationData.wdiLbpPickNewLeaderInd.leader,
+              sizeof(pRmcUpdateInd->leader));
+
+         WDA_SendMsg(pWDA, WDA_RMC_UPDATE_IND, (void *)pRmcUpdateInd, 0) ;
+         break;
+      }
+#endif /* WLAN_FEATURE_RELIABLE_MCAST */
+
+#ifdef FEATURE_WLAN_BATCH_SCAN
+     case  WDI_BATCH_SCAN_RESULT_IND:
+     {
+         void *pBatchScanResult;
+         void *pCallbackContext;
+         tpAniSirGlobal pMac;
+
+         VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO_HIGH,
+                   "Received WDI_BATCHSCAN_RESULT_IND from FW");
+
+         /*sanity check*/
+         if(NULL == pWDA)
+         {
+            VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+              "%s:pWDA is NULL", __func__);
+            VOS_ASSERT(0);
+            return;
+         }
+
+         pBatchScanResult =
+            (void *)wdiLowLevelInd->wdiIndicationData.pBatchScanResult;
+         if (NULL == pBatchScanResult)
+         {
+            VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+              "%s:Batch scan result from FW is null can't invoke HDD callback",
+              __func__);
+            VOS_ASSERT(0);
+            return;
+         }
+
+         pMac = (tpAniSirGlobal )VOS_GET_MAC_CTXT(pWDA->pVosContext);
+         if (NULL == pMac)
+         {
+            VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+              "%s:pMac is NULL", __func__);
+            VOS_ASSERT(0);
+            return;
+         }
+
+         pCallbackContext = pMac->pmc.batchScanResultCallbackContext;
+         /*call hdd callback with set batch scan response data*/
+         if(pMac->pmc.batchScanResultCallback)
+         {
+            pMac->pmc.batchScanResultCallback(pCallbackContext,
+               pBatchScanResult);
+         }
+         else
+         {
+            VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+               "%s:HDD callback is null", __func__);
+            VOS_ASSERT(0);
+         }
+         break;
+     }
+#endif
 
       default:
       {
