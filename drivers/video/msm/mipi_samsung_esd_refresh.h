@@ -39,6 +39,7 @@
 #include <linux/timer.h>
 #include <linux/wakelock.h>
 #include <linux/slab.h>
+#include <linux/earlysuspend.h>
 #include "msm_fb.h"
 #include "mipi_dsi.h"
 
