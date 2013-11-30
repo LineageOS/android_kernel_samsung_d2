@@ -2241,11 +2241,13 @@ u32 ddl_set_default_decoder_buffer_req(struct ddl_decoder_data *decoder,
 		return false;
 	}
 	if (estimate) {
+#if 0
 		if (decoder->cont_mode &&
 			decoder->codec.codec == VCD_CODEC_H264) {
 			min_dpb = res_trk_get_min_dpb_count();
 			min_dpb_from_res_trk = 1;
 		} else
+#endif
 			min_dpb = ddl_decoder_min_num_dpb(decoder);
 		frame_size = &decoder->client_frame_size;
 		output_buf_req = &decoder->client_output_buf_req;
@@ -2259,6 +2261,7 @@ u32 ddl_set_default_decoder_buffer_req(struct ddl_decoder_data *decoder,
 		output_buf_req = &decoder->actual_output_buf_req;
 		input_buf_req = &decoder->actual_input_buf_req;
 		min_dpb = decoder->min_dpb_num;
+#if 0
 		if (decoder->cont_mode &&
 			decoder->codec.codec == VCD_CODEC_H264) {
 			min_dpb = res_trk_get_min_dpb_count();
@@ -2268,6 +2271,7 @@ u32 ddl_set_default_decoder_buffer_req(struct ddl_decoder_data *decoder,
 					"(%u) is less than decoder min dpb count(%u)",
 					min_dpb, decoder->min_dpb_num);
 			}
+#endif
 		}
 		if ((decoder->buf_format.buffer_format ==
 			VCD_BUFFER_FORMAT_TILE_4x2) &&
