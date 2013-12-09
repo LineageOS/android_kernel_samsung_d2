@@ -512,7 +512,7 @@ static u32 ddl_set_dec_property(struct ddl_client_context *ddl,
 		DDL_MSG_LOW("Set property VCD_I_CONT_ON_RECONFIG\n");
 		if (sizeof(u32) == property_hdr->sz &&
 			DDLCLIENT_STATE_IS(ddl, DDL_CLIENT_OPEN)) {
-				decoder->cont_mode = *(u32 *)property_value;
+//				decoder->cont_mode = *(u32 *)property_value;
 				vcd_status = VCD_S_SUCCESS;
 		}
 	}
