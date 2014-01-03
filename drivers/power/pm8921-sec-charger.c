@@ -3800,7 +3800,7 @@ pm8921_bat_read_proc(char *buf, char **start, off_t offset,
 	ktime_t ktime;
 	int len = 0;
 
-	ktime = alarm_get_elapsed_realtime();
+	get_monotonic_boottime(&ktime);
 	cur_time = ktime_to_timespec(ktime);
 
 	len = sprintf(buf, "%lu\t%d\t%d\t%d\t%d\t%d",
