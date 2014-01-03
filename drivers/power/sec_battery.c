@@ -250,7 +250,7 @@ static void  sec_bat_monitoring_alarm(struct sec_bat_info *info,
 	ktime_t next;
 
 	next = ktime_add(info->cur_monitor_time, low_interval);
-	alarm_start_range(&info->alarm, next, ktime_add(next, slack));
+	devalarm_start(&info->alarm, next, ktime_add(next, slack));
 }
 
 static void sec_bat_monitor_queue(struct alarm *alarm)
@@ -1977,7 +1977,7 @@ static void  sec_bat_program_alarm(struct sec_bat_info *info,
 	ktime_t next;
 
 	next = ktime_add(info->cur_time, low_interval);
-	alarm_start_range(&info->event_alarm, next, ktime_add(next, slack));
+	devalarm_start(&info->event_alarm, next, ktime_add(next, slack));
 }
 
 static void sec_bat_use_timer_func(struct alarm *alarm)

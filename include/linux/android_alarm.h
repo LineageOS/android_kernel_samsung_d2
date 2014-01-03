@@ -13,6 +13,8 @@
  *
  */
 
+#include "../../drivers/staging/android/android_alarm.h"
+#if 0
 #ifndef _LINUX_ANDROID_ALARM_H
 #define _LINUX_ANDROID_ALARM_H
 
@@ -104,4 +106,5 @@ enum android_alarm_return_flags {
 #define ANDROID_ALARM_BASE_CMD(cmd)         (cmd & ~(_IOC(0, 0, 0xf0, 0)))
 #define ANDROID_ALARM_IOCTL_TO_TYPE(cmd)    (_IOC_NR(cmd) >> 4)
 
+#endif
 #endif
