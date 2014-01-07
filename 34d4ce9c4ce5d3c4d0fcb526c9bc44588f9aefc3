@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5a5ae5dd_1af2699b",
+        "filename": "drivers/tty/serial/msm_serial_hs.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 211,
+      "author": {
+        "id": 3671
+      },
+      "writtenOn": "2014-01-07T12:16:14Z",
+      "side": 1,
+      "message": "invisiblek - y u no tab?",
+      "revId": "34d4ce9c4ce5d3c4d0fcb526c9bc44588f9aefc3",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    }
+  ]
+}
