@@ -89,11 +89,7 @@ typedef struct {
 /* GPIO definitions */
 #define VIB_PWM			70
 #define HAPTIC_PWR_EN		47
-#if defined(CONFIG_MACH_M2_DCM)
-#define	VIB_EN			65
-#else
 #define VIB_EN			77
-#endif
 #define PMIC_GPIO_VIB_ON	4
 
 int32_t g_nforce_32;

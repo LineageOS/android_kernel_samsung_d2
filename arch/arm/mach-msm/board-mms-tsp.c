@@ -73,15 +73,12 @@ void  melfas_vdd_on(bool onoff)
 	/* 3.3V */
 	static struct regulator *reg_l17;
 	/* 1.8V */
-#ifdef CONFIG_MACH_M2_VZW
 	if (system_rev < BOARD_REV02) {
 		if (onoff)
 			gpio_direction_output(10, 1);
 		else
 			gpio_direction_output(10, 0);
-	} else
-#endif
-	{
+	} else {
 #if !defined(CONFIG_MACH_ESPRESSO_VZW) && !defined(CONFIG_MACH_ESPRESSO_ATT) \
 				&& !defined(CONFIG_MACH_ESPRESSO10_VZW) \
 				&& !defined(CONFIG_MACH_ESPRESSO_SPR)
@@ -361,7 +358,6 @@ static struct i2c_board_info __initdata mms_i2c3_boardinfo_final[] = {
 	},
 };
 
-#ifdef CONFIG_MACH_M2_VZW
 static void  mms144_init(void)
 {
 	if (system_rev < BOARD_REV02) {
@@ -374,7 +370,6 @@ static void  mms144_init(void)
 		}
 	}
 }
-#endif
 
 #ifdef CONFIG_MACH_JASPER
 static void mms136_tkey_init(void)
@@ -388,9 +383,7 @@ void __init mms_tsp_input_init(void)
 {
 	int ret;
 
-#ifdef CONFIG_MACH_M2_VZW
 	mms144_init();
-#endif
 #ifdef CONFIG_MACH_JASPER
 	mms136_tkey_init();
 #endif

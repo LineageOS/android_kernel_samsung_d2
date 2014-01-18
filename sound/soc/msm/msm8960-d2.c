@@ -299,7 +299,7 @@ static int msm8960_bias_event(struct snd_soc_dapm_widget *w,
 	struct snd_kcontrol *k, int event)
 {
 	pr_debug("GPIO BIAS UP!!!%d\n", SND_SOC_DAPM_EVENT_ON(event));
-#if defined(CONFIG_MACH_M2_DCM) || defined(CONFIG_MACH_K2_KDI)
+#if defined(CONFIG_MACH_K2_KDI)
 	if (system_rev == BOARD_REV00)
 		gpio_direction_output(GPIO_MAIN_MIC_BIAS_REV00,
 				SND_SOC_DAPM_EVENT_ON(event));
@@ -985,7 +985,7 @@ static void *def_tabla_mbhc_cal(void)
 	btn_cfg = TABLA_MBHC_CAL_BTN_DET_PTR(tabla_cal);
 	btn_low = tabla_mbhc_cal_btn_det_mp(btn_cfg, TABLA_BTN_DET_V_BTN_LOW);
 	btn_high = tabla_mbhc_cal_btn_det_mp(btn_cfg, TABLA_BTN_DET_V_BTN_HIGH);
-	if (machine_is_M2_VZW() && system_rev >= BOARD_REV10) {
+	if (system_rev >= BOARD_REV10) {
 		btn_low[0] = -105;
 		btn_high[0] = 65;
 		btn_low[1] = 66;
@@ -1091,9 +1091,7 @@ static int msm8960_i2s_audrx_init(struct snd_soc_pcm_runtime *rtd)
 	snd_jack_set_key(volumedown_jack.jack,
 			SND_JACK_BTN_2, KEY_VOLUMEDOWN);
 
-	if (!(machine_is_M2_ATT() && system_rev >= BOARD_REV10) &&
-		!(machine_is_M2_VZW() && system_rev >= BOARD_REV13) &&
-		!(machine_is_M2_SPR() && system_rev >= BOARD_REV08) &&
+	if (system_rev >= BOARD_REV13) &&
 		!(machine_is_AEGIS2() && system_rev >= BOARD_REV04) &&
 		!(machine_is_JASPER() && system_rev >= BOARD_REV04) &&
 		!(machine_is_COMANCHE() && system_rev >= BOARD_REV02) &&
@@ -2170,7 +2168,7 @@ static int msm8960_configure_audio_gpios(void)
 		.out_strength   = PM_GPIO_STRENGTH_MED,
 		.function       = PM_GPIO_FUNC_NORMAL,
 	};
-#if !defined(CONFIG_MACH_M2_DCM) && !defined(CONFIG_MACH_AEGIS2) \
+#if !defined(CONFIG_MACH_AEGIS2) \
 	&& !defined(CONFIG_MACH_K2_KDI) && !defined(CONFIG_MACH_EXPRESS)
 	ret = gpio_request(PM8921_GPIO_PM_TO_SYS(23), "AV_SWITCH");
 	if (ret) {
@@ -2235,8 +2233,8 @@ static int msm8960_configure_audio_gpios(void)
 static void msm8960_free_audio_gpios(void)
 {
 	if (msm8960_audio_gpios_configured) {
-#if !defined(CONFIG_MACH_M2_DCM) && !defined(CONFIG_MACH_AEGIS2) \
-	&& !defined(CONFIG_MACH_K2_KDI) && !defined(CONFIG_MACH_EXPRESS)
+#if !defined(CONFIG_MACH_AEGIS2) && !defined(CONFIG_MACH_K2_KDI) \
+    && !defined(CONFIG_MACH_EXPRESS)
 		gpio_free(PM8921_GPIO_PM_TO_SYS(23));
 		gpio_free(PM8921_GPIO_PM_TO_SYS(35));
 #endif

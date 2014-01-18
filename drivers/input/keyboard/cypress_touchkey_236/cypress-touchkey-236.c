@@ -872,9 +872,7 @@ static int __devinit cypress_touchkey_probe(struct i2c_client *client,
 	struct input_dev *input_dev;
 	int ret = 0;
 	int i;
-#if defined(CONFIG_MACH_M2_ATT) || defined(CONFIG_MACH_M2_DCM) \
-	|| defined(CONFIG_MACH_M2_SKT) || defined(CONFIG_MACH_K2_KDI) \
-	|| defined(CONFIG_MACH_EXPRESS)
+#if defined(CONFIG_MACH_K2_KDI) || defined(CONFIG_MACH_EXPRESS)
 	int retry = NUM_OF_RETRY_UPDATE;
 #endif
 	int ic_fw_ver;
@@ -978,9 +976,7 @@ static int __devinit cypress_touchkey_probe(struct i2c_client *client,
 	ic_fw_ver = i2c_smbus_read_byte_data(client, CYPRESS_FW_VER);
 	dev_err(&client->dev, "Touchkey FW Version: 0x%02x\n", ic_fw_ver);
 
-#if defined(CONFIG_MACH_M2_ATT) || defined(CONFIG_MACH_M2_DCM) \
-	|| defined(CONFIG_MACH_M2_SKT) || defined(CONFIG_MACH_K2_KDI) \
-	|| defined(CONFIG_MACH_EXPRESS)
+#if defined(CONFIG_MACH_EXPRESS)
 	dev_err(&client->dev, "Touchkey FW Version: 0x%02x, system_rev: %x\n",
 						ic_fw_ver, system_rev);
 	if (0 /* ic_fw_ver < BIN_FW_VERSION */) {

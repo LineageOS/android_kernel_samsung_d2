@@ -318,17 +318,8 @@ static int is_pm8921_sec_charger_using(void)
 #if defined(CONFIG_MACH_JAGUAR)
 	if (system_rev >= 0xD)
 		return 0;
-#elif defined(CONFIG_MACH_M2_ATT)
-	if (system_rev >= 0x4)
-		return 0;
-#elif defined(CONFIG_MACH_M2_SPR)
-	if (system_rev >= 0x3)
-		return 0;
-#elif defined(CONFIG_MACH_M2_VZW)
+#elif defined(CONFIG_MACH_M2)
 	if (system_rev >= 0x9)
-		return 0;
-#elif defined(CONFIG_MACH_M2_SKT)
-	if (system_rev >= 0x4)
 		return 0;
 #elif defined(CONFIG_MACH_GOGH)
 	if (system_rev >= 0x1)
@@ -336,7 +327,7 @@ static int is_pm8921_sec_charger_using(void)
 #elif defined(CONFIG_MACH_INFINITE)
 	if (system_rev >= 0x1)
 		return 0;
-#elif defined(CONFIG_MACH_M2_DCM) || defined(CONFIG_MACH_K2_KDI)
+#elif defined(CONFIG_MACH_K2_KDI)
 	if (system_rev >= 0x1)
 		return 0;
 #elif defined(CONFIG_MACH_AEGIS2)

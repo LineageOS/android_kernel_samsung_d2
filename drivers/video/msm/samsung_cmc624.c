@@ -1753,28 +1753,8 @@ int samsung_cmc624_init(void)
 }
 bool samsung_has_cmc624(void)
 {
-#ifdef CONFIG_MACH_M2_ATT
-	if ((system_rev >= 11) && (system_rev != 13))
-		return false;
-	else
-		return true;
-#elif defined(CONFIG_MACH_M2_SPR)
-	if (system_rev >= 11)
-		return false;
-	else
-		return true;
-#elif defined(CONFIG_MACH_M2_VZW)
+#if defined(CONFIG_MACH_M2)
 	if ((system_rev == 4) || (system_rev >= 14))
-		return false;
-	else
-		return true;
-#elif defined(CONFIG_MACH_M2_SKT)
-	if (system_rev >= 10)
-		return false;
-	else
-		return true;
-#elif defined(CONFIG_MACH_M2_DCM) || defined(CONFIG_MACH_K2_KDI)
-	if (system_rev >= 5)
 		return false;
 	else
 		return true;
