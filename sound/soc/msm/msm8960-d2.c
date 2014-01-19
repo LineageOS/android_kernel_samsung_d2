@@ -1105,7 +1105,7 @@ static int msm8960_i2s_audrx_init(struct snd_soc_pcm_runtime *rtd)
 
 	return 0;
 }
-
+#if defined(CONFIG_MACH_M2_DCM)
 static int msm8960_audrx_init(struct snd_soc_pcm_runtime *rtd)
 {
 	int err;
@@ -1275,7 +1275,7 @@ static int msm8960_hw_params(struct snd_pcm_substream *substream,
 end:
 	return ret;
 }
-
+#endif
 static int msm8960_i2s_rx_be_hw_params_fixup(struct snd_soc_pcm_runtime *rtd,
 			struct snd_pcm_hw_params *params)
 {
@@ -1307,7 +1307,7 @@ static int msm8960_i2s_tx_be_hw_params_fixup(struct snd_soc_pcm_runtime *rtd,
 
 	return 0;
 }
-
+#if defined(CONFIG_MACH_M2_DCM)
 static int msm8960_slim_0_rx_be_hw_params_fixup(struct snd_soc_pcm_runtime *rtd,
 			struct snd_pcm_hw_params *params)
 {
@@ -1339,7 +1339,7 @@ static int msm8960_slim_0_tx_be_hw_params_fixup(struct snd_soc_pcm_runtime *rtd,
 
 	return 0;
 }
-
+#endif
 static int msm8960_be_hw_params_fixup(struct snd_soc_pcm_runtime *rtd,
 			struct snd_pcm_hw_params *params)
 {
@@ -1740,6 +1740,7 @@ static void msm8960_auxpcm_shutdown(struct snd_pcm_substream *substream)
 		msm8960_aux_pcm_free_gpios();
 }
 
+#if defined(CONFIG_MACH_M2_DCM)
 static int msm8960_startup(struct snd_pcm_substream *substream)
 {
 	struct snd_soc_pcm_runtime *rtd = substream->private_data;
@@ -1764,7 +1765,7 @@ static struct snd_soc_ops msm8960_be_ops = {
 	.hw_params = msm8960_hw_params,
 	.shutdown = msm8960_shutdown,
 };
-
+#endif
 static struct snd_soc_ops msm8960_i2s_be_ops = {
 	.startup = msm8960_i2s_startup,
 	.shutdown = msm8960_i2s_shutdown,
@@ -1806,7 +1807,7 @@ static struct snd_soc_dai_link msm8960_i2s_be_dai[] = {
 		.ops = &msm8960_i2s_be_ops,
 	},
 };
-
+#if defined(CONFIG_MACH_M2_DCM)
 static struct snd_soc_dai_link msm8960_slimbus_be_dai[] = {
 	{
 		.name = LPASS_BE_SLIMBUS_0_RX,
@@ -1835,7 +1836,7 @@ static struct snd_soc_dai_link msm8960_slimbus_be_dai[] = {
 		.ops = &msm8960_be_ops,
 	},
 };
-
+#endif
 /* Digital audio interface glue - connects codec <---> CPU */
 static struct snd_soc_dai_link msm8960_dai[] = {
 	/* FrontEnd DAI Links */
@@ -2287,7 +2288,7 @@ static int __init msm8960_audio_init(void)
 	int ret;
 	msm8960_dai_list = kzalloc(sizeof(msm8960_dai) +
 			2 * sizeof(struct snd_soc_dai_link), GFP_KERNEL);
-
+#if defined(CONFIG_MACH_M2_DCM)
 	if (wcd9xxx_get_intf_type() == WCD9XXX_INTERFACE_TYPE_SLIMBUS) {
 		memcpy(msm8960_dai_list, msm8960_dai, sizeof(msm8960_dai));
 		memcpy(&msm8960_dai_list[ARRAY_SIZE(msm8960_dai)],
@@ -2302,6 +2303,7 @@ static int __init msm8960_audio_init(void)
 		snd_soc_card_msm8960.dai_link = msm8960_dai_list;
 		snd_soc_card_msm8960.num_links = ARRAY_SIZE(msm8960_dai) +
 					ARRAY_SIZE(msm8960_i2s_be_dai);
+#endif
 	}
 
 	printk(KERN_INFO "%s: start", __func__);
