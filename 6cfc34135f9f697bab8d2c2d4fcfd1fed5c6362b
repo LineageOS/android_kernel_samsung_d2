@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3a57f1b5_986d05cf",
+        "filename": "arch/arm/mach-msm/Kconfig",
+        "patchSetId": 2
+      },
+      "lineNbr": 932,
+      "author": {
+        "id": 3671
+      },
+      "writtenOn": "2014-01-23T17:00:35Z",
+      "side": 1,
+      "message": "whitespace (yea, i\u0027m picky)",
+      "revId": "6cfc34135f9f697bab8d2c2d4fcfd1fed5c6362b",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a57f1b5_b87241ac",
+        "filename": "arch/arm/mach-msm/Makefile",
+        "patchSetId": 2
+      },
+      "lineNbr": 309,
+      "author": {
+        "id": 3671
+      },
+      "writtenOn": "2014-01-23T17:00:35Z",
+      "side": 1,
+      "message": "moar whitespace",
+      "revId": "6cfc34135f9f697bab8d2c2d4fcfd1fed5c6362b",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    }
+  ]
+}
