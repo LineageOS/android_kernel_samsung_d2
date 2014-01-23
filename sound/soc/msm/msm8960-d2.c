@@ -1103,7 +1103,7 @@ static int msm8960_i2s_audrx_init(struct snd_soc_pcm_runtime *rtd)
 
 	return 0;
 }
-#if 0
+
 static int msm8960_audrx_init(struct snd_soc_pcm_runtime *rtd)
 {
 	int err;
@@ -1196,7 +1196,7 @@ static int msm8960_audrx_init(struct snd_soc_pcm_runtime *rtd)
 			mbhc_cfg.gpio = PM8921_GPIO_PM_TO_SYS(JACK_DETECT_GPIO);
 			mbhc_cfg.gpio_irq = JACK_DETECT_INT;
 		}
-		
+
 		if (mbhc_cfg.gpio) {
 			err = pm8xxx_gpio_config(mbhc_cfg.gpio, &jack_gpio_cfg);
 			if (err) {
@@ -1210,41 +1210,70 @@ static int msm8960_audrx_init(struct snd_soc_pcm_runtime *rtd)
 
 	return 0;
 }
-static struct snd_soc_dsp_link lpa_fe_media = {
-	.playback = true,
-	.trigger = {
-		SND_SOC_DSP_TRIGGER_POST,
-		SND_SOC_DSP_TRIGGER_POST
-	},
-};
 
-static struct snd_soc_dsp_link fe_media = {
-	.playback = true,
-	.capture = true,
-	.trigger = {
-		SND_SOC_DSP_TRIGGER_POST,
-		SND_SOC_DSP_TRIGGER_POST
-	},
-};
+static int msm8960_hw_params(struct snd_pcm_substream *substream,
+				struct snd_pcm_hw_params *params)
+{
+	struct snd_soc_pcm_runtime *rtd = substream->private_data;
+	struct snd_soc_dai *codec_dai = rtd->codec_dai;
+	struct snd_soc_dai *cpu_dai = rtd->cpu_dai;
+	int ret = 0;
+	unsigned int rx_ch[SLIM_MAX_RX_PORTS], tx_ch[SLIM_MAX_TX_PORTS];
+	unsigned int rx_ch_cnt = 0, tx_ch_cnt = 0;
 
-static struct snd_soc_dsp_link slimbus0_hl_media = {
-	.playback = true,
-	.capture = true,
-	.trigger = {
-		SND_SOC_DSP_TRIGGER_POST,
-		SND_SOC_DSP_TRIGGER_POST
-	},
-};
+	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK) {
 
-static struct snd_soc_dsp_link int_fm_hl_media = {
-	.playback = true,
-	.capture = true,
-	.trigger = {
-		SND_SOC_DSP_TRIGGER_POST,
-		SND_SOC_DSP_TRIGGER_POST
-	},
-};
-#endif
+		pr_debug("%s: rx_0_ch=%d\n", __func__, msm8960_slim_0_rx_ch);
+
+		ret = snd_soc_dai_get_channel_map(codec_dai,
+				&tx_ch_cnt, tx_ch, &rx_ch_cnt , rx_ch);
+		if (ret < 0) {
+			pr_err("%s: failed to get codec chan map\n", __func__);
+			goto end;
+		}
+
+		ret = snd_soc_dai_set_channel_map(cpu_dai, 0, 0,
+				msm8960_slim_0_rx_ch, rx_ch);
+		if (ret < 0) {
+			pr_err("%s: failed to set cpu chan map\n", __func__);
+			goto end;
+		}
+		ret = snd_soc_dai_set_channel_map(codec_dai, 0, 0,
+				msm8960_slim_0_rx_ch, rx_ch);
+		if (ret < 0) {
+			pr_err("%s: failed to set codec channel map\n",
+								__func__);
+			goto end;
+		}
+	} else {
+
+		pr_debug("%s: %s  tx_dai_id = %d  num_ch = %d\n", __func__,
+			codec_dai->name, codec_dai->id, msm8960_slim_0_tx_ch);
+
+		ret = snd_soc_dai_get_channel_map(codec_dai,
+				&tx_ch_cnt, tx_ch, &rx_ch_cnt , rx_ch);
+		if (ret < 0) {
+			pr_err("%s: failed to get codec chan map\n", __func__);
+			goto end;
+		}
+		ret = snd_soc_dai_set_channel_map(cpu_dai,
+				msm8960_slim_0_tx_ch, tx_ch, 0 , 0);
+		if (ret < 0) {
+			pr_err("%s: failed to set cpu chan map\n", __func__);
+			goto end;
+		}
+		ret = snd_soc_dai_set_channel_map(codec_dai,
+				msm8960_slim_0_tx_ch, tx_ch, 0, 0);
+		if (ret < 0) {
+			pr_err("%s: failed to set codec channel map\n",
+								__func__);
+			goto end;
+		}
+	}
+end:
+	return ret;
+}
+
 static int msm8960_i2s_rx_be_hw_params_fixup(struct snd_soc_pcm_runtime *rtd,
 			struct snd_pcm_hw_params *params)
 {
@@ -1276,7 +1305,7 @@ static int msm8960_i2s_tx_be_hw_params_fixup(struct snd_soc_pcm_runtime *rtd,
 
 	return 0;
 }
-#if 0
+
 static int msm8960_slim_0_rx_be_hw_params_fixup(struct snd_soc_pcm_runtime *rtd,
 			struct snd_pcm_hw_params *params)
 {
@@ -1308,7 +1337,7 @@ static int msm8960_slim_0_tx_be_hw_params_fixup(struct snd_soc_pcm_runtime *rtd,
 
 	return 0;
 }
-#endif
+
 static int msm8960_be_hw_params_fixup(struct snd_soc_pcm_runtime *rtd,
 			struct snd_pcm_hw_params *params)
 {
@@ -1709,33 +1738,36 @@ static void msm8960_auxpcm_shutdown(struct snd_pcm_substream *substream)
 		msm8960_aux_pcm_free_gpios();
 }
 
-/* Not used */
-#if 0
 static int msm8960_startup(struct snd_pcm_substream *substream)
 {
-	pr_info("%s(): substream = %s  stream = %d\n", __func__,
-		 substream->name, substream->stream);
+	struct snd_soc_pcm_runtime *rtd = substream->private_data;
+
+	pr_debug("%s(): dai_link_str_name = %s cpu_dai = %s codec_dai = %s\n",
+		__func__, rtd->dai_link->stream_name,
+		rtd->dai_link->cpu_dai_name, rtd->dai_link->codec_dai_name);
 	return 0;
 }
 
 static void msm8960_shutdown(struct snd_pcm_substream *substream)
 {
-	pr_debug("%s(): substream = %s  stream = %d\n", __func__,
-		 substream->name, substream->stream);
+	struct snd_soc_pcm_runtime *rtd = substream->private_data;
+
+	pr_debug("%s(): dai_link str_name = %s cpu_dai = %s codec_dai = %s\n",
+		__func__, rtd->dai_link->stream_name,
+		rtd->dai_link->cpu_dai_name, rtd->dai_link->codec_dai_name);
 }
 
 static struct snd_soc_ops msm8960_be_ops = {
 	.startup = msm8960_startup,
+	.hw_params = msm8960_hw_params,
 	.shutdown = msm8960_shutdown,
 };
-#endif
+
 static struct snd_soc_ops msm8960_i2s_be_ops = {
 	.startup = msm8960_i2s_startup,
 	.shutdown = msm8960_i2s_shutdown,
 	.hw_params = msm8660_i2s_hw_params,
 };
-
-/* Not Used */
 
 static struct snd_soc_ops msm8960_auxpcm_be_ops = {
 	.startup = msm8960_auxpcm_startup,
@@ -1770,7 +1802,7 @@ static struct snd_soc_dai_link msm8960_i2s_be_dai[] = {
 		.ops = &msm8960_i2s_be_ops,
 	},
 };
-#if 0
+
 static struct snd_soc_dai_link msm8960_slimbus_be_dai[] = {
 	{
 		.name = LPASS_BE_SLIMBUS_0_RX,
@@ -1784,6 +1816,7 @@ static struct snd_soc_dai_link msm8960_slimbus_be_dai[] = {
 		.init = &msm8960_audrx_init,
 		.be_hw_params_fixup = msm8960_slim_0_rx_be_hw_params_fixup,
 		.ops = &msm8960_be_ops,
+		.ignore_pmdown_time = 1, /* this dainlink has playback support */
 	},
 	{
 		.name = LPASS_BE_SLIMBUS_0_TX,
@@ -1798,7 +1831,7 @@ static struct snd_soc_dai_link msm8960_slimbus_be_dai[] = {
 		.ops = &msm8960_be_ops,
 	},
 };
-#endif
+
 /* Digital audio interface glue - connects codec <---> CPU */
 static struct snd_soc_dai_link msm8960_dai[] = {
 	/* FrontEnd DAI Links */
@@ -2250,23 +2283,21 @@ static int __init msm8960_audio_init(void)
 	int ret;
 	msm8960_dai_list = kzalloc(sizeof(msm8960_dai) +
 			2 * sizeof(struct snd_soc_dai_link), GFP_KERNEL);
-/*
-	if (tabla_get_intf_type() == TABLA_INTERFACE_TYPE_SLIMBUS) {
+	if (wcd9xxx_get_intf_type() == WCD9XXX_INTERFACE_TYPE_SLIMBUS) {
 		memcpy(msm8960_dai_list, msm8960_dai, sizeof(msm8960_dai));
 		memcpy(&msm8960_dai_list[ARRAY_SIZE(msm8960_dai)],
 			msm8960_slimbus_be_dai, sizeof(msm8960_slimbus_be_dai));
 		snd_soc_card_msm8960.dai_link = msm8960_dai_list;
 		snd_soc_card_msm8960.num_links = ARRAY_SIZE(msm8960_dai) +
 					ARRAY_SIZE(msm8960_slimbus_be_dai);
-	} else if (tabla_get_intf_type() == TABLA_INTERFACE_TYPE_I2C) {
-*/
+	} else if (wcd9xxx_get_intf_type() == WCD9XXX_INTERFACE_TYPE_I2C) {
 		memcpy(msm8960_dai_list, msm8960_dai, sizeof(msm8960_dai));
 		memcpy(&msm8960_dai_list[ARRAY_SIZE(msm8960_dai)],
 				msm8960_i2s_be_dai, sizeof(msm8960_i2s_be_dai));
 		snd_soc_card_msm8960.dai_link = msm8960_dai_list;
 		snd_soc_card_msm8960.num_links = ARRAY_SIZE(msm8960_dai) +
 					ARRAY_SIZE(msm8960_i2s_be_dai);
-//	}
+	}
 
 	printk(KERN_INFO "%s: start", __func__);
 	mbhc_cfg.calibration = def_tabla_mbhc_cal();
