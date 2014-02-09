@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fade3982_8e7eb8ac",
+        "filename": "sound/soc/msm/msm8960-d2.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 2300,
+      "author": {
+        "id": 3671
+      },
+      "writtenOn": "2014-02-09T05:53:13Z",
+      "side": 1,
+      "message": "this closing bracket was breaking my build.",
+      "revId": "61815cd0267f0ed3945ecb432b9140929f644306",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    }
+  ]
+}
