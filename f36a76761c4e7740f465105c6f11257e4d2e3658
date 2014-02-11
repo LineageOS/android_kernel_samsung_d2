@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fade3982_963fee24",
+        "filename": "arch/arm/configs/cyanogen_d2_defconfig",
+        "patchSetId": 2
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 3671
+      },
+      "writtenOn": "2014-02-11T17:23:11Z",
+      "side": 1,
+      "message": "this is probably useless",
+      "revId": "f36a76761c4e7740f465105c6f11257e4d2e3658",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    }
+  ]
+}
