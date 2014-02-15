@@ -1241,8 +1241,11 @@ static void msm_otg_start_host(struct usb_otg *otg, int on)
 #ifdef CONFIG_USB_HOST_NOTIFY
 	if (on == 1) {
 		motg->ndev.mode = NOTIFY_HOST_MODE;
+		if (!motg->smartdock)
+				host_state_notify(&motg->ndev, NOTIFY_HOST_ADD);
 	} else if (on == 0) {
 		motg->ndev.mode = NOTIFY_NONE_MODE;
+		host_state_notify(&motg->ndev, NOTIFY_HOST_REMOVE);
 	}
 #endif
 	hcd = bus_to_hcd(otg->host);
@@ -1586,12 +1589,6 @@ static void msm_otg_start_peripheral(struct usb_otg *otg, int on)
 	if (!otg->gadget)
 		return;
 
-#ifdef CONFIG_USB_HOST_NOTIFY
-	if (on == 1)
-		motg->ndev.mode = NOTIFY_PERIPHERAL_MODE;
-	else if (on == 0)
-		motg->ndev.mode = NOTIFY_NONE_MODE;
-#endif
 	if (on) {
 		dev_dbg(otg->phy->dev, "gadget on\n");
 		/*
@@ -2429,7 +2426,6 @@ static void msm_otg_init_sm(struct msm_otg *motg)
 				else
 					clear_bit(B_SESS_VLD, &motg->inputs);
 			}
-#ifndef CONFIG_USB_MSM_USE_POWER_SUPPLY_API
 			else {
                                 pr_info("msm_otg_init_sm, PM8921\n");
 				/*
@@ -2438,7 +2434,6 @@ static void msm_otg_init_sm(struct msm_otg *motg)
 				 */
 				wait_for_completion(&pmic_vbus_init);
 			}
-#endif
 		}
 		break;
 	case USB_HOST:
@@ -2452,13 +2447,11 @@ static void msm_otg_init_sm(struct msm_otg *motg)
 			else
 				clear_bit(B_SESS_VLD, &motg->inputs);
 		} else if (pdata->otg_control == OTG_PMIC_CONTROL) {
-#ifndef CONFIG_USB_MSM_USE_POWER_SUPPLY_API
 			/*
 			 * VBUS initial state is reported after PMIC
 			 * driver initialization. Wait for it.
 			 */
 			wait_for_completion(&pmic_vbus_init);
-#endif
 		}
 		break;
 	default:
