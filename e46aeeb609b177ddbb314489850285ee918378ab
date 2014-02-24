@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "bae84128_83bea0fd",
+        "filename": "arch/arm/configs/cyanogen_d2_defconfig",
+        "patchSetId": 1
+      },
+      "lineNbr": 1876,
+      "author": {
+        "id": 5589
+      },
+      "writtenOn": "2014-02-24T08:37:50Z",
+      "side": 1,
+      "message": "breaks d2 audio without changes to the board file and the sound driver.",
+      "revId": "e46aeeb609b177ddbb314489850285ee918378ab",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    }
+  ]
+}
