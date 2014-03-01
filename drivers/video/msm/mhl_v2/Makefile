@@ -6,5 +6,10 @@
 #	aakash.manik@samsung.com
 
 
+obj-$(CONFIG_SAMSUNG_MHL_8240) += sii8240/
 
-obj-$(CONFIG_VIDEO_MHL_V2) += sii9234.o \
+ifeq ($(CONFIG_VIDEO_MHL_V2),y)
+ifneq ($(CONFIG_SAMSUNG_MHL_8240),y)
+obj-$(CONFIG_VIDEO_MHL_V2) += sii9234.o
+endif
+endif

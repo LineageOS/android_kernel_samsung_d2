@@ -649,6 +649,12 @@ struct msm_cam_clk_info {
 	long clk_rate;
 };
 
+struct msm_camera_i2c_conf {
+        uint8_t use_i2c_mux;
+        struct platform_device *mux_dev;
+        enum msm_cam_mode i2c_mux_mode;
+};
+
 int msm_camio_enable(struct platform_device *dev);
 int msm_camio_jpeg_clk_enable(void);
 int msm_camio_jpeg_clk_disable(void);

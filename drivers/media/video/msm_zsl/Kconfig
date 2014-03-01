@@ -153,6 +153,13 @@ config S5K3E2FX
 	---help---
 	  Samsung 5M with Autofocus
 
+config S5K6B2YX
+        bool "Sensor S5K6B2YX (BAYER 2M)"
+        depends on MSM_CAMERA 
+        default y
+        ---help---
+        Samsung 2MP Bayer Sensor
+
 config QS_S5K4E1
 	bool "Sensor qs_s5k4e1 (Samsung 5M)"
 	depends on MSM_CAMERA && ARCH_MSM8X60 && !MSM_CAMERA_V4L2

@@ -35,6 +35,10 @@
 
 #define TABLA_INTERRUPT_BASE		(PM8821_IRQ_BASE + PM8821_NR_IRQS)
 
+#ifdef CONFIG_MFD_MAX77693
+#define IF_PMIC_IRQ_BASE                (TABLA_INTERRUPT_BASE + NR_TABLA_IRQS)
+#endif
+
 extern struct pm8xxx_regulator_platform_data
 	msm8064_pm8921_regulator_pdata[] __devinitdata;
 
@@ -79,18 +83,27 @@ struct mmc_platform_data;
 int __init apq8064_add_sdcc(unsigned int controller,
 		struct mmc_platform_data *plat);
 int __init apq8064_add_uio(void);
+#ifdef CONFIG_MACH_JF
+extern int msm_otg_power_cb(int active);
+extern void msm_otg_set_vbus_state(int online);
+extern void msm_otg_set_id_state(int online);
+//extern void msm_otg_set_smartdock_state(int online);
+#endif
 
 void apq8064_init_mmc(void);
 void apq8064_init_gpiomux(void);
 void apq8064_init_pmic(void);
 
 extern struct msm_camera_board_info apq8064_camera_board_info;
+extern struct msm_camera_board_info apq8064_front_camera_board_info;
 void apq8064_init_cam(void);
 
 #define APQ_8064_GSBI1_QUP_I2C_BUS_ID 0
+#define APQ_8064_GSBI2_QUP_I2C_BUS_ID 2
 #define APQ_8064_GSBI3_QUP_I2C_BUS_ID 3
 #define APQ_8064_GSBI4_QUP_I2C_BUS_ID 4
 #define APQ_8064_GSBI5_QUP_I2C_BUS_ID 5
+#define APQ_8064_GSBI7_QUP_I2C_BUS_ID 7
 
 unsigned char apq8064_hdmi_as_primary_selected(void);
 unsigned char apq8064_mhl_display_enabled(void);
@@ -103,6 +116,14 @@ void __init apq8064_set_display_params(char *prim_panel, char *ext_panel,
 void apq8064_init_gpu(void);
 void apq8064_pm8xxx_gpio_mpp_init(void);
 void __init configure_apq8064_pm8917_power_grid(void);
+
+#ifdef CONFIG_MACH_JF
+void msm8960_init_battery(void);
+extern int poweroff_charging;
+extern unsigned int system_rev;
+extern void __init mxt540s_tsp_input_init(void);
+extern void __init S5000_tsp_input_init(int version);
+#endif
 
 #define PLATFORM_IS_MPQ8064() \
 	(machine_is_mpq8064_hrd() || \
@@ -156,4 +177,7 @@ enum {
 
 extern struct msm_rtb_platform_data apq8064_rtb_pdata;
 extern struct msm_cache_dump_platform_data apq8064_cache_dump_pdata;
+#ifdef CONFIG_MACH_JF
+extern int current_cable_type;
+#endif
 #endif

@@ -29,7 +29,11 @@
 #define MSM_8960_GSBI7_QUP_I2C_BUS_ID 7
 
 #define MSM_MHL_I2C_BUS_ID             9
+#ifndef CONFIG_MACH_JF
 #define MSM_FSA9485_I2C_BUS_ID  11
+#else
+#define MSM_FSA9485_I2C_BUS_ID  12
+#endif
 #define MSM_SNS_I2C_BUS_ID     12
 #define MSM_FUELGAUGE_I2C_BUS_ID             13
 #define MSM_OPT_I2C_BUS_ID     14

@@ -239,14 +239,18 @@ static irqreturn_t cypress_touchkey_interrupt(int irq, void *dev_id)
 	TOUCHKEY_LOG(info->keycode[code], press);
 #endif
 
+#ifndef CONFIG_MACH_JF
 	if (touch_is_pressed && press) {
 		printk(KERN_ERR "[TouchKey] don't send event because touch is pressed.\n");
 		printk(KERN_ERR "[TouchKey] touch_pressed = %d\n",
 							touch_is_pressed);
 	} else {
+#endif
 		input_report_key(info->input_dev, info->keycode[code], press);
 		input_sync(info->input_dev);
+#ifndef CONFIG_MACH_JF
 	}
+#endif
 
 out:
 	return IRQ_HANDLED;

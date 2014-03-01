@@ -825,7 +825,7 @@ static inline void mdp4_dsi_cmd_del_timer(void)
 {
 	/* empty */
 }
-#else /* CONFIG_FB_MSM_MIPI_DSI */
+#else /* CONFIG_FB_MSM_MDP303 */
 void mdp4_dsi_cmd_del_timer(void);
 #endif
 #else  /* CONFIG_FB_MSM_MIPI_DSI */

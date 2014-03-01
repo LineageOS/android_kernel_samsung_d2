@@ -36,6 +36,7 @@ EXPORT_SYMBOL(external_common_state);
 DEFINE_MUTEX(external_common_state_hpd_mutex);
 EXPORT_SYMBOL(external_common_state_hpd_mutex);
 
+int hdmi_forced_resolution = -1;
 
 static int atoi(const char *name)
 {

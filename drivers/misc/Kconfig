@@ -518,6 +518,14 @@ config MAX8997_MUIC
 	  Maxim MAX8997 PMIC.
 	  The MAX8997 MUIC is a USB port accessory detector and switch.
 
+config MFD_MAX77693
+	tristate "MAX77693 MUIC Support"
+	default n
+	help
+	  If you say yes here you get support for the MUIC device of
+	  Maxim MAX77693 PMIC.
+	  The MAX77693 MUIC is a USB port accessory detector and switch.
+
 config WL127X_RFKILL
 	tristate "Bluetooth power control driver for TI wl127x"
 	depends on RFKILL
@@ -670,6 +678,10 @@ config USB_HSIC_SMSC_HUB
 
 	  This adds support for connecting devices like mouse in HSIC
 	  Host mode.
+
+config BCM2079X_NFC_I2C
+	boolean "Broadcom BCM2079X NFC Chip"
+	default n
 
 config BU52031NVX
 	tristate "Cradle BU52031NVX support"

@@ -25,6 +25,10 @@ struct pm8xxx_mpp_core_data {
 struct pm8xxx_mpp_platform_data {
 	struct pm8xxx_mpp_core_data	core_data;
 	int				mpp_base;
+#ifdef CONFIG_MACH_JF
+	int				*dbg_mpps;
+	int				dbg_mpp_len;
+#endif
 };
 
 /**

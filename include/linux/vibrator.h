@@ -37,7 +37,9 @@ struct vibrator_platform_data {
 						0 -> msm gpio used */
 	unsigned int is_pmic_vib_en;		/* 1 -> pmic gpio used,\
 						0 -> msm gpio used */
+	unsigned int is_pmic_vib_pwm ;
 	enum vibrator_model vib_model;
+	void (*power_onoff)(int onoff);
 };
 
 #endif

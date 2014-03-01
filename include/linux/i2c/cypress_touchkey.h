@@ -14,6 +14,11 @@
 extern struct class *sec_class;
 extern int ISSP_main(void);
 extern int touch_is_pressed;
+
+struct touchkey_callbacks {
+        void (*inform_charger)(struct touchkey_callbacks *, bool);
+};
+
 struct cypress_touchkey_platform_data {
 	unsigned	gpio_int;
 	unsigned	gpio_led_en;
@@ -21,7 +26,12 @@ struct cypress_touchkey_platform_data {
 	void	(*power_onoff) (int);
 	bool	skip_fw_update;
 	bool	touchkey_order;
+	void	(*register_cb)(void *);
 };
+
+#ifdef CONFIG_MACH_JF
+void touchkey_charger_infom(bool en);
+#endif
 
 #if defined(CONFIG_KEYBOARD_CYPRESS_TOUCH)
 #if defined(CONFIG_MACH_EXPRESS)
@@ -49,6 +59,14 @@ struct cypress_touchkey_platform_data {
 
 
 #endif
+#endif
+
+#ifdef CONFIG_MACH_JF
+#define GPIO_TOUCHKEY_SDA       33
+#define GPIO_TOUCHKEY_SCL       34
+#define GPIO_TOUCHKEY_SCL_2     26
+#define PMIC_GPIO_TKEY_INT      31
+#define PMIC_GPIO_TKEY_EN       32
 #endif
 
 #endif /* __LINUX_CYPRESS_TOUCHKEY_H */

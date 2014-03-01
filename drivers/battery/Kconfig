@@ -103,6 +103,26 @@ config CHARGER_DUMMY
 	 This driver source code implemented
 	 skeleton source code for charger functions.
 
+config CHARGER_MAX77693
+	tristate "MAX77693 charger driver"
+	default n
+	depends on BATTERY_SAMSUNG
+	help
+	 Say Y to include support
+	 for MAXIM MAX77693 charger driver.
+	 This driver source code implemented
+	 all functions for MAX77693 charger.
+
+config CHARGER_MAX77803
+	tristate "MAX77803 charger driver"
+	default n
+	depends on BATTERY_SAMSUNG
+	help
+	 Say Y to include support
+	 for MAXIM MAX77803 charger driver.
+	 This driver source code implemented
+	 all functions for MAX77803 charger.
+
 config CHARGER_MAX8903
 	tristate "MAX8903 charger driver"
 	default n
@@ -163,4 +183,6 @@ config CHARGER_BQ24191
 	 This driver source code implemented
 	 all functions for BQ24191 charger.
 
-
+config WIRELESS_CHARGER
+	bool "Support wireless charger"
+	default n

@@ -60,6 +60,7 @@ struct sec_jack_platform_data {
 	int	num_buttons_zones;
 	int	det_int;
 	int	send_int;
+	bool	send_end_active_high;
 };
 
 #endif

@@ -340,11 +340,11 @@ cam_vdig_put:
 #endif
 	regulator_put(cam_vdig);
 	cam_vdig = NULL;
-#ifndef CONFIG_S5C73M3
+#ifdef CONFIG_S5C73M3
 cam_vio_disable:
 #endif
 	regulator_disable(cam_vio);
-#ifndef CONFIG_S5C73M3
+#ifdef CONFIG_S5C73M3
 cam_vio_put:
 #endif
 	regulator_put(cam_vio);

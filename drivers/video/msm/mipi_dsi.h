@@ -54,7 +54,8 @@
 #define MIPI_DSI_PANEL_WXGA	6
 #define MIPI_DSI_PANEL_WUXGA	7
 #define MIPI_DSI_PANEL_720P_PT	8
-#define DSI_PANEL_MAX	8
+#define MIPI_DSI_PANEL_FULL_HD_PT 9
+#define DSI_PANEL_MAX	9
 
 enum {		/* mipi dsi panel */
 	DSI_VIDEO_MODE,
@@ -329,6 +330,11 @@ void mipi_dsi_sw_reset(void);
 void mipi_dsi_mdp_busy_wait(void);
 
 irqreturn_t mipi_dsi_isr(int irq, void *ptr);
+
+enum {
+	HS_TX_MODE,
+	LP_TX_MODE,
+};
 
 void mipi_set_tx_power_mode(int mode);
 void mipi_dsi_phy_init(int panel_ndx, struct msm_panel_info const *panel_info,

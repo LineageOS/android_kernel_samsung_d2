@@ -89,6 +89,8 @@ else ifdef CONFIG_MACH_SUPERIORLTE_SKT
 snd-soc-msm8960-objs := msm8960-d2.o
 else ifdef CONFIG_MACH_JAGUAR
 snd-soc-msm8960-objs := msm8960-jaguar.o
+else ifdef CONFIG_MACH_JF
+snd-soc-msm8960-objs := msm8960-jf.o apq8064.o mpq8064.o apq8064-i2s.o
 else
 snd-soc-msm8960-objs := msm8960-jaguar.o
 endif

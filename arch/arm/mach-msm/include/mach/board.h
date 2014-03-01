@@ -233,6 +233,7 @@ struct msm_camera_gpio_conf {
     uint8_t cam_gpio_common_tbl_size;
 };
 #endif
+
 enum msm_camera_vreg_name_t {
 	CAM_VDIG,
 	CAM_VIO,
@@ -481,6 +482,10 @@ struct mddi_platform_data {
 
 struct mipi_dsi_platform_data {
 	int vsync_gpio;
+#ifdef CONFIG_MACH_JF
+	void (*active_reset)(int high);
+	int (*power_common)(void);
+#endif
 	int (*dsi_power_save)(int on);
 	int (*dsi_client_reset)(void);
 	int (*get_lane_config)(void);

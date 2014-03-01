@@ -946,6 +946,13 @@ config MACH_EXPRESS
         bool "MSM8960 Samsung EXPRESS"
         help
           Support for the Samsung EXPRESS(AT&T) device.
+
+config MACH_JF
+	depends on ARCH_APQ8064
+	default n
+        bool "MSM8960 Samsung M2"
+        help
+          Support for Samsung JF devices.
 endmenu
 
 source "arch/arm/mach-msm/lge/Kconfig"

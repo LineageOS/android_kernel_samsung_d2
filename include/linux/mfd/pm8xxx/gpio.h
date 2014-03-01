@@ -30,6 +30,10 @@ struct pm8xxx_gpio_core_data {
 struct pm8xxx_gpio_platform_data {
 	struct pm8xxx_gpio_core_data	gpio_cdata;
 	int				gpio_base;
+#ifdef CONFIG_MACH_JF
+	int				*dbg_gpios;
+	int				dbg_gpio_len;
+#endif
 };
 
 /* GPIO parameters */

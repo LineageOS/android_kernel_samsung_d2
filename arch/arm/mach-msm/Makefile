@@ -308,6 +308,13 @@ obj-$(CONFIG_MACH_EXPRESS) += board-apexq-battery.o board-apexq-camera.o
 obj-$(CONFIG_MACH_EXPRESS) += board-express.o board-express-gpiomux.o
 obj-$(CONFIG_MACH_EXPRESS) += board-m2-display.o board-m2-pmic.o
 
+obj-$(CONFIG_MACH_JF) += board-jf.o board-jf-gpiomux.o
+obj-$(CONFIG_MACH_JF) += board-jf-bt.o board-jf.o board-jf-display.o board-jf-gpiomux.o 
+obj-$(CONFIG_MACH_JF) += board-jf-gpu.o board-jf-pmic.o board-jf-regulator.o board-jf-storage.o board-jf-wifi.o
+#obj-$(CONFIG_MACH_JF) += board-jf-camera.o  #TODO invisiblek
+obj-$(CONFIG_MACH_JF) += board-fusion3-battery.o board-s5000-tsp.o fusion3-thermistor.o sec-switch.o board-mxt540s-tsp.o
+obj-$(CONFIG_BCM4335) += board-bluetooth-bcm4335.o
+
 obj-$(CONFIG_MACH_LGE) += lge/
 
 CFLAGS_msm_vibrator.o += -Idrivers/staging/android

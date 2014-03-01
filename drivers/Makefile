@@ -147,3 +147,5 @@ obj-$(CONFIG_MOBICORE_SUPPORT)  += gud/
 obj-$(CONFIG_CORESIGHT)		+= coresight/
 
 obj-$(CONFIG_FELICA)		+= felica/
+
+obj-$(CONFIG_SEC_FPGA)		+= barcode_emul/

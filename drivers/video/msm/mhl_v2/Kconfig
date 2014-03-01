@@ -19,3 +19,16 @@ config MHL_NEW_CBUS_MSC_CMD
 	default n
 	---help---
 	  This is a MHL v2 driver customized for Qualcomm MSM8960 based chipsets.
+
+config SAMSUNG_MHL_8240
+	bool "Suppor Samsung MHL 8240"
+	default n
+
+config MHL_VERSION
+	hex "Number of MHL Version"
+	default 0x20
+	---help---
+	  MHL Version
+	  For example, those device compliant
+	  with MHL Specification version 2.0
+	  shell set this MHL_VERSION to 0x20
