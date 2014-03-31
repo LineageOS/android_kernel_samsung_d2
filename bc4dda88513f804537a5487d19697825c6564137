@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "bae84128_7159745a",
+        "filename": "arch/arm/configs/cyanogen_d2_defconfig",
+        "patchSetId": 1
+      },
+      "lineNbr": 2668,
+      "author": {
+        "id": 5589
+      },
+      "writtenOn": "2014-03-31T05:55:57Z",
+      "side": 1,
+      "message": "change this to y, because you really do want to support logitch dj",
+      "revId": "bc4dda88513f804537a5487d19697825c6564137",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    }
+  ]
+}
