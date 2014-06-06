@@ -16,6 +16,24 @@
       "revId": "86245f3643435998c86d9eeeea5f9b6877ae7036",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da0c15f0_e9cac14e",
+        "filename": "kernel/futex.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 640,
+      "author": {
+        "id": 3671
+      },
+      "writtenOn": "2014-06-06T08:51:59Z",
+      "side": 0,
+      "message": "yea, i\u0027ll fixit here in a minute",
+      "parentUuid": "da0c15f0_a9b0c9de",
+      "revId": "86245f3643435998c86d9eeeea5f9b6877ae7036",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
     }
   ]
 }
