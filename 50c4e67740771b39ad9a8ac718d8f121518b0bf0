@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "da0c15f0_cf79bd31",
+        "filename": "Kd2dcm",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 3671
+      },
+      "writtenOn": "2014-06-07T02:12:45Z",
+      "side": 1,
+      "message": "is this file necessary?",
+      "revId": "50c4e67740771b39ad9a8ac718d8f121518b0bf0",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    }
+  ]
+}
