@@ -711,25 +711,6 @@ config MPU_411_ENABLE
 	depends on I2C
 	default n
 
-config YAS_532_ENABLE
-	bool "yas 532 sensor YAS 4.2.602"
-	depends on I2C
-	default n
-
-config OPTICAL_GP2A
-	depends on I2C
-	tristate "GP2A driver"
-	default n
-	help
-	  This option enables proximity & light sensors using gp2a driver.
-
-config OPTICAL_GP2AP020A00F
-	depends on I2C
-	tristate "GP2AP020A00F driver"
-	default n
-	help
-	  This option enables proximity & light sensors using gp2ap020a00f driver.
-
 config OPTICAL_TAOS_TRITON
 	depends on I2C
 	tristate "TAOS ambient light and proximity input device"
@@ -798,7 +779,6 @@ source "drivers/misc/ti-st/Kconfig"
 source "drivers/misc/lis3lv02d/Kconfig"
 source "drivers/misc/carma/Kconfig"
 source "drivers/misc/inv_mpu/Kconfig"
-source "drivers/misc/yas532/Kconfig"
 source "drivers/misc/altera-stapl/Kconfig"
 source "drivers/misc/slimport_anx7808/Kconfig"
 
