@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ba0121b8_1eacadec",
+        "filename": "drivers/sensors/Kconfig",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 3671
+      },
+      "writtenOn": "2014-06-12T08:57:14Z",
+      "side": 1,
+      "message": "eww",
+      "revId": "59a30a86cdd8808c44fcdb7b1124a63390c27540",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    }
+  ]
+}
