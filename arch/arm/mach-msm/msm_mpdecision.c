@@ -385,7 +385,7 @@ restart:
 		}
 
 		if (ktime_to_ns(ktime_sub(ktime_get(), last_down_time)) >
-		    100 * NSEC_PER_MSEC)
+		    2 * NSEC_PER_SEC)
 			for_each_possible_cpu(cpu)
 				if (!(atomic_read(&msm_mpd.algo_cpu_mask) &
 				      (1 << cpu)) && cpu_online(cpu)) {
