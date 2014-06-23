@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ba0121b8_7337d0e3",
+        "filename": "init/main.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 415,
+      "author": {
+        "id": 444
+      },
+      "writtenOn": "2014-06-23T14:08:01Z",
+      "side": 1,
+      "message": "Remove the { at the end",
+      "revId": "6ee824f29a5442a89fe2ad2521b0c2c7991f18ee",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    }
+  ]
+}
