@@ -17,4 +17,12 @@ config MPU_SENSORS_AK8975_411
 	  Specifying more that one compass in the board file will result
 	  in runtime errors.
 
+config MPU_SENSORS_AK8975_SELFTEST
+	bool "Self-test of AKM ak8975 sensor"
+	depends on MPU_SENSORS_AK8975_411
+	default n
+	help
+	  Say Y here if you want support for self-test of the AKM ak8975 sensor
+	  device.
+
 endif

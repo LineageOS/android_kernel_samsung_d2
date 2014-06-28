@@ -2157,6 +2157,7 @@ static ssize_t ak8975c_get_status(struct device *dev,
 
 }
 
+#ifdef CONFIG_MPU_SENSORS_AK8975_SELFTEST
 int ak8975c_selftest(struct i2c_adapter *slave_adapter,
 	struct ak8975_private_data *private_data, int *sf)
 {
@@ -2280,6 +2281,7 @@ static ssize_t ak8975c_get_selftest(struct device *dev,
 	return snprintf(buf, PAGE_SIZE, "%d, %d, %d, %d\n",
 		success, sf[0], sf[1], sf[2]);
 }
+#endif
 
 static ssize_t akm_vendor_show(struct device *dev,
 				 struct device_attribute *attr, char *buf)
@@ -2321,8 +2323,10 @@ static DEVICE_ATTR(dac, S_IRUGO,
 		ak8975_check_cntl, NULL);
 static DEVICE_ATTR(status, S_IRUGO,
 		ak8975c_get_status, NULL);
+#ifdef CONFIG_MPU_SENSORS_AK8975_SELFTEST
 static DEVICE_ATTR(selftest, S_IRUGO,
 		ak8975c_get_selftest, NULL);
+#endif
 
 static struct device_attribute dev_attr_mag_rawdata =
 	__ATTR(raw_data, S_IRUGO,
@@ -2363,7 +2367,9 @@ static struct device_attribute *magnetic_sensor_attrs[] = {
 	&dev_attr_mag_rawdata,
 	&dev_attr_dac,
 	&dev_attr_status,
+#ifdef CONFIG_MPU_SENSORS_AK8975_SELFTEST
 	&dev_attr_selftest,
+#endif
 	&dev_attr_mag_vendor,
 	&dev_attr_mag_name,
 	NULL,
