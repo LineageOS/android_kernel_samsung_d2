@@ -219,6 +219,7 @@ config FB_MSM_MIPI_DSI_NT35516
 config FB_MSM_MIPI_DSI_SAMSUNG_OLED
         bool
         select FB_MSM_MIPI_DSI
+        select GAMMA_CONTROL
         default n
 
 config SAMSUNG_CMC624
