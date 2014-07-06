@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ba0121b8_54ec1dc7",
+        "filename": "drivers/misc/gamma_control.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 257,
+      "author": {
+        "id": 3671
+      },
+      "writtenOn": "2014-07-06T10:52:59Z",
+      "side": 1,
+      "message": "so...what do you propose a device that DOESN\u0027T have v19 to use here?",
+      "revId": "985a84576270bf6323a2c5f6499b5aa4e1ca4e5b",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    }
+  ]
+}
