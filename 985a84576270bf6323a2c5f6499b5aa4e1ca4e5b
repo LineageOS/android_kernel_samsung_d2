@@ -16,6 +16,24 @@
       "revId": "985a84576270bf6323a2c5f6499b5aa4e1ca4e5b",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ba0121b8_94ceb558",
+        "filename": "drivers/misc/gamma_control.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 257,
+      "author": {
+        "id": 5589
+      },
+      "writtenOn": "2014-07-06T10:54:04Z",
+      "side": 1,
+      "message": "typo",
+      "parentUuid": "ba0121b8_54ec1dc7",
+      "revId": "985a84576270bf6323a2c5f6499b5aa4e1ca4e5b",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
     }
   ]
 }
