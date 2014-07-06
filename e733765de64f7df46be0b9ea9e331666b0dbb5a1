@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ba0121b8_34c7e913",
+        "filename": "drivers/misc/gamma_control.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 9400
+      },
+      "writtenOn": "2014-07-06T14:19:51Z",
+      "side": 1,
+      "message": "Do we need an array for this?",
+      "revId": "e733765de64f7df46be0b9ea9e331666b0dbb5a1",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ba0121b8_94d875f1",
+        "filename": "drivers/misc/gamma_control.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 291,
+      "author": {
+        "id": 9400
+      },
+      "writtenOn": "2014-07-06T14:19:51Z",
+      "side": 1,
+      "message": "Red/green are zero no matter what for a lot of values, (for the sake of this tuner) we can probably cut down on what\u0027s applied here \u0026 color_mods",
+      "revId": "e733765de64f7df46be0b9ea9e331666b0dbb5a1",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    }
+  ]
+}
