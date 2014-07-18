@@ -30,7 +30,8 @@
 #include "msm-pcm-routing.h"
 #include "qdsp6/q6voice.h"
 
-#define VOIP_MAX_Q_LEN 10
+#define VOIP_MIN_Q_LEN 2
+#define VOIP_MAX_Q_LEN 2
 #define VOIP_MAX_VOC_PKT_SIZE 640
 #define VOIP_MIN_VOC_PKT_SIZE 320
 
@@ -162,7 +163,7 @@ static struct snd_pcm_hardware msm_pcm_hardware = {
 	.buffer_bytes_max =	sizeof(struct voip_buf_node) * VOIP_MAX_Q_LEN,
 	.period_bytes_min =	VOIP_MIN_VOC_PKT_SIZE,
 	.period_bytes_max =	VOIP_MAX_VOC_PKT_SIZE,
-	.periods_min =		VOIP_MAX_Q_LEN,
+	.periods_min =		VOIP_MIN_Q_LEN,
 	.periods_max =		VOIP_MAX_Q_LEN,
 	.fifo_size =            0,
 };
@@ -347,7 +348,7 @@ static void voip_process_ul_pkt(uint8_t *voc_pkt,
 		snd_pcm_period_elapsed(prtd->capture_substream);
 	} else {
 		spin_unlock_irqrestore(&prtd->dsp_ul_lock, dsp_flags);
-		pr_err("UL data dropped\n");
+		pr_debug("UL data dropped\n");
 	}
 
 	wake_up(&prtd->out_wait);
@@ -424,7 +425,7 @@ static void voip_process_dl_pkt(uint8_t *voc_pkt,
 	} else {
 		*pkt_len = 0;
 		spin_unlock_irqrestore(&prtd->dsp_lock, dsp_flags);
-		pr_err("DL data not available\n");
+		pr_debug("DL data not available\n");
 	}
 	wake_up(&prtd->in_wait);
 }
