@@ -117,7 +117,7 @@
 #include <linux/i2c/mxt224e.h>
 #endif
 #ifdef CONFIG_KEYBOARD_CYPRESS_TOUCH_236
-#include <linux/i2c/cypress_touchkey_236.h>
+#include <linux/i2c/cypress_touchkey.h>
 #endif
 #include <linux/msm_ion.h>
 #include <mach/ion.h>
