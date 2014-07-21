@@ -116,8 +116,8 @@
 #ifdef CONFIG_TOUCHSCREEN_MXT224
 #include <linux/i2c/mxt224e.h>
 #endif
-#ifdef CONFIG_KEYBOARD_CYPRESS_TOUCH
-#include <linux/i2c/cypress_touchkey.h>
+#ifdef CONFIG_KEYBOARD_CYPRESS_TOUCH_236
+#include <linux/i2c/cypress_touchkey_236.h>
 #endif
 #include <linux/msm_ion.h>
 #include <mach/ion.h>
@@ -1003,7 +1003,7 @@ static void __init msm8960_allocate_memory_regions(void)
 {
 	msm8960_allocate_fb_region();
 }
-#ifdef CONFIG_KEYBOARD_CYPRESS_TOUCH
+#ifdef CONFIG_KEYBOARD_CYPRESS_TOUCH_236
 static void cypress_power_onoff(int onoff)
 {
 	int ret;
@@ -4580,7 +4580,7 @@ static struct platform_device *comanche_devices[] __initdata = {
 #ifdef CONFIG_USB_SWITCH_FSA9485
 	&fsa_i2c_gpio_device,
 #endif
-#ifdef CONFIG_KEYBOARD_CYPRESS_TOUCH
+#ifdef CONFIG_KEYBOARD_CYPRESS_TOUCH_236
 	&touchkey_i2c_gpio_device,
 #endif
 #ifdef CONFIG_SAMSUNG_JACK
@@ -4880,7 +4880,7 @@ static struct i2c_registry msm8960_i2c_devices[] __initdata = {
 		ARRAY_SIZE(mxt224_info),
 	},
 #endif
-#ifdef CONFIG_KEYBOARD_CYPRESS_TOUCH
+#ifdef CONFIG_KEYBOARD_CYPRESS_TOUCH_236
 {
 	I2C_SURF | I2C_FFA | I2C_FLUID,
 	MSM_TOUCHKEY_I2C_BUS_ID,
@@ -5283,7 +5283,7 @@ static void __init samsung_comanche_init(void)
 #if defined(CONFIG_NFC_PN544)
 	pn544_init();
 #endif
-#ifdef CONFIG_KEYBOARD_CYPRESS_TOUCH
+#ifdef CONFIG_KEYBOARD_CYPRESS_TOUCH_236
 	cypress_init();
 #endif
 #if defined(CONFIG_VIDEO_MHL_V1) || defined(CONFIG_VIDEO_MHL_V2)
