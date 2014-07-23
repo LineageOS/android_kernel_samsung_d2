@@ -5028,11 +5028,7 @@ static void __init gpio_rev_init(void)
 		msm_8960_vibrator_pdata.vib_en_gpio = PMIC_GPIO_VIB_ON;
 		msm_8960_vibrator_pdata.is_pmic_vib_en = 1;
 	}
-#endif /* CONFIG_VIBETONZ */
-	opt_i2c_gpio_data.sda_pin = gpio_rev(ALS_SDA);
-	opt_i2c_gpio_data.scl_pin = gpio_rev(ALS_SCL);
-	if (system_rev < BOARD_REV04)
-		taos_pdata.als_int = gpio_rev(ALS_INT);
+#endif /* CONFIG_VIBETONZ */;
 #ifdef CONFIG_VP_A2220
 	a2220_i2c_gpio_data.sda_pin = gpio_rev(A2220_I2C_SDA);
 	a2220_i2c_gpio_data.scl_pin = gpio_rev(A2220_I2C_SCL);
