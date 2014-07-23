@@ -125,21 +125,21 @@ struct mxt224_platform_data {
 #define	MXT_CTE_MODE        0x31
 
 #if defined(CONFIG_MACH_COMANCHE)
-#define THRESHOLD_E_TA		32
-#define THRESHOLD_E_BAT		32
-#define ACTIVE_DEPTH_TA		42
-#define ACTIVE_DEPTH_BAT	27
+#define THRESHOLD_E_TA          32
+#define THRESHOLD_E_BAT         32
+#define ACTIVE_DEPTH_TA         42
+#define ACTIVE_DEPTH_BAT        27
 
-#define MEDIAN_ERR_T48_ADDR_3_BAT	2
-#define MEDIAN_ERR_T48_ADDR_3_TA	2
-#define MEDIAN_ERR_T48_ADDR_8		0
-#define MEDIAN_ERR_T48_ADDR_9		0
-#define MEDIAN_ERR_T48_ADDR_35		40
-#define MEDIAN_ERR_T48_ADDR_39_BAT	81
-#define MEDIAN_ERR_T48_ADDR_39_TA	65
-#define MEDIAN_ERR_T46_ADDR_3_BAT	42
-#define MEDIAN_ERR_T46_ADDR_3_TA	63
-#define MEDIAN_ERR_T48_ADDR_38_TA	3
+#define MEDIAN_ERR_T48_ADDR_3_BAT       2
+#define MEDIAN_ERR_T48_ADDR_3_TA        2
+#define MEDIAN_ERR_T48_ADDR_8           0
+#define MEDIAN_ERR_T48_ADDR_9           0
+#define MEDIAN_ERR_T48_ADDR_35          40
+#define MEDIAN_ERR_T48_ADDR_39_BAT      81
+#define MEDIAN_ERR_T48_ADDR_39_TA       65
+#define MEDIAN_ERR_T46_ADDR_3_BAT       42
+#define MEDIAN_ERR_T46_ADDR_3_TA        63
+#define MEDIAN_ERR_T48_ADDR_38_TA       3
 
 #elif defined(CONFIG_MACH_APEXQ)
 #define THRESHOLD_E_TA		40
