@@ -91,7 +91,7 @@
 #include <linux/mfd/wcd9xxx/core.h>
 #include <linux/mfd/wcd9xxx/pdata.h>
 #endif
-#ifdef CONFIG_KEYBOARD_GPIO
+#ifdef CONFIG_KEYBOARD_SEC_GPIO
 #include <linux/gpio_keys.h>
 #endif
 #ifdef CONFIG_USB_SWITCH_FSA9485
@@ -4179,7 +4179,7 @@ static struct platform_device msm8960_device_ext_3p3v_vreg __devinitdata = {
 			&msm_gpio_regulator_pdata[GPIO_VREG_ID_EXT_3P3V],
 	},
 };
-#ifdef CONFIG_KEYBOARD_GPIO
+#ifdef CONFIG_KEYBOARD_SEC_GPIO
 static struct gpio_keys_button gpio_keys_button[] = {
 	{
 		.code			= KEY_VOLUMEUP,
@@ -4476,7 +4476,7 @@ static struct platform_device *common_devices[] __initdata = {
         &msm8960_android_pmem_audio_device,
 #endif
 #endif
-#ifdef CONFIG_KEYBOARD_GPIO
+#ifdef CONFIG_KEYBOARD_SEC_GPIO
 	&msm8960_gpio_keys_device,
 #endif
 	&msm_device_vidc,
