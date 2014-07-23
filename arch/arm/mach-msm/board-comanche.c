@@ -198,10 +198,10 @@ int gpio_rev(unsigned int index)
 	if (system_rev >= GPIO_REV_MAX)
 		return -EINVAL;
 
-	if (system_rev < BOARD_REV04)
+	if (system_rev < BOARD_REV03)
 		return gpio_table[index][system_rev];
 	else
-		return gpio_table[index][BOARD_REV04];
+		return gpio_table[index][BOARD_REV03];
 }
 
 #if defined(CONFIG_TOUCHSCREEN_MXT224)
@@ -1853,7 +1853,7 @@ static void opt_init(void)
 		.inv_int_pol = 0,
 	};
 
-	if (system_rev < BOARD_REV04) {
+	if (system_rev < BOARD_REV03) {
 		gpio_tlmm_config(GPIO_CFG(prox_int, 0,
 			GPIO_CFG_INPUT, GPIO_CFG_NO_PULL, GPIO_CFG_2MA), 1);
 	} else {
