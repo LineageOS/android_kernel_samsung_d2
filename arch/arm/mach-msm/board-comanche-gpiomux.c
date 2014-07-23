@@ -370,11 +370,25 @@ struct msm_gpiomux_config msm8960_gpio_key_configs[] = {
 		}
 	},
 	{
+                .gpio = GPIO_KEY_HOME,
 		.settings = {
 			[GPIOMUX_ACTIVE] = &gpio_key_active_cfg,
 			[GPIOMUX_SUSPENDED] = &gpio_key_suspend_cfg,
 		}
 	},
+        {
+                .gpio = GPIO_KEY_BACK,
+                .settings = {
+                        [GPIOMUX_ACTIVE] = &gpio_key_active_cfg,
+                        [GPIOMUX_SUSPENDED] = &gpio_key_suspend_cfg,
+                }
+        },
+        {
+                .settings = {
+                        [GPIOMUX_ACTIVE] = &gpio_key_active_cfg,
+                        [GPIOMUX_SUSPENDED] = &gpio_key_suspend_cfg,
+                }
+        },
 };
 
 static struct msm_gpiomux_config msm8960_gsbi_configs[] __initdata = {
@@ -983,14 +997,10 @@ int __init msm8960_init_gpiomux(void)
 
 	msm8960_gpio_key_configs[0].gpio = gpio_rev(VOLUME_UP);
 	msm8960_gpio_key_configs[1].gpio = gpio_rev(VOLUME_DOWN);
-	msm8960_gpio_key_configs[2].gpio = gpio_rev(HALL_INT);
-	if (system_rev < BOARD_REV02)
-		msm_gpiomux_install(msm8960_gpio_key_configs, 3);
-	else {
-		msm8960_gpio_key_configs[3].gpio = gpio_rev(HOME_KEY);
-		msm_gpiomux_install(msm8960_gpio_key_configs,
+	msm8960_gpio_key_configs[2].gpio = gpio_rev(MENU_KEY);
+	msm8960_gpio_key_configs[5].gpio = gpio_rev(PTT_KEY);
+	msm_gpiomux_install(msm8960_gpio_key_configs,
 			ARRAY_SIZE(msm8960_gpio_key_configs));
-	}
 
 	msm_gpiomux_install(msm8960_sec_ts_configs,
 			ARRAY_SIZE(msm8960_sec_ts_configs));
@@ -1050,9 +1060,6 @@ int __init msm8960_init_gpiomux(void)
 	msm_gpiomux_install(msm8960_mdp_vsync_configs,
 			ARRAY_SIZE(msm8960_mdp_vsync_configs));
 
-	msm8960_keypad_slide_configs[0].gpio = gpio_rev(HALL_INT);
-	msm_gpiomux_install(msm8960_keypad_slide_configs,
-			ARRAY_SIZE(msm8960_keypad_slide_configs));
 #if defined(CONFIG_KEYBOARD_ADP5588) || defined(CONFIG_KEYBOARD_ADP5588_MODULE)
 	msm_gpiomux_install(msm8960_adp5588_configs,
 			ARRAY_SIZE(msm8960_adp5588_configs));
