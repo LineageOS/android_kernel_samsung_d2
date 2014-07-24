@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9a061dce_d255f8c6",
+        "filename": "cyanogen_comanche_defconfig",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 5774
+      },
+      "writtenOn": "2014-07-24T12:01:50Z",
+      "side": 1,
+      "message": "This file is a dupe",
+      "revId": "5fbf908d31cc13da408dd2e34d09df9a42467d9a",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    }
+  ]
+}
