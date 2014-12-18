@@ -454,7 +454,7 @@ static int bluesleep_start(void)
 
 	/* assert BT_WAKE */
 	if (bsi->has_ext_wake == 1)
-		gpio_set_value(bsi->ext_wake, 1);
+		gpio_set_value(bsi->ext_wake, 0);
 	set_bit(BT_EXT_WAKE, &flags);
 #if BT_ENABLE_IRQ_WAKE
 	retval = enable_irq_wake(bsi->host_wake_irq);
