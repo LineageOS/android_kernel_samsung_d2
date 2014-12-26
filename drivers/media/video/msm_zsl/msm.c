@@ -16,6 +16,7 @@
 #include <linux/types.h>
 #include <linux/list.h>
 #include <linux/ioctl.h>
+#include <linux/module.h>
 #include <linux/spinlock.h>
 #include <linux/proc_fs.h>
 #include "msm.h"
