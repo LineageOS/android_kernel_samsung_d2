@@ -16,6 +16,7 @@
 #include <linux/types.h>
 #include <linux/list.h>
 #include <linux/ioctl.h>
+#include <linux/module.h>
 #include <linux/spinlock.h>
 #include <linux/proc_fs.h>
 #include "msm.h"
@@ -1737,6 +1738,7 @@ static int msm_close(struct file *f)
 	mutex_destroy(&pcam_inst->inst_lock);
 	kfree(pcam_inst);
 	f->private_data = NULL;
+	pr_err("%s after pcam_inst free\n", __func__);
 	if (pcam->use_count == 0) {
 		v4l2_device_unregister_subdev(pcam->mctl.isp_sdev->sd);
 		v4l2_device_unregister_subdev(pcam->mctl.isp_sdev->sd_vpe);
@@ -1759,6 +1761,7 @@ static int msm_close(struct file *f)
 #endif
 	}
 	mutex_unlock(&pcam->vid_lock);
+	pr_err("%s reached return, pcam still not freed\n", __func__);
 	return rc;
 }
 
@@ -1988,6 +1991,7 @@ static long msm_ioctl_server(struct file *fp, unsigned int cmd,
 		break;
 
 	default:
+		pr_info("%s: trouble recognizing ioctl, break", __func__);
 		break;
 	}
 	return rc;
