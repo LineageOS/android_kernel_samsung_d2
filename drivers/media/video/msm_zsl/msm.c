@@ -1995,7 +1995,7 @@ static long msm_ioctl_server(struct file *fp, unsigned int cmd,
 		break;
 
 	default:
-		pr_info("%s: trouble recognizing ioctl, break", __func__);
+		/* pr_info("%s: trouble recognizing ioctl, break", __func__); */
 		break;
 	}
 	return rc;
