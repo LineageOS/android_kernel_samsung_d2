@@ -332,8 +332,6 @@ static void msm_ispif_intf_cmd(uint8_t intfmask, uint8_t intf_cmd_mask)
 				global_intf_cmd_mask &= ~((0x3 & ~val)
 							  << ((vc * 2) +
 							      (intfnum * 8)));
-				CDBG("nishu intf cmd  0x%x\n",
-				       global_intf_cmd_mask);
 			}
 			vc++;
 			cid_mask >>= 4;
@@ -670,8 +668,6 @@ static inline void msm_ispif_read_irq_status(struct ispif_irq_status *out)
 {
 	out->ispifIrqStatus0 = msm_io_r(ispif->base + ISPIF_IRQ_STATUS_ADDR);
 	out->ispifIrqStatus1 = msm_io_r(ispif->base + ISPIF_IRQ_STATUS_1_ADDR);
-	CDBG("nishu ispif->irq: Irq_status0 = 0x%x\n",
-		out->ispifIrqStatus0);/*nishu */
 	msm_io_w(out->ispifIrqStatus0, ispif->base + ISPIF_IRQ_CLEAR_ADDR);
 	msm_io_w(out->ispifIrqStatus1, ispif->base + ISPIF_IRQ_CLEAR_1_ADDR);
 

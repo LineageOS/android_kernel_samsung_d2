@@ -132,13 +132,10 @@ void msm_io_dump1(void __iomem *addr, int size)
 		snprintf(p_str, 12, "%08x ", data);
 		p_str += 9;
 		if ((i + 1) % 4 == 0) {
-			CDBG("nishu %s\n", line_str);
 			line_str[0] = '\0';
 			p_str = line_str;
 		}
 	}
-	if (line_str[0] != '\0')
-		CDBG("nishu %s\n", line_str);
 }
 
 void msm_io_dump(void __iomem *addr, int size)
