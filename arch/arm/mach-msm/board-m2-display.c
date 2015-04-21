@@ -234,7 +234,10 @@ static void set_mdp_clocks_for_wuxga(void);
 
 static int msm_fb_detect_panel(const char *name)
 {
-	if (machine_is_msm8960_liquid()) {
+	if (machine_is_msm8960_liquid() || machine_is_ESPRESSO_VZW()
+		|| machine_is_ESPRESSO_ATT() || machine_is_ESPRESSO10_VZW()
+		|| machine_is_ESPRESSO_SPR() || machine_is_ESPRESSO10_ATT()
+		|| machine_is_ESPRESSO10_SPR()) {
 		if (!strncmp(name, MIPI_VIDEO_CHIMEI_WXGA_PANEL_NAME,
 				strnlen(MIPI_VIDEO_CHIMEI_WXGA_PANEL_NAME,
 					PANEL_NAME_MAX_LEN)))
@@ -417,6 +420,8 @@ static bool dsi_power_on;
  *
  * @return int
  */
+#if defined(CONFIG_FB_MSM_MIPI_BOEOT_TFT_VIDEO_WSVGA_PT_PANEL) \
+	|| defined(CONFIG_FB_MSM_MIPI_SAMSUNG_TFT_VIDEO_WXGA_PT_PANEL)
 static int mipi_dsi_espresso_dsi_power(int on)
 {
 	static struct regulator *vreg_l2_1p2;
@@ -442,7 +447,10 @@ static int mipi_dsi_espresso_dsi_power(int on)
 	}
 	return 0;
 }
+#endif
 
+#if !defined(CONFIG_FB_MSM_MIPI_NOVATEK_VIDEO_WXGA_PT_PANEL)
+#ifdef CONFIG_FB_MSM_MIPI_PANEL_POWERON_LP11
 static int mipi_dsi_tc35reset_release(void)
 {
 	/* Perform LVDS_RST */
@@ -559,10 +567,14 @@ static int mipi_dsi_espresso_panel_power(int on)
 	}
 	return 0;
 }
+#endif /* CONFIG_FB_MSM_MIPI_PANEL_POWERON_LP11 */
+#endif
 
 #undef LVDS_REGULATOR_TUNE
+/*
 #undef LVDS_REGULATOR_ENABLE
 #undef LVDS_REGULATOR_DISABLE
+*/
 #endif /* CONFIG_FB_MSM_MIPI_BOEOT_TFT_VIDEO_WSVGA_PT_PANEL */
 
 /**
@@ -767,6 +779,10 @@ void cmc_power(int on)
 		}
 }
 #endif
+
+#undef LVDS_REGULATOR_ENABLE
+#undef LVDS_REGULATOR_DISABLE
+
 #if defined(CONFIG_MIPI_SAMSUNG_ESD_REFRESH)
 #if defined(CONFIG_SAMSUNG_CMC624)
 void set_esd_gpio_config(void)
@@ -1957,7 +1973,13 @@ void __init msm8960_init_fb(void)
 #endif
 	}
 
-	if (machine_is_msm8960_liquid())
+	if (machine_is_msm8960_liquid() \
+			|| machine_is_ESPRESSO_VZW()
+			|| machine_is_ESPRESSO_SPR()
+			|| machine_is_ESPRESSO_ATT()
+			|| machine_is_ESPRESSO10_SPR()
+			|| machine_is_ESPRESSO10_VZW()
+			|| machine_is_ESPRESSO10_ATT())
 		platform_device_register(&mipi_dsi2lvds_bridge_device);
 	else
 		platform_device_register(&mipi_dsi_samsung_oled_panel_device);
