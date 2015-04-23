@@ -53,6 +53,24 @@
     },
     {
       "key": {
+        "uuid": "da7fb54a_aa81d34f",
+        "filename": "arch/arm/mach-msm/board-8960.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 5589
+      },
+      "writtenOn": "2015-04-23T10:25:51Z",
+      "side": 1,
+      "message": "See proposed changes in my patchbomb squash http://review.cyanogenmod.org/#/c/95718/2/arch/arm/mach-msm/board-8960.h",
+      "parentUuid": "da7fb54a_2495fc3f",
+      "revId": "fa5a0d98d6eeeba9da0d8b900c6bdeb372f49771",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "da7fb54a_a4874c11",
         "filename": "arch/arm/mach-msm/board-apexq-camera.c",
         "patchSetId": 1
@@ -116,6 +134,24 @@
       "writtenOn": "2015-04-23T01:17:40Z",
       "side": 1,
       "message": "i think this is backwards, it used to be an ifndef",
+      "revId": "fa5a0d98d6eeeba9da0d8b900c6bdeb372f49771",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da7fb54a_ea7bdb79",
+        "filename": "arch/arm/mach-msm/board-apexq-camera.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 1194,
+      "author": {
+        "id": 5589
+      },
+      "writtenOn": "2015-04-23T10:25:51Z",
+      "side": 1,
+      "message": "change this to not express and not espresso",
+      "parentUuid": "da7fb54a_649f0460",
       "revId": "fa5a0d98d6eeeba9da0d8b900c6bdeb372f49771",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
       "unresolved": false
@@ -225,6 +261,24 @@
     },
     {
       "key": {
+        "uuid": "da7fb54a_0a81df4a",
+        "filename": "arch/arm/mach-msm/board-mms-tsp.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 5589
+      },
+      "writtenOn": "2015-04-23T10:25:51Z",
+      "side": 1,
+      "message": "you\u0027ll cause compiler warnings for devices that don\u0027t use these if you don\u0027t ifdef",
+      "parentUuid": "da7fb54a_e4fdd46f",
+      "revId": "fa5a0d98d6eeeba9da0d8b900c6bdeb372f49771",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "da7fb54a_64762440",
         "filename": "drivers/media/video/Makefile",
         "patchSetId": 1
@@ -254,6 +308,24 @@
       "side": 1,
       "message": "It works... But it looks funny and should be fixed.",
       "parentUuid": "da7fb54a_64762440",
+      "revId": "fa5a0d98d6eeeba9da0d8b900c6bdeb372f49771",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da7fb54a_2addc370",
+        "filename": "drivers/media/video/Makefile",
+        "patchSetId": 1
+      },
+      "lineNbr": 219,
+      "author": {
+        "id": 5589
+      },
+      "writtenOn": "2015-04-23T10:25:51Z",
+      "side": 1,
+      "message": "You can probably just drop the ifeq altogether, it\u0027s not likely we\u0027re ever going to add a different camera tree besides apex and msm_zsl. Comment out the stock msm",
+      "parentUuid": "da7fb54a_04ec78c6",
       "revId": "fa5a0d98d6eeeba9da0d8b900c6bdeb372f49771",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
       "unresolved": false
@@ -307,6 +379,24 @@
       "side": 1,
       "message": "oh, maybe d2 is 349, i dont remember...",
       "parentUuid": "da7fb54a_24d17cfc",
+      "revId": "fa5a0d98d6eeeba9da0d8b900c6bdeb372f49771",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da7fb54a_aacf13b2",
+        "filename": "drivers/power/smb347_charger.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 1682,
+      "author": {
+        "id": 5589
+      },
+      "writtenOn": "2015-04-23T10:25:51Z",
+      "side": 1,
+      "message": "Jason, check the changes from samsung\u0027s stock 3.4 kernel for d2, we haven\u0027t imported everything from it, including this driver. https://github.com/samsung-msm/android_kernel_samsung_msm8960/blob/cm-12.0/drivers/power/smb347_charger.c#L1817",
+      "parentUuid": "da7fb54a_e4d074cc",
       "revId": "fa5a0d98d6eeeba9da0d8b900c6bdeb372f49771",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
       "unresolved": false
