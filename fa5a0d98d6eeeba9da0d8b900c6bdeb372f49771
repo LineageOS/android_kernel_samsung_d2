@@ -70,6 +70,24 @@
     },
     {
       "key": {
+        "uuid": "da7fb54a_a403cc75",
+        "filename": "arch/arm/mach-msm/board-apexq-camera.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 588,
+      "author": {
+        "id": 6753
+      },
+      "writtenOn": "2015-04-23T03:07:25Z",
+      "side": 1,
+      "message": "following pattern here, this entire driver is 99% stock import from 3.0. Much of the rest here is the same.",
+      "parentUuid": "da7fb54a_a4874c11",
+      "revId": "fa5a0d98d6eeeba9da0d8b900c6bdeb372f49771",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "da7fb54a_44920059",
         "filename": "arch/arm/mach-msm/board-apexq-camera.c",
         "patchSetId": 1
@@ -189,6 +207,24 @@
     },
     {
       "key": {
+        "uuid": "da7fb54a_e4fdd46f",
+        "filename": "arch/arm/mach-msm/board-mms-tsp.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 6753
+      },
+      "writtenOn": "2015-04-23T03:07:25Z",
+      "side": 1,
+      "message": "Stock Samsung derp",
+      "parentUuid": "da7fb54a_247c1c20",
+      "revId": "fa5a0d98d6eeeba9da0d8b900c6bdeb372f49771",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "da7fb54a_64762440",
         "filename": "drivers/media/video/Makefile",
         "patchSetId": 1
@@ -206,6 +242,24 @@
     },
     {
       "key": {
+        "uuid": "da7fb54a_04ec78c6",
+        "filename": "drivers/media/video/Makefile",
+        "patchSetId": 1
+      },
+      "lineNbr": 219,
+      "author": {
+        "id": 6753
+      },
+      "writtenOn": "2015-04-23T03:07:25Z",
+      "side": 1,
+      "message": "It works... But it looks funny and should be fixed.",
+      "parentUuid": "da7fb54a_64762440",
+      "revId": "fa5a0d98d6eeeba9da0d8b900c6bdeb372f49771",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "da7fb54a_a48e6c25",
         "filename": "drivers/power/smb347_charger.c",
         "patchSetId": 1
@@ -217,6 +271,24 @@
       "writtenOn": "2015-04-23T01:17:40Z",
       "side": 1,
       "message": "this seems weird...why are we changing it?\n\nat the very least, an ifdef would be needed",
+      "revId": "fa5a0d98d6eeeba9da0d8b900c6bdeb372f49771",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da7fb54a_24d17cfc",
+        "filename": "drivers/power/smb347_charger.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 1682,
+      "author": {
+        "id": 6753
+      },
+      "writtenOn": "2015-04-23T03:07:25Z",
+      "side": 1,
+      "message": "Changes from stock kernel diff, thought I was the only one using this driver but will reevaluate.",
+      "parentUuid": "da7fb54a_a48e6c25",
       "revId": "fa5a0d98d6eeeba9da0d8b900c6bdeb372f49771",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
       "unresolved": false
