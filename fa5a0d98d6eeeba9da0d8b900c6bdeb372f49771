@@ -1,0 +1,225 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "da7fb54a_e4aa3485",
+        "filename": "arch/arm/mach-msm/board-8960-pmic.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 3671
+      },
+      "writtenOn": "2015-04-23T01:17:40Z",
+      "side": 1,
+      "message": "do we need to add support for sprint? or for all these variants? we\u0027re not defining anything other than MACH_ESPRESSO_VZW in kconfig",
+      "revId": "fa5a0d98d6eeeba9da0d8b900c6bdeb372f49771",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da7fb54a_04b0f8f3",
+        "filename": "arch/arm/mach-msm/board-8960.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 3671
+      },
+      "writtenOn": "2015-04-23T01:17:40Z",
+      "side": 1,
+      "message": "same here with the extra, unused, variants",
+      "revId": "fa5a0d98d6eeeba9da0d8b900c6bdeb372f49771",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da7fb54a_2495fc3f",
+        "filename": "arch/arm/mach-msm/board-8960.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 3671
+      },
+      "writtenOn": "2015-04-23T01:17:40Z",
+      "side": 1,
+      "message": "should these additions be wrapped in an ifdef?",
+      "revId": "fa5a0d98d6eeeba9da0d8b900c6bdeb372f49771",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da7fb54a_a4874c11",
+        "filename": "arch/arm/mach-msm/board-apexq-camera.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 588,
+      "author": {
+        "id": 3671
+      },
+      "writtenOn": "2015-04-23T01:17:40Z",
+      "side": 1,
+      "message": "comments should probably be shifted over",
+      "revId": "fa5a0d98d6eeeba9da0d8b900c6bdeb372f49771",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da7fb54a_44920059",
+        "filename": "arch/arm/mach-msm/board-apexq-camera.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 803,
+      "author": {
+        "id": 3671
+      },
+      "writtenOn": "2015-04-23T01:17:40Z",
+      "side": 1,
+      "message": "whitespace! oh noes!\n\nalso...jasper...lol...i have one of these...maybe some day, when i have exactly nothing to do, i\u0027ll get cm running on it...\n\ni think a lot of this block can be simplified by adding only what espresso needs",
+      "revId": "fa5a0d98d6eeeba9da0d8b900c6bdeb372f49771",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da7fb54a_649f0460",
+        "filename": "arch/arm/mach-msm/board-apexq-camera.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 1194,
+      "author": {
+        "id": 3671
+      },
+      "writtenOn": "2015-04-23T01:17:40Z",
+      "side": 1,
+      "message": "i think this is backwards, it used to be an ifndef",
+      "revId": "fa5a0d98d6eeeba9da0d8b900c6bdeb372f49771",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da7fb54a_849c086b",
+        "filename": "arch/arm/mach-msm/board-apexq-camera.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 1285,
+      "author": {
+        "id": 3671
+      },
+      "writtenOn": "2015-04-23T01:17:40Z",
+      "side": 1,
+      "message": "useless variants",
+      "revId": "fa5a0d98d6eeeba9da0d8b900c6bdeb372f49771",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da7fb54a_c48c5038",
+        "filename": "arch/arm/mach-msm/board-m2-display.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 239,
+      "author": {
+        "id": 3671
+      },
+      "writtenOn": "2015-04-23T01:17:40Z",
+      "side": 1,
+      "message": "useless variants",
+      "revId": "fa5a0d98d6eeeba9da0d8b900c6bdeb372f49771",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da7fb54a_e48154fd",
+        "filename": "arch/arm/mach-msm/board-m2-display.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 575,
+      "author": {
+        "id": 3671
+      },
+      "writtenOn": "2015-04-23T01:17:40Z",
+      "side": 1,
+      "message": "why comment these out just to move them down ~180 lines?",
+      "revId": "fa5a0d98d6eeeba9da0d8b900c6bdeb372f49771",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da7fb54a_04871810",
+        "filename": "arch/arm/mach-msm/board-m2-display.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 1978,
+      "author": {
+        "id": 3671
+      },
+      "writtenOn": "2015-04-23T01:17:40Z",
+      "side": 1,
+      "message": "useless variants",
+      "revId": "fa5a0d98d6eeeba9da0d8b900c6bdeb372f49771",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da7fb54a_247c1c20",
+        "filename": "arch/arm/mach-msm/board-mms-tsp.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 3671
+      },
+      "writtenOn": "2015-04-23T01:17:40Z",
+      "side": 1,
+      "message": "wrap this in the ifdef too?",
+      "revId": "fa5a0d98d6eeeba9da0d8b900c6bdeb372f49771",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da7fb54a_64762440",
+        "filename": "drivers/media/video/Makefile",
+        "patchSetId": 1
+      },
+      "lineNbr": 219,
+      "author": {
+        "id": 3671
+      },
+      "writtenOn": "2015-04-23T01:17:40Z",
+      "side": 1,
+      "message": "don\u0027t the else and ifeq need to be on separate lines with another endif added? maybe my kconfig-fu is lacking...",
+      "revId": "fa5a0d98d6eeeba9da0d8b900c6bdeb372f49771",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da7fb54a_a48e6c25",
+        "filename": "drivers/power/smb347_charger.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 1682,
+      "author": {
+        "id": 3671
+      },
+      "writtenOn": "2015-04-23T01:17:40Z",
+      "side": 1,
+      "message": "this seems weird...why are we changing it?\n\nat the very least, an ifdef would be needed",
+      "revId": "fa5a0d98d6eeeba9da0d8b900c6bdeb372f49771",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    }
+  ]
+}
