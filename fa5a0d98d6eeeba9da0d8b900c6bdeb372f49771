@@ -71,6 +71,24 @@
     },
     {
       "key": {
+        "uuid": "da7fb54a_f0b58e7e",
+        "filename": "arch/arm/mach-msm/board-8960.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 6753
+      },
+      "writtenOn": "2015-04-24T15:37:11Z",
+      "side": 1,
+      "message": "leaving this for now until patchbomb comes in.",
+      "parentUuid": "da7fb54a_aa81d34f",
+      "revId": "fa5a0d98d6eeeba9da0d8b900c6bdeb372f49771",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "da7fb54a_a4874c11",
         "filename": "arch/arm/mach-msm/board-apexq-camera.c",
         "patchSetId": 1
@@ -158,6 +176,24 @@
     },
     {
       "key": {
+        "uuid": "da7fb54a_10bbd273",
+        "filename": "arch/arm/mach-msm/board-apexq-camera.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 1194,
+      "author": {
+        "id": 6753
+      },
+      "writtenOn": "2015-04-24T15:37:11Z",
+      "side": 1,
+      "message": "Stock driver from 3.0 has this as #if defined(CONFIG_MACH_APEXQ). In our current situation #if APEX \u003d\u003d (!EXPRESS \u0026\u0026 !ESPRESSO_VZW). I\u0027m inclined to follow stock behavior here",
+      "parentUuid": "da7fb54a_ea7bdb79",
+      "revId": "fa5a0d98d6eeeba9da0d8b900c6bdeb372f49771",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "da7fb54a_849c086b",
         "filename": "arch/arm/mach-msm/board-apexq-camera.c",
         "patchSetId": 1
@@ -203,6 +239,24 @@
       "writtenOn": "2015-04-23T01:17:40Z",
       "side": 1,
       "message": "why comment these out just to move them down ~180 lines?",
+      "revId": "fa5a0d98d6eeeba9da0d8b900c6bdeb372f49771",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da7fb54a_b0bb0675",
+        "filename": "arch/arm/mach-msm/board-m2-display.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 575,
+      "author": {
+        "id": 6753
+      },
+      "writtenOn": "2015-04-24T15:37:11Z",
+      "side": 1,
+      "message": "From the looks of it, these #undef\u0027s needed to be moved because espresso needs them in the functions in between.",
+      "parentUuid": "da7fb54a_e48154fd",
       "revId": "fa5a0d98d6eeeba9da0d8b900c6bdeb372f49771",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
       "unresolved": false
@@ -397,6 +451,24 @@
       "side": 1,
       "message": "Jason, check the changes from samsung\u0027s stock 3.4 kernel for d2, we haven\u0027t imported everything from it, including this driver. https://github.com/samsung-msm/android_kernel_samsung_msm8960/blob/cm-12.0/drivers/power/smb347_charger.c#L1817",
       "parentUuid": "da7fb54a_e4d074cc",
+      "revId": "fa5a0d98d6eeeba9da0d8b900c6bdeb372f49771",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da7fb54a_b0622615",
+        "filename": "drivers/power/smb347_charger.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 1682,
+      "author": {
+        "id": 6753
+      },
+      "writtenOn": "2015-04-24T15:37:11Z",
+      "side": 1,
+      "message": "Leaving as is based on daves reference. Looks like we have a few driver updates to look into as well in that new kernel.",
+      "parentUuid": "da7fb54a_aacf13b2",
       "revId": "fa5a0d98d6eeeba9da0d8b900c6bdeb372f49771",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
       "unresolved": false
