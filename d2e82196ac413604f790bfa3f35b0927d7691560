@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7a8ec9b2_8cf6e5d5",
+        "filename": "fs/exec.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 1310,
+      "author": {
+        "id": 129
+      },
+      "writtenOn": "2015-06-04T22:54:50Z",
+      "side": 1,
+      "message": "Is the no_new_privs check omitted here intentionally?\nI\u0027d expect \"if ((bprm-\u003efile-\u003ef_path.mnt-\u003emnt_flags \u0026 MNT_NOSUID) || task_no_new_privs(current))\" to be here.\nThe same question applies to jf kernel.",
+      "range": {
+        "startLine": 1310,
+        "startChar": 4,
+        "endLine": 1310,
+        "endChar": 52
+      },
+      "revId": "d2e82196ac413604f790bfa3f35b0927d7691560",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    }
+  ]
+}
