@@ -513,8 +513,13 @@ static int msm_pcm_playback_close(struct snd_pcm_substream *substream)
 	pr_debug("%s\n", __func__);
 
 	dir = IN;
+#ifdef CONFIG_MACH_M2
+	ret = wait_event_timeout(the_locks.eos_wait,
+				prtd->cmd_ack, 1 * HZ);
+#else
 	ret = wait_event_timeout(the_locks.eos_wait,
 				prtd->cmd_ack, 5 * HZ);
+#endif
 	if (!ret)
 		pr_err("%s: CMD_EOS failed\n", __func__);
 	q6asm_cmd(prtd->audio_client, CMD_CLOSE);
@@ -524,6 +529,9 @@ static int msm_pcm_playback_close(struct snd_pcm_substream *substream)
 	msm_pcm_routing_dereg_phy_stream(soc_prtd->dai_link->be_id,
 			SNDRV_PCM_STREAM_PLAYBACK);
 	q6asm_audio_client_free(prtd->audio_client);
+
+	prtd->audio_client = NULL; /* Samsung fix - prevent null pointer dereference */
+
 	kfree(prtd);
 	return 0;
 }
@@ -736,10 +744,22 @@ static int msm_pcm_hw_params(struct snd_pcm_substream *substream,
 						  substream->stream, event);
 	}
 
-	ret = q6asm_audio_client_buf_alloc_contiguous(dir,
+	if (dir == OUT) {
+		ret = q6asm_audio_client_buf_alloc_contiguous(dir,
 			prtd->audio_client,
 			(params_buffer_bytes(params) / params_periods(params)),
 			params_periods(params));
+		pr_debug("buff bytes = %d, period size = %d,\
+			period count = %d\n", params_buffer_bytes(params),
+			params_periods(params),
+			params_buffer_bytes(params) / params_periods(params));
+	} else {
+		ret = q6asm_audio_client_buf_alloc_contiguous(dir,
+			prtd->audio_client,
+			runtime->hw.period_bytes_min,
+			runtime->hw.periods_max);
+	}
+
 	if (ret < 0) {
 		pr_err("Audio Start: Buffer Allocation failed \
 					rc = %d\n", ret);
@@ -756,7 +776,10 @@ static int msm_pcm_hw_params(struct snd_pcm_substream *substream,
 	dma_buf->area = buf[0].data;
 	dma_buf->addr =  buf[0].phys;
 	dma_buf->bytes = runtime->hw.buffer_bytes_max;
-	dma_buf->bytes = params_buffer_bytes(params);
+	if (dir == IN)
+		dma_buf->bytes = runtime->hw.buffer_bytes_max;
+	else
+		dma_buf->bytes = params_buffer_bytes(params);
 
 	if (!dma_buf->area)
 		return -ENOMEM;

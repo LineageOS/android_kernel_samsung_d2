@@ -48,13 +48,14 @@
 #define msm8960_SLIM_0_RX_MAX_CHANNELS		2
 #define msm8960_SLIM_0_TX_MAX_CHANNELS		4
 
-#define BTSCO_RATE_8KHZ 8000
-#define BTSCO_RATE_16KHZ 16000
+#define SAMPLE_RATE_8KHZ 8000
+#define SAMPLE_RATE_16KHZ 16000
 
 #define BOTTOM_SPK_AMP_POS	0x1
 #define BOTTOM_SPK_AMP_NEG	0x2
 #define TOP_SPK_AMP_POS		0x4
 #define TOP_SPK_AMP_NEG		0x8
+#define TOP_SPK_AMP		0x10
 
 #define GPIO_AUX_PCM_DOUT 63
 #define GPIO_AUX_PCM_DIN 64
@@ -75,13 +76,14 @@
 
 #define TABLA_EXT_CLK_RATE 12288000
 
-#define TABLA_MBHC_DEF_BUTTONS 3
+#define TABLA_MBHC_DEF_BUTTONS 8
 #define TABLA_MBHC_DEF_RLOADS 5
 
 #define NUM_EXT_SPK_AMP_STATES 2
 
 #define JACK_DETECT_GPIO 38
 #define JACK_DETECT_INT PM8921_GPIO_IRQ(PM8921_IRQ_BASE, JACK_DETECT_GPIO)
+#define JACK_US_EURO_SEL_GPIO 35
 #define GPIO_DETECT_USED false
 
 extern unsigned int system_rev;
@@ -93,8 +95,11 @@ static int msm8960_ext_top_spk_pamp;
 static int msm8960_slim_0_rx_ch = 1;
 static int msm8960_slim_0_tx_ch = 1;
 
-static int msm8960_btsco_rate = BTSCO_RATE_8KHZ;
+static int msm8960_btsco_rate = SAMPLE_RATE_8KHZ;
 static int msm8960_btsco_ch = 1;
+static int hdmi_rate_variable;
+static int msm_hdmi_rx_ch = 2;
+static int msm8960_auxpcm_rate = SAMPLE_RATE_8KHZ;
 
 static struct clk *codec_clk;
 static int clk_users;
@@ -103,13 +108,21 @@ static int msm8960_audio_gpios_configured;
 
 static struct snd_soc_jack hs_jack;
 static struct snd_soc_jack button_jack;
+static atomic_t auxpcm_rsc_ref;
+
 static struct snd_soc_jack volumedown_jack;
 static struct snd_soc_jack volumeup_jack;
-static atomic_t auxpcm_rsc_ref;
+
+static bool hs_detect_extn_cable;
+module_param(hs_detect_extn_cable, bool, 0444);
+MODULE_PARM_DESC(hs_detect_extn_cable, "Enable extension cable feature");
+
 
 static int msm8960_enable_codec_ext_clk(struct snd_soc_codec *codec, int enable,
 					bool dapm);
-
+/*
+static bool msm8960_swap_gnd_mic(struct snd_soc_codec *codec);
+*/
 static struct tabla_mbhc_config mbhc_cfg = {
 	.headset_jack = &hs_jack,
 	.button_jack = &button_jack,
@@ -121,8 +134,11 @@ static struct tabla_mbhc_config mbhc_cfg = {
 	.gpio = 0,
 	.gpio_irq = 0,
 	.gpio_level_insert = 1,
+	.swap_gnd_mic = NULL,
+	.detect_extn_cable = false,
 };
 
+static u32 us_euro_sel_gpio = PM8921_GPIO_PM_TO_SYS(JACK_US_EURO_SEL_GPIO);
 
 static int msm8960_i2s_rx_ch = 1;
 static int msm8960_i2s_tx_ch = 1;
@@ -131,6 +147,23 @@ static int msm8960_i2s_spk_control;
 static struct clk *rx_bit_clk;
 static struct clk *tx_osr_clk;
 static struct clk *tx_bit_clk;
+
+struct ext_amp_work {
+	struct delayed_work dwork;
+};
+
+static struct ext_amp_work ext_amp_dwork;
+
+/* Work queue for delaying the amp power on-off to
+remove the static noise during SPK_PA enable */
+static void external_speaker_amp_work(struct work_struct *work)
+{
+	pr_debug("%s :: Top Speaker Amp enable\n", __func__);
+	gpio_direction_output(top_spk_pamp_gpio, 1);
+	pr_debug("%s: slepping 4 ms after turning on external "
+			" Top Speaker Ampl\n", __func__);
+	usleep_range(4000, 4000);
+}
 
 static void msm8960_ext_spk_power_amp_on(u32 spk)
 {
@@ -170,8 +203,11 @@ static void msm8960_ext_spk_power_amp_on(u32 spk)
 
 		if ((msm8960_ext_top_spk_pamp & TOP_SPK_AMP_POS) &&
 			(msm8960_ext_top_spk_pamp & TOP_SPK_AMP_NEG)) {
-			gpio_direction_output(top_spk_pamp_gpio, 1);
-			usleep_range(4000, 4000);
+			/* Delaying the amp power_on to remove the static noise
+			during SPK_PA enable */
+			schedule_delayed_work(
+			&ext_amp_dwork.dwork,
+			msecs_to_jiffies(50));
 		}
 	} else  {
 
@@ -204,7 +240,6 @@ static void msm8960_ext_spk_power_amp_off(u32 spk)
 		gpio_direction_output(top_spk_pamp_gpio, 0);
 		pr_debug("%s: slepping 4 ms after turning off external "
 			" Top Speaker Ampl\n", __func__);
-		usleep_range(4000, 4000);
 		msm8960_ext_top_spk_pamp = 0;
 	} else  {
 
@@ -217,6 +252,7 @@ static void msm8960_ext_spk_power_amp_off(u32 spk)
 static void msm8960_ext_control(struct snd_soc_codec *codec)
 {
 	struct snd_soc_dapm_context *dapm = &codec->dapm;
+
 	mutex_lock(&dapm->codec->mutex);
 
 	pr_debug("%s: msm8960_spk_control = %d", __func__, msm8960_spk_control);
@@ -271,6 +307,8 @@ static int msm8960_spkramp_event(struct snd_soc_dapm_widget *w,
 			msm8960_ext_spk_power_amp_on(TOP_SPK_AMP_POS);
 		else if  (!strncmp(w->name, "Ext Spk Top Neg", 15))
 			msm8960_ext_spk_power_amp_on(TOP_SPK_AMP_NEG);
+		else if  (!strncmp(w->name, "Ext Spk Top", 12))
+			msm8960_ext_spk_power_amp_on(TOP_SPK_AMP);
 		else {
 			pr_err("%s() Invalid Speaker Widget = %s\n",
 					__func__, w->name);
@@ -286,6 +324,8 @@ static int msm8960_spkramp_event(struct snd_soc_dapm_widget *w,
 			msm8960_ext_spk_power_amp_off(TOP_SPK_AMP_POS);
 		else if  (!strncmp(w->name, "Ext Spk Top Neg", 15))
 			msm8960_ext_spk_power_amp_off(TOP_SPK_AMP_NEG);
+		else if  (!strncmp(w->name, "Ext Spk Top", 12))
+			msm8960_ext_spk_power_amp_off(TOP_SPK_AMP);
 		else {
 			pr_err("%s() Invalid Speaker Widget = %s\n",
 					__func__, w->name);
@@ -385,7 +425,16 @@ static int msm8960_enable_codec_ext_clk(struct snd_soc_codec *codec, int enable,
 	mutex_unlock(&cdc_mclk_mutex);
 	return r;
 }
-
+/*
+static bool msm8960_swap_gnd_mic(struct snd_soc_codec *codec)
+{
+	int value = gpio_get_value_cansleep(us_euro_sel_gpio);
+	pr_debug("%s: US EURO select switch %d to %d\n", __func__, value,
+		 !value);
+	gpio_set_value_cansleep(us_euro_sel_gpio, !value);
+	return true;
+}
+*/
 static int msm8960_mclk_event(struct snd_soc_dapm_widget *w,
 		struct snd_kcontrol *kcontrol, int event)
 {
@@ -399,15 +448,18 @@ static int msm8960_mclk_event(struct snd_soc_dapm_widget *w,
 	}
 	return 0;
 }
+
 static const struct snd_soc_dapm_widget msm8960_dapm_widgets_org[] = {
 
 	SND_SOC_DAPM_SUPPLY("MCLK",  SND_SOC_NOPM, 0, 0,
 	msm8960_mclk_event, SND_SOC_DAPM_PRE_PMU | SND_SOC_DAPM_POST_PMD),
+
 	SND_SOC_DAPM_SPK("Ext Spk Bottom Pos", msm8960_spkramp_event),
 	SND_SOC_DAPM_SPK("Ext Spk Bottom Neg", msm8960_spkramp_event),
 
 	SND_SOC_DAPM_SPK("Ext Spk Top Pos", msm8960_spkramp_event),
 	SND_SOC_DAPM_SPK("Ext Spk Top Neg", msm8960_spkramp_event),
+	SND_SOC_DAPM_SPK("Ext Spk Top", msm8960_spkramp_event),
 
 	SND_SOC_DAPM_MIC("Handset Mic", NULL),
 	SND_SOC_DAPM_MIC("Headset Mic", NULL),
@@ -415,6 +467,7 @@ static const struct snd_soc_dapm_widget msm8960_dapm_widgets_org[] = {
 	SND_SOC_DAPM_MIC("Digital Mic1", NULL),
 	SND_SOC_DAPM_MIC("ANCRight Headset Mic", NULL),
 	SND_SOC_DAPM_MIC("ANCLeft Headset Mic", NULL),
+
 	SND_SOC_DAPM_MIC("Digital Mic1", NULL),
 	SND_SOC_DAPM_MIC("Digital Mic2", NULL),
 	SND_SOC_DAPM_MIC("Digital Mic3", NULL),
@@ -436,6 +489,7 @@ static const struct snd_soc_dapm_route common_audio_map_org[] = {
 
 	{"Ext Spk Top Pos", NULL, "LINEOUT3"},
 	{"Ext Spk Top Neg", NULL, "LINEOUT4"},
+	{"Ext Spk Top", NULL, "LINEOUT5"},
 
 	/* Microphone path */
 	/**
@@ -548,7 +602,6 @@ static const struct snd_soc_dapm_widget msm8960_dapm_widgets_rev00[] = {
 };
 
 static const struct snd_soc_dapm_route common_audio_map_rev00[] = {
-
 	{"EAR_RX_BIAS", NULL, "MCLK"},
 	{"RX_BIAS", NULL, "MCLK"},
 	{"LDO_H", NULL, "MCLK"},
@@ -667,7 +720,6 @@ static const struct snd_soc_dapm_widget msm8960_dapm_widgets_rev01[] = {
 };
 
 static const struct snd_soc_dapm_route common_audio_map_rev01[] = {
-
 	{"EAR_RX_BIAS", NULL, "MCLK"},
 	{"RX_BIAS", NULL, "MCLK"},
 	{"LDO_H", NULL, "MCLK"},
@@ -760,11 +812,16 @@ static const struct snd_soc_dapm_route common_audio_map_rev01[] = {
 static const char *spk_function[] = {"Off", "On"};
 static const char *slim0_rx_ch_text[] = {"One", "Two"};
 static const char *slim0_tx_ch_text[] = {"One", "Two", "Three", "Four"};
+static char const *hdmi_rx_ch_text[] = {"Two", "Three", "Four", "Five",
+					"Six", "Seven", "Eight"};
+static const char * const hdmi_rate[] = {"Default", "Variable"};
 
 static const struct soc_enum msm8960_enum[] = {
 	SOC_ENUM_SINGLE_EXT(2, spk_function),
 	SOC_ENUM_SINGLE_EXT(2, slim0_rx_ch_text),
 	SOC_ENUM_SINGLE_EXT(4, slim0_tx_ch_text),
+	SOC_ENUM_SINGLE_EXT(2, hdmi_rate),
+	SOC_ENUM_SINGLE_EXT(7, hdmi_rx_ch_text),
 };
 
 static const char *btsco_rate_text[] = {"8000", "16000"};
@@ -772,6 +829,10 @@ static const struct soc_enum msm8960_btsco_enum[] = {
 		SOC_ENUM_SINGLE_EXT(2, btsco_rate_text),
 };
 
+static const char *auxpcm_rate_text[] = {"rate_8000", "rate_16000"};
+static const struct soc_enum msm8960_auxpcm_enum[] = {
+		SOC_ENUM_SINGLE_EXT(2, auxpcm_rate_text),
+};
 static int msm8960_i2s_rx_ch_get(struct snd_kcontrol *kcontrol,
 	struct snd_ctl_elem_value *ucontrol)
 {
@@ -861,18 +922,45 @@ static int msm8960_btsco_rate_put(struct snd_kcontrol *kcontrol,
 				struct snd_ctl_elem_value *ucontrol)
 {
 	switch (ucontrol->value.integer.value[0]) {
-	case 0:
-		msm8960_btsco_rate = BTSCO_RATE_8KHZ;
+	case 8000:
+		msm8960_btsco_rate = SAMPLE_RATE_8KHZ;
 		break;
-	case 1:
-		msm8960_btsco_rate = BTSCO_RATE_16KHZ;
+	case 16000:
+		msm8960_btsco_rate = SAMPLE_RATE_16KHZ;
 		break;
 	default:
-		msm8960_btsco_rate = BTSCO_RATE_8KHZ;
+		msm8960_btsco_rate = SAMPLE_RATE_8KHZ;
 		break;
 	}
-	pr_debug("%s: msm8960_btsco_rate = %d\n", __func__,
-					msm8960_btsco_rate);
+	pr_debug("%s: msm8960_btsco_rate = %d\n", __func__, msm8960_btsco_rate);
+	return 0;
+}
+
+static int msm8960_auxpcm_rate_get(struct snd_kcontrol *kcontrol,
+				struct snd_ctl_elem_value *ucontrol)
+{
+	pr_debug("%s: msm8960_auxpcm_rate  = %d", __func__,
+		msm8960_auxpcm_rate);
+	ucontrol->value.integer.value[0] = msm8960_auxpcm_rate;
+	return 0;
+}
+
+static int msm8960_auxpcm_rate_put(struct snd_kcontrol *kcontrol,
+				struct snd_ctl_elem_value *ucontrol)
+{
+	switch (ucontrol->value.integer.value[0]) {
+	case 0:
+		msm8960_auxpcm_rate = SAMPLE_RATE_8KHZ;
+		break;
+	case 1:
+		msm8960_auxpcm_rate = SAMPLE_RATE_16KHZ;
+		break;
+	default:
+		msm8960_auxpcm_rate = SAMPLE_RATE_8KHZ;
+		break;
+	}
+	pr_debug("%s: msm8960_auxpcm_rate = %d\n", __func__,
+		msm8960_auxpcm_rate);
 	return 0;
 }
 
@@ -905,7 +993,44 @@ static const struct snd_kcontrol_new tabla_msm8960_i2s_controls[] = {
 		msm8960_i2s_rx_ch_get, msm8960_i2s_rx_ch_put),
 	SOC_ENUM_EXT("PRI_TX Channels", msm8960_enum[2],
 		msm8960_i2s_tx_ch_get, msm8960_i2s_tx_ch_put),
+	SOC_ENUM_EXT("Internal BTSCO SampleRate", msm8960_btsco_enum[0],
+		msm8960_btsco_rate_get, msm8960_btsco_rate_put),
+	SOC_ENUM_EXT("AUX PCM SampleRate", msm8960_auxpcm_enum[0],
+		msm8960_auxpcm_rate_get, msm8960_auxpcm_rate_put),
 };
+static int msm_hdmi_rx_ch_get(struct snd_kcontrol *kcontrol,
+	struct snd_ctl_elem_value *ucontrol)
+{
+	pr_debug("%s: msm_hdmi_rx_ch  = %d\n", __func__,
+			msm_hdmi_rx_ch);
+	ucontrol->value.integer.value[0] = msm_hdmi_rx_ch - 2;
+	return 0;
+}
+
+static int msm_hdmi_rx_ch_put(struct snd_kcontrol *kcontrol,
+	struct snd_ctl_elem_value *ucontrol)
+{
+	msm_hdmi_rx_ch = ucontrol->value.integer.value[0] + 2;
+
+	pr_debug("%s: msm_hdmi_rx_ch = %d\n", __func__,
+		msm_hdmi_rx_ch);
+	return 1;
+}
+
+static int msm8960_hdmi_rate_put(struct snd_kcontrol *kcontrol,
+				struct snd_ctl_elem_value *ucontrol)
+{
+	hdmi_rate_variable = ucontrol->value.integer.value[0];
+	pr_debug("%s: hdmi_rate_variable = %d\n", __func__, hdmi_rate_variable);
+	return 0;
+}
+
+static int msm8960_hdmi_rate_get(struct snd_kcontrol *kcontrol,
+				struct snd_ctl_elem_value *ucontrol)
+{
+	ucontrol->value.integer.value[0] = hdmi_rate_variable;
+	return 0;
+}
 
 static const struct snd_kcontrol_new tabla_msm8960_controls[] = {
 	SOC_ENUM_EXT("Speaker Function", msm8960_enum[0], msm8960_get_spk,
@@ -916,27 +1041,15 @@ static const struct snd_kcontrol_new tabla_msm8960_controls[] = {
 		msm8960_slim_0_tx_ch_get, msm8960_slim_0_tx_ch_put),
 	SOC_ENUM_EXT("Internal BTSCO SampleRate", msm8960_btsco_enum[0],
 		msm8960_btsco_rate_get, msm8960_btsco_rate_put),
+	SOC_ENUM_EXT("AUX PCM SampleRate", msm8960_auxpcm_enum[0],
+		msm8960_auxpcm_rate_get, msm8960_auxpcm_rate_put),
+	SOC_ENUM_EXT("HDMI RX Rate", msm8960_enum[3],
+					msm8960_hdmi_rate_get,
+					msm8960_hdmi_rate_put),
+	SOC_ENUM_EXT("HDMI_RX Channels", msm8960_enum[4],
+		msm_hdmi_rx_ch_get, msm_hdmi_rx_ch_put),
 };
 
-
-#if 0
-static const struct snd_kcontrol_new int_btsco_rate_mixer_controls[] = {
-	SOC_ENUM_EXT("Internal BTSCO SampleRate", msm8960_btsco_enum[0],
-		msm8960_btsco_rate_get, msm8960_btsco_rate_put),
-};
-static int msm8960_btsco_init(struct snd_soc_pcm_runtime *rtd)
-{
-	int err = 0;
-	struct snd_soc_platform *platform = rtd->platform;
-
-	err = snd_soc_add_platform_controls(platform,
-			int_btsco_rate_mixer_controls,
-		ARRAY_SIZE(int_btsco_rate_mixer_controls));
-	if (err < 0)
-		return err;
-	return 0;
-}
-#endif
 static void *def_tabla_mbhc_cal(void)
 {
 	void *tabla_cal;
@@ -1360,7 +1473,12 @@ static int msm8960_hdmi_be_hw_params_fixup(struct snd_soc_pcm_runtime *rtd,
 
 	pr_debug("%s channels->min %u channels->max %u ()\n", __func__,
 			channels->min, channels->max);
-	rate->min = rate->max = 48000;
+
+	if (!hdmi_rate_variable)
+		rate->min = rate->max = 48000;
+	channels->min = channels->max = msm_hdmi_rx_ch;
+	if (channels->max < 2)
+		channels->min = channels->max = 2;
 
 	return 0;
 }
@@ -1388,13 +1506,12 @@ static int msm8960_auxpcm_be_params_fixup(struct snd_soc_pcm_runtime *rtd,
 	struct snd_interval *channels = hw_param_interval(params,
 					SNDRV_PCM_HW_PARAM_CHANNELS);
 
-	/* PCM only supports mono output with 8khz sample rate */
-	rate->min = rate->max = 8000;
+	rate->min = rate->max = msm8960_auxpcm_rate;
+	/* PCM only supports mono output */
 	channels->min = channels->max = 1;
 
 	return 0;
 }
-
 static int msm8960_proxy_be_hw_params_fixup(struct snd_soc_pcm_runtime *rtd,
 			struct snd_pcm_hw_params *params)
 {
@@ -1406,8 +1523,7 @@ static int msm8960_proxy_be_hw_params_fixup(struct snd_soc_pcm_runtime *rtd,
 
 	return 0;
 }
-
-int msm8960_aux_pcm_get_gpios(void)
+static int msm8960_aux_pcm_get_gpios(void)
 {
 	int ret = 0;
 
@@ -1462,7 +1578,7 @@ fail_dout:
 	return ret;
 }
 
-int msm8960_aux_pcm_free_gpios(void)
+static int msm8960_aux_pcm_free_gpios(void)
 {
 	gpio_tlmm_config(GPIO_CFG(GPIO_AUX_PCM_DOUT, 0, GPIO_CFG_INPUT,
 				GPIO_CFG_PULL_DOWN, GPIO_CFG_2MA), 1);
@@ -1777,6 +1893,7 @@ static struct snd_soc_ops msm8960_auxpcm_be_ops = {
 };
 
 static struct snd_soc_dai_link *msm8960_dai_list;
+
 static struct snd_soc_dai_link msm8960_i2s_be_dai[] = {
 	{
 		.name = LPASS_BE_PRI_I2S_RX,
@@ -2220,20 +2337,20 @@ static int msm8960_configure_audio_gpios(void)
 	}
 	gpio_direction_output(PM8921_GPIO_PM_TO_SYS(23), 0);
 
-	ret = gpio_request(PM8921_GPIO_PM_TO_SYS(35), "US_EURO_SWITCH");
+	ret = gpio_request(us_euro_sel_gpio, "US_EURO_SWITCH");
 	if (ret) {
 		pr_err("%s: Failed to request gpio %d\n", __func__,
-			PM8921_GPIO_PM_TO_SYS(35));
+		       us_euro_sel_gpio);
 		gpio_free(PM8921_GPIO_PM_TO_SYS(23));
 		return ret;
 	}
-	ret = pm8xxx_gpio_config(PM8921_GPIO_PM_TO_SYS(35), &param);
+	ret = pm8xxx_gpio_config(us_euro_sel_gpio, &param);
 	if (ret) {
 		pr_err("%s: Failed to configure gpio %d\n", __func__,
-			PM8921_GPIO_PM_TO_SYS(35));
+		       us_euro_sel_gpio);
 		return ret;
 	}
-	gpio_direction_output(PM8921_GPIO_PM_TO_SYS(35), 0);
+	gpio_direction_output(us_euro_sel_gpio, 0);
 #endif
 #if !defined(CONFIG_MACH_AEGIS2)
 	ret = gpio_request(bottom_spk_pamp_gpio, "BOTTOM_SPK_AMP");
@@ -2264,7 +2381,6 @@ static int msm8960_configure_audio_gpios(void)
 
 	return 0;
 }
-
 static void msm8960_free_audio_gpios(void)
 {
 	if (msm8960_audio_gpios_configured) {
@@ -2320,7 +2436,6 @@ static int __init msm8960_audio_init(void)
 		kfree(msm8960_dai_list);
 		return -ENOMEM;
 	}
-
 	platform_set_drvdata(msm8960_snd_device, &snd_soc_card_msm8960);
 	ret = platform_device_add(msm8960_snd_device);
 	if (ret) {
@@ -2330,14 +2445,21 @@ static int __init msm8960_audio_init(void)
 		return ret;
 	}
 
+	if (cpu_is_msm8960()) {
 	if (msm8960_configure_audio_gpios()) {
 		pr_err("%s Fail to configure headset mic gpios\n", __func__);
 		msm8960_audio_gpios_configured = 0;
 	} else
 		msm8960_audio_gpios_configured = 1;
+	} else {
+		msm8960_audio_gpios_configured = 0;
+	}
 
 	mutex_init(&cdc_mclk_mutex);
+	atomic_set(&auxpcm_rsc_ref, 0);
 	
+	INIT_DELAYED_WORK(&ext_amp_dwork.dwork,
+			external_speaker_amp_work);
 	return ret;
 
 }
