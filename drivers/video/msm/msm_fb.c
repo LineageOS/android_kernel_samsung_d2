@@ -183,8 +183,13 @@ int msm_fb_cursor(struct fb_info *info, struct fb_cursor *cursor)
 
 static int msm_fb_resource_initialized;
 
+static int pcc_r = 32768, pcc_g = 32768, pcc_b = 32768;
+static int set_pcc (int r, int g, int b);
+
 #ifndef CONFIG_FB_BACKLIGHT
 static int lcd_backlight_registered;
+
+static int global_backlight;
 
 static void msm_fb_set_bl_brightness(struct led_classdev *led_cdev,
 					enum led_brightness value)
@@ -207,6 +212,11 @@ static void msm_fb_set_bl_brightness(struct led_classdev *led_cdev,
 
         down(&mfd->sem);
 	msm_fb_set_backlight(mfd, bl_lvl);
+
+	global_backlight = (value <=0 ? 1 : value);
+	if (global_backlight < 30)
+		set_pcc(pcc_r, pcc_g, pcc_b);
+
 	up(&mfd->sem);
 }
 
@@ -355,8 +365,6 @@ static ssize_t msm_fb_msm_fb_type(struct device *dev,
 	return ret;
 }
 
-
-static int pcc_r = 32768, pcc_g = 32768, pcc_b = 32768;
 static ssize_t mdp_get_rgb(struct device *dev,
 		struct device_attribute *attr, char *buf)
 {
@@ -379,7 +387,6 @@ static ssize_t mdp_set_rgb(struct device *dev,
                const char *buf, size_t count)
 {
 	uint32_t r = 0, g = 0, b = 0;
-	struct mdp_pcc_cfg_data pcc_cfg;
 
 	if (count > 19)
 		return -EINVAL;
@@ -395,19 +402,43 @@ static ssize_t mdp_set_rgb(struct device *dev,
 
 	pr_info("%s: r=%d g=%d b=%d", __func__, r, g, b);
 
+	if (set_pcc(r, g, b) == -EINVAL)
+		return -EINVAL;
+	else
+		return count;
+}
+
+static int set_pcc (int r, int g, int b)
+{
+	struct mdp_pcc_cfg_data pcc_cfg;
+
 	memset(&pcc_cfg, 0, sizeof(struct mdp_pcc_cfg_data));
 
 	pcc_cfg.block = MDP_BLOCK_DMA_P;
 	pcc_cfg.ops = MDP_PP_OPS_ENABLE | MDP_PP_OPS_WRITE;
-	pcc_cfg.r.r = r;
-	pcc_cfg.g.g = g;
-	pcc_cfg.b.b = b;
+
+	if (global_backlight < 30) {
+		int modifier = (30 - global_backlight) * 1092;
+		pcc_cfg.r.r = (r <= modifier ? 0 : (r - modifier));
+		pcc_cfg.g.g = (g <= modifier ? 0 : (g - modifier));
+		pcc_cfg.b.b = (b <= modifier ? 0 : (b - modifier));
+	} else {
+		pcc_cfg.r.r = r;
+		pcc_cfg.g.g = g;
+		pcc_cfg.b.b = b;
+	}
+
+	if ((pcc_cfg.r.r < 8000) && (pcc_cfg.g.g < 8000) && (pcc_cfg.b.b < 8000)) {
+		pcc_cfg.r.r = 8000;
+		pcc_cfg.g.g = 8000;
+		pcc_cfg.b.b = 8000;
+	}
 
 	if (mdp4_pcc_cfg(&pcc_cfg) == 0) {
 		pcc_r = r;
 		pcc_g = g;
 		pcc_b = b;
-		return count;
+		return 0;
 	}
 
 	return -EINVAL;
