@@ -60,9 +60,6 @@
 
 #include "aniGlobal.h"
 
-
-#ifdef TRACE_RECORD
-
 #define CASE_RETURN_STRING( str )           \
     case ( ( str ) ): return( (tANI_U8*)(#str) ); break \
 
@@ -86,8 +83,6 @@ eHalStatus pe_AcquireGlobalLock( tAniSirLim *psPe);
 eHalStatus pe_ReleaseGlobalLock( tAniSirLim *psPe);
 
 
-
-#endif
 
 #endif
 
