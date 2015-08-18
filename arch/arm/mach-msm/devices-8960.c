@@ -1188,7 +1188,7 @@ struct msm_vidc_platform_data vidc_platform_data = {
 	.disable_dmx = 0,
 	.disable_fullhd = 0,
 	.cont_mode_dpb_count = 18,
-#if defined(CONFIG_MACH_M2) || defined (CONFIG_MACH_ESPRESSO_VZW)
+#if defined(CONFIG_MACH_M2) || defined (CONFIG_MACH_ESPRESSO_VZW) || defined (CONFIG_MACH_APEXQ)
 	.fw_addr = 0xafe00000,
 #else
 	.fw_addr = 0x9fe00000,

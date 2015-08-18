@@ -280,19 +280,22 @@ static bool sec_bat_check_cable_result_callback(
 {
 	current_cable_type = cable_type;
 
+pr_err("%s cable type (%d)\n",
+			__func__, cable_type);
 	switch (cable_type) {
 	case POWER_SUPPLY_TYPE_USB:
 		pr_info("%s set vbus applied\n",
 			__func__);
+		msm_otg_set_cable_state(cable_type);
 		break;
 
 	case POWER_SUPPLY_TYPE_BATTERY:
 		pr_info("%s set vbus cut\n",
 			__func__);
-//		msm_otg_set_charging_state(0);
+		msm_otg_set_cable_state(cable_type);
 		break;
 	case POWER_SUPPLY_TYPE_MAINS:
-//		msm_otg_set_charging_state(1);
+		msm_otg_set_cable_state(cable_type);
 		break;
 	default:
 		pr_err("%s cable type (%d)\n",
