@@ -47,7 +47,6 @@ struct snd_msm {
 #define CAPTURE_MAX_NUM_PERIODS  16
 #define CAPTURE_MAX_PERIOD_SIZE  4096
 #define CAPTURE_MIN_PERIOD_SIZE  64
-
 static struct snd_pcm_hardware msm_pcm_hardware_capture = {
 	.info =                 (SNDRV_PCM_INFO_MMAP |
 				SNDRV_PCM_INFO_BLOCK_TRANSFER |
@@ -83,7 +82,7 @@ static struct snd_pcm_hardware msm_pcm_hardware_playback = {
 	.channels_max =         2,
 	.buffer_bytes_max =     PLAYBACK_MAX_NUM_PERIODS *
 				PLAYBACK_MAX_PERIOD_SIZE,
-	.period_bytes_min =     PLAYBACK_MIN_PERIOD_SIZE,
+	.period_bytes_min =	PLAYBACK_MIN_PERIOD_SIZE,
 	.period_bytes_max =     PLAYBACK_MAX_PERIOD_SIZE,
 	.periods_min =          PLAYBACK_MIN_NUM_PERIODS,
 	.periods_max =          PLAYBACK_MAX_NUM_PERIODS,
@@ -400,6 +399,7 @@ static int msm_pcm_open(struct snd_pcm_substream *substream)
 	if (ret < 0)
 		pr_err("snd_pcm_hw_constraint_integer failed\n");
 
+
 	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK) {
 		ret = snd_pcm_hw_constraint_minmax(runtime,
 			SNDRV_PCM_HW_PARAM_BUFFER_BYTES,
@@ -420,19 +420,6 @@ static int msm_pcm_open(struct snd_pcm_substream *substream)
 			pr_err("constraint for buffer bytes min max ret = %d\n",
 									ret);
 		}
-	}
-
-	ret = snd_pcm_hw_constraint_step(runtime, 0,
-		SNDRV_PCM_HW_PARAM_PERIOD_BYTES, 32);
-	if (ret < 0) {
-		pr_err("constraint for period bytes step ret = %d\n",
-								ret);
-	}
-	ret = snd_pcm_hw_constraint_step(runtime, 0,
-		SNDRV_PCM_HW_PARAM_BUFFER_BYTES, 32);
-	if (ret < 0) {
-		pr_err("constraint for buffer bytes step ret = %d\n",
-								ret);
 	}
 
 	prtd->dsp_cnt = 0;
@@ -525,6 +512,9 @@ static int msm_pcm_playback_close(struct snd_pcm_substream *substream)
 	msm_pcm_routing_dereg_phy_stream(soc_prtd->dai_link->be_id,
 			SNDRV_PCM_STREAM_PLAYBACK);
 	q6asm_audio_client_free(prtd->audio_client);
+
+	prtd->audio_client = NULL; /* Samsung fix - prevent null pointer dereference */
+
 	kfree(prtd);
 	return 0;
 }
@@ -738,9 +728,9 @@ static int msm_pcm_hw_params(struct snd_pcm_substream *substream,
 	}
 
 	ret = q6asm_audio_client_buf_alloc_contiguous(dir,
-		prtd->audio_client,
-		(params_buffer_bytes(params) / params_periods(params)),
-		params_periods(params));
+			prtd->audio_client,
+			(params_buffer_bytes(params) / params_periods(params)),
+			params_periods(params));
 
 	pr_debug("buff bytes = %d, period count = %d, period size = %d\n",
 		params_buffer_bytes(params),
