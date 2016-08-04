@@ -422,19 +422,6 @@ static int msm_pcm_open(struct snd_pcm_substream *substream)
 		}
 	}
 
-	ret = snd_pcm_hw_constraint_step(runtime, 0,
-		SNDRV_PCM_HW_PARAM_PERIOD_BYTES, 32);
-	if (ret < 0) {
-		pr_err("constraint for period bytes step ret = %d\n",
-								ret);
-	}
-	ret = snd_pcm_hw_constraint_step(runtime, 0,
-		SNDRV_PCM_HW_PARAM_BUFFER_BYTES, 32);
-	if (ret < 0) {
-		pr_err("constraint for buffer bytes step ret = %d\n",
-								ret);
-	}
-
 	prtd->dsp_cnt = 0;
 	runtime->private_data = prtd;
 
@@ -525,6 +512,9 @@ static int msm_pcm_playback_close(struct snd_pcm_substream *substream)
 	msm_pcm_routing_dereg_phy_stream(soc_prtd->dai_link->be_id,
 			SNDRV_PCM_STREAM_PLAYBACK);
 	q6asm_audio_client_free(prtd->audio_client);
+
+	prtd->audio_client = NULL; /* Samsung fix - prevent null pointer dereference */
+
 	kfree(prtd);
 	return 0;
 }
@@ -738,9 +728,9 @@ static int msm_pcm_hw_params(struct snd_pcm_substream *substream,
 	}
 
 	ret = q6asm_audio_client_buf_alloc_contiguous(dir,
-		prtd->audio_client,
-		(params_buffer_bytes(params) / params_periods(params)),
-		params_periods(params));
+			prtd->audio_client,
+			(params_buffer_bytes(params) / params_periods(params)),
+			params_periods(params));
 
 	pr_debug("buff bytes = %d, period count = %d, period size = %d\n",
 		params_buffer_bytes(params),
