@@ -58,7 +58,7 @@ static ssize_t store_scaling_min_freq(struct kobject *kobj,
 	if (ret < 0)
 		return ret;
 
-	if (new_freq == 384000)
+	if (new_freq == CONFIG_MSM_CPU_FREQ_MIN)
 		new_freq = MSM_CPUFREQ_NO_LIMIT;
 
 	for_each_possible_cpu(cpu) {
@@ -95,7 +95,7 @@ static ssize_t store_scaling_max_freq(struct kobject *kobj,
 	if (ret < 0)
 		return ret;
 
-	if (new_freq == 1512000)
+	if (new_freq == CONFIG_MSM_CPU_FREQ_MAX)
 		new_freq = MSM_CPUFREQ_NO_LIMIT;
 
 	for_each_possible_cpu(cpu) {

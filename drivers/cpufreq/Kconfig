@@ -44,6 +44,7 @@ config CPU_FREQ_STAT_DETAILS
 
 config CPU_FREQ_LIMIT
 	tristate "CPU frequency limits"
+	depends on MSM_CPU_FREQ_SET_MIN_MAX
 	help
 	  This driver allows userspace to limit the CPU frequency through sysfs
 	  file system.
