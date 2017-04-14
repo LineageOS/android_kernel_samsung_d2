@@ -23,8 +23,8 @@
 #define CPUFREQ_LIMIT "cpufreq_limit"
 
 static struct kobject *kobj;
-static uint32_t scaling_max_freq = MSM_CPUFREQ_NO_LIMIT;
-static uint32_t scaling_min_freq = MSM_CPUFREQ_NO_LIMIT;
+static uint32_t scaling_max_freq = CONFIG_MSM_CPU_FREQ_MAX;
+static uint32_t scaling_min_freq = CONFIG_MSM_CPU_FREQ_MIN;
 
 static int update_cpu_freq_limits(unsigned int cpu,
 			uint32_t min_freq, uint32_t max_freq)
@@ -57,9 +57,6 @@ static ssize_t store_scaling_min_freq(struct kobject *kobj,
 	ret = kstrtoul(buf, 0, &new_freq);
 	if (ret < 0)
 		return ret;
-
-	if (new_freq == CONFIG_MSM_CPU_FREQ_MIN)
-		new_freq = MSM_CPUFREQ_NO_LIMIT;
 
 	for_each_possible_cpu(cpu) {
 		ret = update_cpu_freq_limits(cpu, new_freq, scaling_max_freq);
@@ -94,9 +91,6 @@ static ssize_t store_scaling_max_freq(struct kobject *kobj,
 	ret = kstrtoul(buf, 0, &new_freq);
 	if (ret < 0)
 		return ret;
-
-	if (new_freq == CONFIG_MSM_CPU_FREQ_MAX)
-		new_freq = MSM_CPUFREQ_NO_LIMIT;
 
 	for_each_possible_cpu(cpu) {
 		ret = update_cpu_freq_limits(cpu, scaling_min_freq, new_freq);
