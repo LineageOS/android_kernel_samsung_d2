@@ -20,10 +20,9 @@
 #include <linux/module.h>
 #include <mach/cpufreq.h>
 
-#define CPUFREQ_LIMIT "cpufreq_limit"
-
-static uint32_t limited_max_freq = MSM_CPUFREQ_NO_LIMIT;
-static uint32_t limited_min_freq = MSM_CPUFREQ_NO_LIMIT;
+static struct kobject *kobj;
+static uint32_t scaling_max_freq = MSM_CPUFREQ_NO_LIMIT;
+static uint32_t scaling_min_freq = MSM_CPUFREQ_NO_LIMIT;
 
 static int update_cpu_freq_limits(unsigned int cpu,
 			uint32_t min_freq, uint32_t max_freq)
@@ -40,13 +39,13 @@ err:
 	return ret;
 }
 
-static ssize_t show_limited_min_freq(struct kobject *kobj,
+static ssize_t show_scaling_min_freq(struct kobject *kobj,
 			struct attribute *attr, char *buf)
 {
-	return sprintf(buf, "%u\n", limited_min_freq);
+	return sprintf(buf, "%u\n", scaling_min_freq);
 }
 
-static ssize_t store_limited_min_freq(struct kobject *kobj,
+static ssize_t store_scaling_min_freq(struct kobject *kobj,
 			struct attribute *attr, const char *buf, size_t count)
 {
 	int ret;
@@ -61,29 +60,29 @@ static ssize_t store_limited_min_freq(struct kobject *kobj,
 		new_freq = MSM_CPUFREQ_NO_LIMIT;
 
 	for_each_possible_cpu(cpu) {
-		ret = update_cpu_freq_limits(cpu, new_freq, limited_max_freq);
+		ret = update_cpu_freq_limits(cpu, new_freq, scaling_max_freq);
 		if (ret)
 			pr_debug("%s: Failed to limit cpu%u min freq to %lu\n",
 				__func__, cpu, new_freq);
 	}
 
-	limited_min_freq = new_freq;
+	scaling_min_freq = new_freq;
 
 	return count;
 }
 
-static struct global_attr limited_min_freq_attr = __ATTR(limited_min_freq,
+static struct global_attr scaling_min_freq_attr = __ATTR(scaling_min_freq,
 		S_IRUGO | S_IWUSR | S_IWGRP,
-		show_limited_min_freq,
-		store_limited_min_freq);
+		show_scaling_min_freq,
+		store_scaling_min_freq);
 
-static ssize_t show_limited_max_freq(struct kobject *kobj,
+static ssize_t show_scaling_max_freq(struct kobject *kobj,
 			struct attribute *attr, char *buf)
 {
-	return sprintf(buf, "%u\n", limited_max_freq);
+	return sprintf(buf, "%u\n", scaling_max_freq);
 }
 
-static ssize_t store_limited_max_freq(struct kobject *kobj,
+static ssize_t store_scaling_max_freq(struct kobject *kobj,
 			struct attribute *attr, const char *buf, size_t count)
 {
 	int ret;
@@ -98,38 +97,39 @@ static ssize_t store_limited_max_freq(struct kobject *kobj,
 		new_freq = MSM_CPUFREQ_NO_LIMIT;
 
 	for_each_possible_cpu(cpu) {
-		ret = update_cpu_freq_limits(cpu, limited_min_freq, new_freq);
+		ret = update_cpu_freq_limits(cpu, scaling_min_freq, new_freq);
 		if (ret)
 			pr_debug("%s: Failed to limit cpu%u max freq to %lu\n",
 				__func__, cpu, new_freq);
 	}
 
-	limited_max_freq = new_freq;
+	scaling_max_freq = new_freq;
 
 	return count;
 }
 
-static struct global_attr limited_max_freq_attr = __ATTR(limited_max_freq,
+static struct global_attr scaling_max_freq_attr = __ATTR(scaling_max_freq,
 		S_IRUGO | S_IWUSR | S_IWGRP,
-		show_limited_max_freq,
-		store_limited_max_freq);
+		show_scaling_max_freq,
+		store_scaling_max_freq);
 
 static struct attribute *cpufreq_limit_attributes[] = {
-	&limited_max_freq_attr.attr,
-	&limited_min_freq_attr.attr,
+	&scaling_max_freq_attr.attr,
+	&scaling_min_freq_attr.attr,
 	NULL
 };
 
 static struct attribute_group cpufreq_limit_attr_group = {
 	.attrs = cpufreq_limit_attributes,
-	.name = CPUFREQ_LIMIT,
+	.name = "cpufreq",
 };
 
 static int cpufreq_limit_init(void)
 {
 	int ret;
 
-	ret = sysfs_create_group(kernel_kobj, &cpufreq_limit_attr_group);
+	kobj = kobject_create_and_add("cpufreq_limit", kernel_kobj);
+	ret = sysfs_create_group(kobj, &cpufreq_limit_attr_group);
 	if (ret)
 		pr_err("%s: sysfs_creation failed, ret=%d\n", __func__, ret);
 
@@ -138,7 +138,8 @@ static int cpufreq_limit_init(void)
 
 static void cpufreq_limit_exit(void)
 {
-	sysfs_remove_group(kernel_kobj, &cpufreq_limit_attr_group);
+	sysfs_remove_group(kobj, &cpufreq_limit_attr_group);
+	kobject_del(kobj);
 }
 
 module_init(cpufreq_limit_init);
