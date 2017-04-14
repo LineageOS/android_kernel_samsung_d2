@@ -1,4 +1,5 @@
 /* Copyright (c) 2012-2013, The Linux Foundation. All rights reserved.
+ * Copyright (C) 2017 Paul Keith <javelinanddart@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -24,6 +25,7 @@
 #include <linux/platform_device.h>
 #include <linux/of.h>
 #include <mach/cpufreq.h>
+#include <linux/cpufreq_limit.h>
 
 unsigned int temp_threshold = 70;
 module_param(temp_threshold, int, 0644);
@@ -91,8 +93,6 @@ static struct notifier_block msm_thermal_cpufreq_notifier = {
 
 static void limit_cpu_freqs(uint32_t max_freq)
 {
-	unsigned int cpu;
-
 	if (info.limited_max_freq == max_freq)
 		return;
 
@@ -101,12 +101,9 @@ static void limit_cpu_freqs(uint32_t max_freq)
 	info.pending_change = true;
 
 	get_online_cpus();
-	for_each_online_cpu(cpu)
-	{
-		cpufreq_update_policy(cpu);
-		pr_info("%s: Setting cpu%d max frequency to %d\n",
-				KBUILD_MODNAME, cpu, info.limited_max_freq);
-	}
+	pr_info("%s: Setting max frequency to %d\n",
+			KBUILD_MODNAME, info.limited_max_freq);
+	thermal_throttle(max_freq, info.throttling);
 	put_online_cpus();
 
 	info.pending_change = false;
@@ -125,8 +122,8 @@ static void check_temp(struct work_struct *work)
 	{
 		if (temp < (temp_threshold - info.safe_diff))
 		{
-			limit_cpu_freqs(info.cpuinfo_max_freq);
 			info.throttling = false;
+			thermal_throttle(info.cpuinfo_max_freq, info.throttling);
 			goto reschedule;
 		}
 	}
@@ -142,10 +139,10 @@ static void check_temp(struct work_struct *work)
 
 	if (freq)
 	{
-		limit_cpu_freqs(freq);
-
 		if (!info.throttling)
 			info.throttling = true;
+
+		limit_cpu_freqs(freq);
 	}
 
 reschedule:
