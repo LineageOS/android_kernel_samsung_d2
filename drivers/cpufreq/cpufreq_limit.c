@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2012, The Linux Foundation. All rights reserved.
+ * Copyright (C) 2017 Paul Keith <javelinanddart@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -19,24 +20,65 @@
 #include <linux/cpufreq.h>
 #include <linux/module.h>
 #include <mach/cpufreq.h>
+#include <linux/cpufreq_limit.h>
 
+static bool throttling;
 static struct kobject *kobj;
+static uint32_t post_throttle_freq = CONFIG_MSM_CPU_FREQ_MAX;
+static uint32_t pre_throttle_freq = CONFIG_MSM_CPU_FREQ_MAX;
 static uint32_t scaling_max_freq = CONFIG_MSM_CPU_FREQ_MAX;
 static uint32_t scaling_min_freq = CONFIG_MSM_CPU_FREQ_MIN;
 
 static int update_cpu_freq_limits(unsigned int cpu,
-			uint32_t min_freq, uint32_t max_freq)
+			uint32_t min_freq, uint32_t max_freq, bool override)
+{
+	int ret = 0;
+
+	if (!throttling || override) {
+		ret = msm_cpufreq_set_freq_limits(cpu, min_freq, max_freq);
+		if (ret)
+			return ret;
+
+		if (cpu_online(cpu))
+			ret = cpufreq_update_policy(cpu);
+	} else {
+		post_throttle_freq = max_freq;
+	}
+
+	return ret;
+}
+
+void thermal_throttle(uint32_t max_freq, bool throttle)
 {
 	int ret;
+	uint32_t cpu;
 
-	ret = msm_cpufreq_set_freq_limits(cpu, min_freq, max_freq);
-	if (ret)
-		goto err;
+	if (!throttling && throttle) {
+		post_throttle_freq = scaling_max_freq;
+		pre_throttle_freq = scaling_max_freq;
+	}
 
-	ret = cpufreq_update_policy(cpu);
+	throttling = throttle;
 
-err:
-	return ret;
+	if (max_freq > post_throttle_freq)
+		max_freq = post_throttle_freq;
+
+	if (throttling && (max_freq > pre_throttle_freq))
+		max_freq = pre_throttle_freq;
+
+	if (max_freq == scaling_max_freq)
+		return;
+
+	for_each_possible_cpu(cpu) {
+		ret = update_cpu_freq_limits(cpu, scaling_min_freq, max_freq, true);
+		if (ret)
+			pr_debug("%s: Failed to update cpu%u thermal throttling to %u\n",
+				__func__, cpu, max_freq);
+	}
+
+	scaling_max_freq = max_freq;
+
+	return;
 }
 
 static ssize_t show_scaling_min_freq(struct kobject *kobj,
@@ -57,7 +99,7 @@ static ssize_t store_scaling_min_freq(struct kobject *kobj,
 		return ret;
 
 	for_each_possible_cpu(cpu) {
-		ret = update_cpu_freq_limits(cpu, new_freq, scaling_max_freq);
+		ret = update_cpu_freq_limits(cpu, new_freq, scaling_max_freq, false);
 		if (ret)
 			pr_debug("%s: Failed to limit cpu%u min freq to %lu\n",
 				__func__, cpu, new_freq);
@@ -91,7 +133,7 @@ static ssize_t store_scaling_max_freq(struct kobject *kobj,
 		return ret;
 
 	for_each_possible_cpu(cpu) {
-		ret = update_cpu_freq_limits(cpu, scaling_min_freq, new_freq);
+		ret = update_cpu_freq_limits(cpu, scaling_min_freq, new_freq, false);
 		if (ret)
 			pr_debug("%s: Failed to limit cpu%u max freq to %lu\n",
 				__func__, cpu, new_freq);
