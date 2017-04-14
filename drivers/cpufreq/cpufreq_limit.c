@@ -26,6 +26,7 @@
 
 static bool throttling;
 static struct kobject *kobj;
+static uint32_t post_throttle_freq = CONFIG_MSM_CPU_FREQ_MAX;
 static uint32_t scaling_max_freq = CONFIG_MSM_CPU_FREQ_MAX;
 static uint32_t scaling_min_freq = CONFIG_MSM_CPU_FREQ_MIN;
 
@@ -40,6 +41,8 @@ static int update_cpu_freq_limits(unsigned int cpu,
 			return ret;
 
 		ret = cpufreq_update_policy(cpu);
+	} else {
+		post_throttle_freq = max_freq;
 	}
 
 	return ret;
@@ -60,6 +63,11 @@ void thermal_throttle(uint32_t max_freq, bool throttle)
 	}
 
 	return;
+}
+
+void thermal_unthrottle(void)
+{
+	thermal_throttle(post_throttle_freq, false);
 }
 
 static ssize_t show_scaling_min_freq(struct kobject *kobj,

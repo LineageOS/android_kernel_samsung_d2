@@ -13,5 +13,7 @@
 
 /* Thermal throttling function for thermal driver */
 extern void thermal_throttle(uint32_t max_freq, bool throttle);
+/* Thermal throttle removal function for thermal driver */
+extern void thermal_unthrottle(void)
 
 #endif /* _LINUX_CPUFREQ_LIMIT_H */

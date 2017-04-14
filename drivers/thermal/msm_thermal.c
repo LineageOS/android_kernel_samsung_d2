@@ -123,6 +123,7 @@ static void check_temp(struct work_struct *work)
 		if (temp < (temp_threshold - info.safe_diff))
 		{
 			info.throttling = false;
+			thermal_unthrottle();
 			limit_cpu_freqs(info.cpuinfo_max_freq);
 			goto reschedule;
 		}
