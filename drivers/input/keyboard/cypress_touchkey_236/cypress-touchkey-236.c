@@ -943,7 +943,7 @@ static int __devinit cypress_touchkey_probe(struct i2c_client *client,
 			(int)sizeof(pdata->touchkey_keycode));
 	snprintf(info->phys, sizeof(info->phys),
 			"%s/input0", dev_name(&client->dev));
-	input_dev->name = "sec_touchkey";
+	input_dev->name = "sec_tk";
 	input_dev->phys = info->phys;
 	input_dev->id.bustype = BUS_I2C;
 	input_dev->dev.parent = &client->dev;
